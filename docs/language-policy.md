@@ -9,7 +9,7 @@ the architecture accessible, but they do not define independent semantics. If a
 translation conflicts with its English source, the English source is
 authoritative.
 
-Changes to `README.md`, `MANIFESTO.md`, or
+Changes to `README.md`, `MANIFESTO.md`, `docs/team-guide.md`, or
 `docs/create-project-from-zero.md` should update the corresponding Spanish
 translation in the same change. A translation that cannot be updated atomically
 must be marked as out of date at its beginning; silent divergence is prohibited.

@@ -38,6 +38,8 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
 
 - [`MANIFESTO.md`](MANIFESTO.md): reglas normativas de inicialización, evolución
   y conformidad.
+- [`team-guide.md`](team-guide.md): guía humana para comprender, revisar y
+  gobernar los artefactos creados por el kit.
 - [`create-project-from-zero.md`](create-project-from-zero.md):
   procedimiento operativo que debe seguir el agente.
 - [`tools/architecture/`](../../tools/architecture/): validador portable, catálogo de

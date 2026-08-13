@@ -36,6 +36,8 @@ should arrive when the task requires it.
 
 - [`MANIFESTO.md`](MANIFESTO.md): normative initialization, evolution, and
   conformance rules.
+- [`docs/team-guide.md`](docs/team-guide.md): human guide for understanding,
+  reviewing, and governing the artifacts created by the kit.
 - [`docs/create-project-from-zero.md`](docs/create-project-from-zero.md): the
   operational procedure an agent follows to bootstrap a project.
 - [`tools/architecture/`](tools/architecture/): portable validator, rule
