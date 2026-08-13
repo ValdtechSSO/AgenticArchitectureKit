@@ -1,0 +1,178 @@
+# Crear un proyecto desde cero con Agentic Architecture Kit
+
+[English — canonical](../create-project-from-zero.md) · [Política lingüística](language-policy.md)
+
+Esta guía es el procedimiento operativo que acompaña al manifiesto. Su resultado
+no es un árbol predeterminado, sino la arquitectura mínima que puede justificarse
+con la información disponible del producto.
+
+## 1. Entradas obligatorias
+
+Antes de crear código o carpetas, el agente reúne:
+
+- propósito y alcance actual del producto;
+- actores y operaciones conocidas;
+- datos, ownership e invariantes conocidos;
+- interfaces externas requeridas;
+- lenguaje, runtime y restricciones de despliegue;
+- riesgos conocidos;
+- comandos de build y test disponibles.
+
+Cada dato se clasifica como `KNOWN`, `ASSUMED` o `UNKNOWN`. Un supuesto o una
+incógnita no se materializa como módulo, assembly, abstracción o carpeta.
+
+## 2. Descubrir la arquitectura mínima
+
+El agente identifica capacidades por vocabulario, ownership, reglas y ciclo de
+vida. Comienza con un solo módulo salvo que la evidencia actual justifique varios.
+
+Para cada posible límite pregunta:
+
+```text
+¿Tiene vocabulario propio?
+¿Posee datos o estado?
+¿Tiene invariantes propios?
+¿Evoluciona de forma independiente?
+¿Necesita un contrato con otra capacidad actual?
+```
+
+Los hosts se derivan únicamente de formas actuales de ejecutar o exponer el
+producto. Un proyecto compilable separado necesita un límite verificable de
+dependencia, despliegue, runtime, lenguaje, publicación u ownership.
+
+## 3. Proponer antes de materializar
+
+El agente presenta una decisión inicial que incluya:
+
+- módulos propuestos y evidencia de cada límite;
+- áreas funcionales cohesivas dentro de cada módulo;
+- hosts actuales;
+- proyectos o packages necesarios y el límite que imponen;
+- dependencias permitidas;
+- invariantes, riesgos y ADR iniciales;
+- supuestos y preguntas todavía abiertas;
+- comprobaciones automáticas y revisiones semánticas necesarias.
+
+Si el usuario ya autorizó crear el proyecto, esta propuesta puede formar parte
+del registro arquitectónico y el agente continúa sin pedir confirmaciones
+innecesarias. Una decisión que cambie significativamente el producto, el riesgo
+o el ownership sí requiere dirección.
+
+## 4. Instalar la base ejecutable
+
+Desde este kit se copian al proyecto sin cambiar su semántica:
+
+```text
+tools/architecture/
+tools/scripts/validate-architecture.sh
+.agentic/contracts/schemas/
+```
+
+Después se materializan, adaptando las plantillas:
+
+```text
+AGENTS.md
+architecture/system-overview.md
+architecture/decisions/
+domain/global-invariants.md
+src/Modules/{CurrentModule}/AGENTS.md
+src/Modules/{CurrentModule}/module.contract.yml
+.agentic/policies/architecture/project-policy.json
+.agentic/policies/architecture/waivers.json
+```
+
+Las rutas opcionales se omiten si no tienen contenido actual.
+
+## 5. Construir la política específica
+
+El agente copia `project-policy.template.json` a:
+
+```text
+.agentic/policies/architecture/project-policy.json
+```
+
+Luego reemplaza todos los valores de ejemplo con hechos del proyecto:
+
+- raíces de módulos y hosts;
+- áreas funcionales existentes;
+- proyectos observables y sus owners;
+- roles de aplicación, infraestructura, contratos y host;
+- dependencias permitidas;
+- rutas fuente autorizadas dentro de cada host;
+- nombres técnicos o catch-all prohibidos.
+
+La política declara intención. El adaptador obtiene la estructura observada. El
+validador compara ambas; la política nunca debe escribirse para ocultar una
+violación general.
+
+## 6. Adaptador tecnológico
+
+Si existe adaptador para la tecnología, se usa tal cual. Si falta, el agente crea
+`tools/architecture/validator/adapters/{technology}.py` con una función:
+
+```python
+def observe(root, policy) -> ObservedArchitecture:
+    ...
+```
+
+El adaptador solo descubre módulos, hosts, proyectos, dependencias y archivos
+fuente. No decide qué arquitectura es válida ni redefine reglas.
+
+## 7. Licencias
+
+`waivers.json` comienza vacío. Una licencia solo se añade cuando existe una
+desviación concreta y autorizada. Debe identificar regla, scope, decisión,
+motivo, riesgo, ADR autorizador y condiciones de revisión. Su resultado será
+`WAIVED`, nunca `PASS`.
+
+## 8. Bootstrap y expansión del contexto
+
+El proyecto debe proporcionar al agente un contexto inicial pequeño y
+determinista:
+
+```text
+Petición
+AGENTS.md raíz
+Revisión del repositorio
+Políticas de riesgo y permisos
+Comandos autoritativos de build, test y arquitectura
+```
+
+Después, el agente localiza el módulo y área funcional propietarios, lee el
+contrato del módulo, invariantes, ADR, política del proyecto y licencias, y
+amplía únicamente mediante dependencias, consumidores, acceso a datos, tests o
+huecos concretos de evidencia. Registra la procedencia y distingue hechos
+declarados, hechos observados, inferencias y preguntas abiertas. La memoria de
+la conversación nunca es necesaria para continuar el trabajo.
+
+## 9. Validación de cierre
+
+El proyecto inicial no está completo hasta ejecutar:
+
+```bash
+python3 -m unittest discover -s tools/architecture/tests -v
+./tools/scripts/validate-architecture.sh
+```
+
+Además se ejecutan el build y los tests propios del proyecto. Los resultados
+`REVIEW_REQUIRED` se enumeran y se revisan; no se presentan como verificaciones
+automáticas superadas. Una revisión semántica dentro de la autoridad ya delegada
+no requiere por sí sola interacción con el usuario.
+
+## 10. Evolución posterior
+
+Cada petición futura vuelve a localizar primero el módulo y área funcional
+propietarios. Solo crea un nuevo límite cuando la nueva evidencia lo justifica.
+Si cambia un límite, el cambio actualiza conjuntamente código, política,
+contratos, ADR, validaciones, licencias y evidencia.
+
+El agente actualiza la política conforme crece el proyecto, pero nunca solo para
+hacer desaparecer un fallo:
+
+- un límite nuevo legítimo actualiza la política y la decisión que lo sustenta;
+- una violación accidental se corrige en el código;
+- una desviación necesaria y autorizada crea una licencia visible;
+- la semántica no resuelta permanece como `REVIEW_REQUIRED`.
+
+La conversación del agente no es memoria arquitectónica. Al finalizar, otro
+agente debe poder continuar leyendo únicamente el repositorio.

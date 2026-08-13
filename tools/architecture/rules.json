@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "POL001",
+      "title": "Project policy is valid",
+      "description": "The project policy conforms to the portable policy contract.",
+      "evaluator": "policy_valid",
+      "automatic": true,
+      "inputs": ["project-policy"]
+    },
+    {
+      "id": "ARC001",
+      "title": "Declared and observed architecture agree",
+      "description": "Declared modules, hosts, projects, and project names match repository observation.",
+      "evaluator": "architecture_matches",
+      "automatic": true,
+      "inputs": ["project-policy", "observed-architecture"]
+    },
+    {
+      "id": "MOD001",
+      "title": "Modules have semantic contracts",
+      "description": "Every observed module has a schema-valid semantic contract and local AGENTS.md router.",
+      "evaluator": "module_contract",
+      "automatic": true,
+      "inputs": ["module-contracts", "filesystem"]
+    },
+    {
+      "id": "MOD002",
+      "title": "Module identity matches its root",
+      "description": "A module contract id is the normalized name of its module root.",
+      "evaluator": "module_identity",
+      "automatic": true,
+      "inputs": ["module-contracts", "observed-architecture"]
+    },
+    {
+      "id": "MOD003",
+      "title": "Modules represent functional capabilities",
+      "description": "Technical categories are not represented as product modules.",
+      "evaluator": "functional_modules",
+      "automatic": true,
+      "inputs": ["project-policy", "observed-architecture"]
+    },
+    {
+      "id": "FEAT001",
+      "title": "Application behavior has a cohesive feature owner",
+      "description": "Observed feature roots match policy; semantic cohesion is surfaced for review.",
+      "evaluator": "feature_ownership",
+      "automatic": false,
+      "inputs": ["project-policy", "filesystem"]
+    },
+    {
+      "id": "HOST001",
+      "title": "Hosts contain only adapters and composition",
+      "description": "Host source is confined to explicitly declared adapter and composition paths.",
+      "evaluator": "hosts_are_adapters",
+      "automatic": true,
+      "inputs": ["project-policy", "filesystem"]
+    },
+    {
+      "id": "DEP001",
+      "title": "Modules do not depend on hosts",
+      "description": "No module-owned project has a direct or transitive dependency on a host-owned project.",
+      "evaluator": "modules_do_not_depend_on_hosts",
+      "automatic": true,
+      "inputs": ["project-policy", "observed-project-dependencies"]
+    },
+    {
+      "id": "DEP002",
+      "title": "Cross-module access uses public contracts",
+      "description": "A cross-module project dependency targets a declared contract boundary.",
+      "evaluator": "cross_module_contracts",
+      "automatic": true,
+      "inputs": ["project-policy", "observed-project-dependencies"]
+    },
+    {
+      "id": "DEP003",
+      "title": "Project dependencies are authorized",
+      "description": "Every observed project dependency is explicitly allowed by project policy.",
+      "evaluator": "allowed_dependencies",
+      "automatic": true,
+      "inputs": ["project-policy", "observed-project-dependencies"]
+    },
+    {
+      "id": "OWN001",
+      "title": "Authoritative data has one owner",
+      "description": "Declared ownership is unique and observed writes are reviewed when an analyzer is unavailable.",
+      "evaluator": "data_ownership",
+      "automatic": false,
+      "inputs": ["module-contracts", "observed-data-access"]
+    },
+    {
+      "id": "STR001",
+      "title": "Speculative structure is prohibited",
+      "description": "Catch-all directories and generated structural fields in semantic contracts are prohibited; boundary necessity remains reviewable.",
+      "evaluator": "no_speculative_structure",
+      "automatic": false,
+      "inputs": ["project-policy", "module-contracts", "filesystem"]
+    },
+    {
+      "id": "DOC001",
+      "title": "Architectural references resolve",
+      "description": "Invariant and ADR references from module contracts resolve to existing documents and headings.",
+      "evaluator": "document_references",
+      "automatic": true,
+      "inputs": ["module-contracts", "filesystem"]
+    },
+    {
+      "id": "WVR001",
+      "title": "Waivers are explicit and valid",
+      "description": "Waivers reference known rules, existing authorities, valid scopes, and unexpired decisions.",
+      "evaluator": "waivers_valid",
+      "automatic": true,
+      "inputs": ["waivers", "rule-catalog", "filesystem"]
+    }
+  ]
+}

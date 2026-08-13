@@ -1,0 +1,18 @@
+id: samplecapability
+name: SampleCapability
+purpose: >
+  Replace this text with the current capability owned by the module.
+intent:
+  aliases:
+    - replace-with-domain-language
+ownership:
+  domain: replace-with-domain-owner
+  authoritative_data: []
+risk:
+  default: medium
+  reasons:
+    - Replace with a current risk or use an empty list when none is known
+invariants:
+  - domain/contexts/sample-capability.md#replace-with-invariant
+architecture_decisions:
+  - architecture/decisions/ADR-001-initial-architecture.md

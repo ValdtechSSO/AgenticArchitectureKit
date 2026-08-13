@@ -1,0 +1,90 @@
+{
+  "$schema": "../../contracts/schemas/architecture-policy.schema.json",
+  "version": 1,
+  "project": "replace-with-project-id",
+  "adapter": "dotnet",
+  "roots": {
+    "modules": "src/Modules",
+    "hosts": "src/Hosts"
+  },
+  "projectSearchRoots": [
+    "src"
+  ],
+  "structureSearchRoots": [
+    "src"
+  ],
+  "moduleContract": {
+    "fileName": "module.contract.yml",
+    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "forbiddenStructuralFields": [
+      "paths",
+      "entrypoints",
+      "handlers",
+      "classes",
+      "tests",
+      "entities_read",
+      "entities_written",
+      "routes"
+    ]
+  },
+  "technicalModuleNames": [
+    "Git",
+    "Providers",
+    "Repositories",
+    "Validation",
+    "Services",
+    "Infrastructure"
+  ],
+  "forbiddenDirectoryNames": [
+    "Services",
+    "Managers",
+    "Helpers",
+    "Utils",
+    "Common"
+  ],
+  "modules": [
+    {
+      "id": "samplecapability",
+      "root": "src/Modules/SampleCapability",
+      "featureRoot": "src/Modules/SampleCapability/Features",
+      "featureAreas": [
+        "SampleLifecycle"
+      ]
+    }
+  ],
+  "hosts": [
+    {
+      "id": "sample-host",
+      "root": "src/Hosts/SampleHost",
+      "allowedSourcePatterns": [
+        "Program.cs"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "path": "src/Modules/SampleCapability/SampleCapability.csproj",
+      "name": "SampleCapability",
+      "owner": {
+        "kind": "module",
+        "id": "samplecapability"
+      },
+      "role": "application"
+    },
+    {
+      "path": "src/Hosts/SampleHost/SampleHost.csproj",
+      "name": "SampleHost",
+      "owner": {
+        "kind": "host",
+        "id": "sample-host"
+      },
+      "role": "host"
+    }
+  ],
+  "allowedProjectDependencies": [
+    {
+      "from": "src/Hosts/SampleHost/SampleHost.csproj",
+      "to": "src/Modules/SampleCapability/SampleCapability.csproj"
+    }
+  ]
+}
