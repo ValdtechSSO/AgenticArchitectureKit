@@ -101,6 +101,9 @@ digest, scope, revision, reviewer, and platform approval evidence.
 
 Repository declarations and CODEOWNERS are only one half of enforcement. Branch
 protection and recorded approvals are platform facts and need platform controls.
+Team governance uses independent pull-request review. A repository with exactly
+one maintainer records that limitation explicitly and uses durable maintainer
+attestation rather than presenting self-review as independent approval.
 
 Completion comes from build, tests, architecture validation, risk-specific
 checks, approvals, and retained evidence. An agent's assertion is not evidence.

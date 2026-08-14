@@ -123,7 +123,7 @@ Los datos generados son evidencia útil, pero no autoridad semántica. Si un
 | `waivers.json` | Registra desviaciones acotadas y autorizadas | Autoridad definida por la política del equipo | Digest de regla, scope, riesgo, autoridad, caducidad y eliminación |
 | `authorities.json` | Declara principals, scopes protegidos, ramas y controles requeridos | Owners del repositorio | Coincidencia entre declaración y configuración real de plataforma |
 | `.github/CODEOWNERS` | Enruta cambios arquitectónicos protegidos hacia los principals declarados | Owners del repositorio | Un patrón real por scope protegido y ningún override que retire al owner |
-| `reviews.json` | Registra una aprobación semántica respaldada por plataforma para huella y commit exactos | Autoridad declarada | Identidad, digest de regla, evidencia, SHA, scope y obsolescencia |
+| `reviews.json` | Registra una aprobación semántica o atestación de mantenedor individual respaldada por plataforma para huella y commit exactos | Autoridad declarada | Modo, identidad, digest de regla, evidencia, SHA, scope y obsolescencia |
 | `rules.json` | Catálogo estable de reglas portables | Mantenedores del kit | Semántica común y compatibilidad entre proyectos |
 | Adaptador tecnológico | Convierte estructura tecnológica al modelo observado común | Mantenedor del kit o colaborador del adaptador | Precisión de observación; ninguna decisión de política |
 | Tests arquitectónicos | Protegen decisiones específicas que el validador común no expresa | Equipo o agente autorizado | Que protejan comportamiento y no detalles accidentales |
@@ -233,7 +233,7 @@ son automáticamente motivos para preguntar al usuario.
 | `PASS` | El validador ha demostrado la regla para el scope y revisión actuales | Conservar la evidencia |
 | `FAIL` | La arquitectura observada viola una regla o declaración | Corregir código o declaración; no suprimir el check |
 | `WAIVED` | Una licencia explícita válida autoriza la desviación | Confirmar que scope y condiciones siguen siendo correctos |
-| `REVIEWED` | Un CODEOWNER declarado aceptó la huella exacta en un commit alcanzable y aportó evidencia de plataforma | Conservar el acuse; un cambio de evidencia lo dejará obsoleto |
+| `REVIEWED` | La autoridad declarada aceptó la huella exacta en un commit alcanzable y aportó evidencia apropiada para su modo | Conservar el acuse; un cambio de evidencia lo dejará obsoleto |
 | `NOT_APPLICABLE` | La regla no tiene objeto relevante en el proyecto | Ninguna acción salvo cambio arquitectónico |
 | `REVIEW_REQUIRED` | La herramienta no puede demostrar una decisión semántica | El agente o una persona revisa según la autoridad delegada |
 
@@ -244,17 +244,23 @@ El validador local demuestra coherencia del registro, no que GitHub haya aplicad
 realmente la aprobación. La protección descrita en
 [`github-governance.md`](github-governance.md) aporta esa garantía externa.
 
+El modo `team` usa revisión independiente de CODEOWNER mediante pull request. Un
+repositorio realmente mantenido por una sola persona usa `solo-maintainer`, un
+único principal y una atestación durable de GitHub creada por esa persona fuera
+de `reviews.json`. El modo individual hace explícita la menor independencia; no
+es un atajo cuando existe un revisor de equipo disponible.
+
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.1 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.1 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un

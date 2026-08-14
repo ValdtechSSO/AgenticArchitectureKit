@@ -88,12 +88,16 @@ granted. A stale digest cannot silence a current violation.
 
 Every declared protected scope must be covered by a real CODEOWNERS pattern
 owned by its authority principals. A narrower pattern cannot remove that
-authority inside its scope. Pull-request, code-owner, stale-review,
-no-direct-push, and status-check enforcement must be declared; platform
-configuration remains external evidence.
+authority inside its scope. Team mode declares pull-request, code-owner,
+stale-review, no-direct-push, and status-check enforcement. Solo-maintainer mode
+requires exactly one principal and declares pull-request, no-direct-push, and
+status-check enforcement without pretending that self-review is independent.
+Platform configuration remains external evidence.
 
 ## REV001 — Semantic reviews are explicit and current
 
 A semantic review must bind the exact finding fingerprint, rule digest, scope,
 authority, reviewer, approval evidence, and reachable repository revision. A
-semantic change invalidates the acknowledgement.
+semantic change invalidates the acknowledgement. GitHub team mode requires pull
+request review evidence. GitHub solo-maintainer mode requires a durable
+maintainer attestation URL outside the review record itself.

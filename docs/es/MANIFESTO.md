@@ -99,6 +99,10 @@ huella, digest de regla, alcance, revisión Git, revisor y evidencia de platafor
 
 Las declaraciones y CODEOWNERS son solo la mitad. La protección de rama y las
 aprobaciones registradas son hechos de la plataforma.
+El gobierno de equipo usa revisión independiente mediante pull request. Un
+repositorio con exactamente un mantenedor declara esa limitación y usa una
+atestación durable del mantenedor en lugar de presentar la auto-review como
+aprobación independiente.
 
 La completitud procede del build, tests, validación arquitectónica, checks de
 riesgo, aprobaciones y evidencia conservada. La afirmación del agente no es

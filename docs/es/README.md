@@ -105,7 +105,7 @@ publican juntos como `agentic-architecture-kit`. El consumidor fija la versión
 exacta en `.agentic/toolchain.json` y la ejecuta con `uvx` o `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
 ```
 
 En el repositorio consumidor solo viven decisiones y contexto propios:
@@ -154,8 +154,20 @@ selecciona el adaptador a partir de sus artefactos y escribe una propuesta de
 `project-policy.json` con módulos, hosts, proyectos y referencias observadas:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @tu-org/architecture
 ```
+
+Para un repositorio mantenido por una sola persona, declara esa restricción de
+forma honesta en lugar de configurar una auto-review imposible:
+
+```bash
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . \
+  --codeowner @tu-usuario --authority-mode solo-maintainer
+```
+
+Las revisiones `solo-maintainer` usan una URL durable de atestación del
+mantenedor en GitHub. No afirman que aprobar el propio pull request sea una
+revisión independiente.
 
 En un repositorio vacío, indica la tecnología conocida con `--adapter dotnet` o
 `--adapter python`. La propuesta observada es un punto de partida, no una

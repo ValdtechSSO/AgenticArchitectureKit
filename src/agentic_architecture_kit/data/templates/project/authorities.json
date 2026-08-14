@@ -1,8 +1,9 @@
 {
-  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/architecture-authorities.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-authorities.schema.json",
   "version": 1,
   "enforcement": {
     "provider": "github",
+    "mode": "team",
     "codeOwnersFile": ".github/CODEOWNERS",
     "protectedBranches": ["main"],
     "requirements": [

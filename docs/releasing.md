@@ -26,7 +26,8 @@ short-lived identity token only in its publish job.
 2. Review rule, schema, migration, and compatibility changes.
 3. Run the conformance suite, strict self-validation, package build, and an
    isolated wheel validation against the examples.
-4. Merge through the protected branch with the required architecture review.
+4. Merge through the protected branch using the configured team review or
+   solo-maintainer attestation workflow.
 5. Publish a GitHub release whose tag is exactly `v{package-version}`.
    Creating or pushing the tag alone does not trigger publication; the GitHub
    release must transition to the published state.

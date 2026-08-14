@@ -100,7 +100,7 @@ together as `agentic-architecture-kit`. A consumer pins the exact version in
 `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
 ```
 
 Only project-owned decisions and context live in the consumer repository:
@@ -149,8 +149,19 @@ adapter from repository artifacts and writes a `project-policy.json` proposal
 from the observed modules, hosts, projects, and project-reference edges:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @your-org/architecture
 ```
+
+For a repository maintained by one person, declare that constraint honestly
+instead of configuring an impossible self-review requirement:
+
+```bash
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . \
+  --codeowner @your-user --authority-mode solo-maintainer
+```
+
+Solo-maintainer reviews use a durable GitHub maintainer-attestation URL. They do
+not claim that approving one's own pull request is independent review.
 
 For an empty repository, select the known technology explicitly with
 `--adapter dotnet` or `--adapter python`. The observed proposal is a starting
