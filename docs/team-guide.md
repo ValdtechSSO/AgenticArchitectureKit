@@ -121,7 +121,7 @@ index disagrees with current source or revision, it is stale.
 | `waivers.json` | Records bounded, authorized deviations from portable rules | Authority named by team policy | Rule digest, exact scope, risk, owner, expiry, and removal condition |
 | `authorities.json` | Declares approval principals, protected scopes, branches, and required platform controls | Repository owners | Whether the declared authority matches actual platform configuration |
 | `.github/CODEOWNERS` | Routes protected architecture changes to declared principals | Repository owners | A real covering pattern per protected scope and no owner-removing override |
-| `reviews.json` | Records a platform-backed semantic approval for an exact fingerprint and reachable commit | Declared authority | Identity, rule digest, approval evidence, SHA, scope, and staleness |
+| `reviews.json` | Records a platform-backed semantic approval or solo-maintainer attestation for an exact fingerprint and reachable commit | Declared authority | Mode, identity, rule digest, approval evidence, SHA, scope, and staleness |
 | `rules.json` | Stable portable rule catalog | Kit maintainers | Cross-project semantics and compatibility |
 | Technology adapter | Converts technology-specific structure into the common observed model | Kit maintainer or adapter contributor | Observation accuracy; no policy decisions |
 | Architecture tests | Enforce project-specific decisions the common validator cannot express | Team or authorized agent | Whether they protect behavior rather than implementation trivia |
@@ -232,7 +232,7 @@ automatically a reason to ask the user.
 | `PASS` | The validator demonstrated the rule for the current scope and revision | No action beyond retaining evidence |
 | `FAIL` | Observed architecture violates a rule or declaration | Correct code or declaration; do not suppress the check |
 | `WAIVED` | A valid explicit waiver authorizes the deviation | Confirm scope and review condition remain correct |
-| `REVIEWED` | A declared CODEOWNER accepted this exact semantic fingerprint at a reachable commit and supplied platform evidence | Keep the acknowledgement; changed evidence will make it stale |
+| `REVIEWED` | The declared authority accepted this exact semantic fingerprint at a reachable commit and supplied mode-appropriate platform evidence | Keep the acknowledgement; changed evidence will make it stale |
 | `NOT_APPLICABLE` | The rule has no relevant subject in this project | No action unless architecture changed |
 | `REVIEW_REQUIRED` | The tool cannot prove a semantic decision | Agent or person reviews the evidence according to delegated authority |
 
@@ -243,18 +243,24 @@ The local validator proves record consistency, not that GitHub actually enforced
 approval. Branch protection described in
 [`github-governance.md`](github-governance.md) supplies that external guarantee.
 
+`team` mode uses an independent CODEOWNER pull-request review. A genuinely
+single-maintainer repository uses `solo-maintainer`, exactly one principal, and
+a durable GitHub attestation created by that person outside `reviews.json`.
+Solo mode makes reduced reviewer independence explicit; it is not a shortcut
+for a repository that has an available team reviewer.
+
 Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.1 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.1 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This

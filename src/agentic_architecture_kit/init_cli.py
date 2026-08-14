@@ -15,7 +15,7 @@ from .contracts import ContractError
 from .resources import files as package_files, read_json
 
 
-_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
+_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
 _TECHNICAL_MODULE_NAMES = [
     "Git", "Providers", "Repositories", "Validation", "Services", "Infrastructure",
 ]
@@ -39,6 +39,12 @@ def _init_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", default=".")
     parser.add_argument("--codeowner", required=True, help="GitHub CODEOWNER principal, for example @team/architecture.")
     parser.add_argument("--authority-id", default="architecture-maintainers")
+    parser.add_argument(
+        "--authority-mode",
+        choices=("team", "solo-maintainer"),
+        default="team",
+        help="Team review or explicit single-maintainer attestation governance.",
+    )
     parser.add_argument("--protected-branch", default="main")
     parser.add_argument(
         "--adapter",
@@ -276,6 +282,7 @@ def initialize(
     authority_id: str = "architecture-maintainers",
     protected_branch: str = "main",
     adapter: str = "auto",
+    authority_mode: str = "team",
 ) -> dict[str, Any]:
     root = root.resolve()
     if not root.is_dir():
@@ -301,7 +308,7 @@ def initialize(
         policy, observation = _observed_policy(root, selected_adapter)
         proposal_basis = "observed"
     toolchain = {
-            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
             "version": 1,
             "distribution": "agentic-architecture-kit",
             "toolVersion": __version__,
@@ -309,6 +316,13 @@ def initialize(
             "extensions": [],
     }
     authorities = read_json("data/templates/project/authorities.json")
+    authorities["enforcement"]["mode"] = authority_mode
+    if authority_mode == "solo-maintainer":
+        authorities["enforcement"]["requirements"] = [
+            "pull-request",
+            "no-direct-push",
+            "required-status-checks",
+        ]
     authorities["authorities"][0]["id"] = authority_id
     authorities["authorities"][0]["principals"] = [codeowner]
     authorities["enforcement"]["protectedBranches"] = [protected_branch]
@@ -347,7 +361,14 @@ def initialize(
 def run(arguments: list[str] | None = None) -> int:
     args = _init_parser().parse_args(arguments)
     try:
-        result = initialize(Path(args.root), args.codeowner, args.authority_id, args.protected_branch, args.adapter)
+        result = initialize(
+            Path(args.root),
+            args.codeowner,
+            args.authority_id,
+            args.protected_branch,
+            args.adapter,
+            args.authority_mode,
+        )
         print(_json(result), end="")
         return 0
     except (ContractError, OSError, ValueError) as error:

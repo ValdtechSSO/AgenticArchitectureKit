@@ -410,6 +410,16 @@ def run(arguments: list[str] | None = None) -> int:
             output.write_text(serialized, encoding="utf-8")
         if args.write_review_template:
             pending = []
+            authority_mode = authority_document["enforcement"].get("mode", "team")
+            if authority_mode == "solo-maintainer" and len(authority_document["authorities"]) == 1:
+                template_authority = authority_document["authorities"][0]
+                authority_id = template_authority["id"]
+                reviewers = template_authority["principals"]
+                approval_evidence = "github-maintainer-attestation:https://github.com/OWNER/REPOSITORY/issues/NUMBER#issuecomment-ID"
+            else:
+                authority_id = "replace-with-authority-id"
+                reviewers = ["@replace-with-approved-principal"]
+                approval_evidence = "github-pr-review:replace-with-review-url-or-id"
             reviewable = [
                 item for item in findings
                 if item.status == "REVIEW_REQUIRED" and item.review_fingerprint
@@ -422,9 +432,9 @@ def run(arguments: list[str] | None = None) -> int:
                     "subjectFingerprint": finding.review_fingerprint,
                     "ruleDigest": finding.rule_digest,
                     "decision": "Replace with the accepted semantic judgment.",
-                    "authorityId": "replace-with-authority-id",
-                    "reviewedBy": ["@replace-with-approved-principal"],
-                    "approvalEvidence": "github-pr-review:replace-with-review-url-or-id",
+                    "authorityId": authority_id,
+                    "reviewedBy": reviewers,
+                    "approvalEvidence": approval_evidence,
                     "authorizedBy": ["architecture/decisions/ADR-XXX.md"],
                     "reviewedAtRevision": revision,
                     "reviewWhen": ["The reviewed subject or its evidence changes."],

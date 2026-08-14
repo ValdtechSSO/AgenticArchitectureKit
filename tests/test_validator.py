@@ -73,7 +73,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -176,22 +176,36 @@ architecture_decisions:
             json.dumps({"version": 1, "reviews": reviews}), encoding="utf-8"
         )
 
-    def _write_authorities(self) -> None:
-        self.authority_path.write_text(json.dumps({
-            "version": 1,
-            "enforcement": {
-                "provider": "github",
-                "codeOwnersFile": ".github/CODEOWNERS",
-                "protectedBranches": ["main"],
-                "requirements": [
+    def _write_authorities(
+        self,
+        mode: str | None = None,
+        principals: list[str] | None = None,
+        requirements: list[str] | None = None,
+    ) -> None:
+        if requirements is None:
+            requirements = (
+                ["pull-request", "no-direct-push", "required-status-checks"]
+                if mode == "solo-maintainer"
+                else [
                     "pull-request", "code-owner-review", "dismiss-stale-reviews",
                     "no-direct-push", "required-status-checks",
-                ],
-            },
+                ]
+            )
+        enforcement = {
+            "provider": "github",
+            "codeOwnersFile": ".github/CODEOWNERS",
+            "protectedBranches": ["main"],
+            "requirements": requirements,
+        }
+        if mode is not None:
+            enforcement["mode"] = mode
+        self.authority_path.write_text(json.dumps({
+            "version": 1,
+            "enforcement": enforcement,
             "authorities": [{
                 "id": "test-owner",
                 "displayName": "Test architecture owner",
-                "principals": ["@test-owner"],
+                "principals": principals or ["@test-owner"],
                 "protectedScopes": ["."],
             }],
         }), encoding="utf-8")
@@ -403,6 +417,64 @@ architecture_decisions:
         code, output, _ = self._run()
         self.assertEqual(1, code)
         self.assertIn("[FAIL] REV001", output)
+
+    def test_solo_maintainer_attestation_resolves_semantic_review(self) -> None:
+        self._write_authorities(mode="solo-maintainer")
+        _, output, error = self._run("--format", "json")
+        self.assertFalse(error)
+        finding = next(
+            item for item in json.loads(output)["results"]
+            if item["status"] == "REVIEW_REQUIRED"
+        )
+        self._write_reviews([{
+            "id": "SOLO-REVIEW",
+            "rule": finding["rule"],
+            "ruleDigest": finding["ruleDigest"],
+            "scope": finding["scope"],
+            "subjectFingerprint": finding["reviewFingerprint"],
+            "decision": "The sole maintainer accepts this exact semantic subject.",
+            "authorityId": "test-owner",
+            "reviewedBy": ["@test-owner"],
+            "approvalEvidence": "github-maintainer-attestation:https://github.com/example/project/issues/1#issuecomment-1",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewedAtRevision": self.initial_revision,
+            "reviewWhen": ["The subject fingerprint changes"],
+        }])
+
+        code, output, error = self._run("--format", "json", "--fail-on-review")
+        self.assertEqual(0, code, error)
+        self.assertTrue(any(
+            item["rule"] == finding["rule"] and item["status"] == "REVIEWED"
+            for item in json.loads(output)["results"]
+        ))
+
+    def test_solo_maintainer_rejects_pr_review_evidence_and_multiple_principals(self) -> None:
+        self._write_authorities(mode="solo-maintainer", principals=["@test-owner", "@second-owner"])
+        (self.root / ".github/CODEOWNERS").write_text("* @test-owner @second-owner\n", encoding="utf-8")
+        _, output, _ = self._run("--format", "json")
+        finding = next(
+            item for item in json.loads(output)["results"]
+            if item["status"] == "REVIEW_REQUIRED"
+        )
+        self._write_reviews([{
+            "id": "INVALID-SOLO-REVIEW",
+            "rule": finding["rule"],
+            "ruleDigest": finding["ruleDigest"],
+            "scope": finding["scope"],
+            "subjectFingerprint": finding["reviewFingerprint"],
+            "decision": "This record uses team evidence in solo mode.",
+            "authorityId": "test-owner",
+            "reviewedBy": ["@test-owner"],
+            "approvalEvidence": "github-pr-review:not-valid-for-solo-mode",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewedAtRevision": self.initial_revision,
+            "reviewWhen": ["The subject changes"],
+        }])
+
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("Solo-maintainer governance requires exactly one unique authority principal", output)
+        self.assertIn("Solo-maintainer GitHub review requires", output)
 
     def test_stale_rule_digest_prevents_semantic_review_from_applying(self) -> None:
         _, output, _ = self._run("--format", "json")
@@ -713,6 +785,35 @@ architecture_decisions:
         repeated = initialize(target, "@architecture-team")
         self.assertEqual("existing", repeated["policyProposal"]["basis"])
         self.assertEqual([], repeated["created"])
+
+    def test_init_supports_solo_maintainer_governance(self) -> None:
+        target = self.root / "solo-initialized"
+        target.mkdir()
+        initialize(
+            target,
+            "@solo-owner",
+            adapter="dotnet",
+            authority_mode="solo-maintainer",
+        )
+        authorities = json.loads(
+            (target / ".agentic/policies/architecture/authorities.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("solo-maintainer", authorities["enforcement"]["mode"])
+        self.assertEqual(
+            ["pull-request", "no-direct-push", "required-status-checks"],
+            authorities["enforcement"]["requirements"],
+        )
+
+    def test_solo_maintainer_review_template_uses_declared_authority_and_attestation(self) -> None:
+        self._write_authorities(mode="solo-maintainer")
+        code, _, error = self._run("--write-review-template", "solo-reviews.json")
+        self.assertEqual(0, code, error)
+        template = json.loads((self.root / "solo-reviews.json").read_text(encoding="utf-8"))
+        self.assertGreater(len(template["reviews"]), 0)
+        for review in template["reviews"]:
+            self.assertEqual("test-owner", review["authorityId"])
+            self.assertEqual(["@test-owner"], review["reviewedBy"])
+            self.assertTrue(review["approvalEvidence"].startswith("github-maintainer-attestation:https://github.com/"))
 
     def test_init_proposes_policy_from_observed_python_architecture(self) -> None:
         target = self.root / "python-initialized"

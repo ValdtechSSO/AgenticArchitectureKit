@@ -17,9 +17,9 @@ represented as implemented.
 | Policy/result input integrity | Implemented | Results contain canonical digests for toolchain, policy, waivers, reviews, authorities, catalog and observations |
 | Normative-reference integrity | Implemented | Every finding carries a packaged reference and per-rule semantic digest; `DOC001` verifies catalog headings, enforcement classification, module references, and complete validator-heading coverage |
 | Contextual rule diagnosis | Implemented | `aak core` exposes preventive context and `aak explain RULE` combines definition, digest, current findings, scope, evidence, and applied grants |
-| Persistent semantic reviews | Implemented | Local integrity requires exact fingerprint, reachable ancestor SHA, declared authority, CODEOWNER principal and approval evidence; actual approval is externally enforced |
+| Persistent semantic reviews | Implemented | Local integrity requires exact fingerprint, reachable ancestor SHA, declared authority, CODEOWNER principal and mode-specific platform evidence; team review and solo-maintainer attestation are externally enforced |
 | Semantic grant invalidation | Implemented | The schema rejects a missing rule digest; a valid but stale digest cannot apply and becomes review-required; unrelated catalog changes do not invalidate other rules |
-| Authority enforcement | Split guarantee | Every protected scope requires real CODEOWNERS coverage and narrower overrides cannot remove its principals; GitHub branch protection and recorded approval remain platform facts |
+| Authority enforcement | Split guarantee | Every protected scope requires real CODEOWNERS coverage; team mode requires independent review, while solo-maintainer mode makes its single-principal limitation and attestation explicit; GitHub enforcement remains a platform fact |
 | Waiver hygiene | Implemented | Unmatched, invalid, expired and overly broad waivers remain visible |
 | Generated repository index | Initial | Revision-tagged module, project, dependency, document and test JSON indices |
 | Progressive context commands | Initial | Locate, exact-text symbol/reference/test search and direct impact queries with provenance |

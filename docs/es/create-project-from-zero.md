@@ -71,7 +71,7 @@ Elige una versión publicada y ejecútala directamente, preferiblemente con
 `uvx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @tu-org/architecture
 ```
 
 El inicializador crea `.agentic/toolchain.json`, registros de gobernanza vacíos
@@ -153,6 +153,18 @@ SHA completo y ancestro alcanzable, principal declarado y evidencia de aprobaci�
 de la plataforma y `ruleDigest` actual. El agente no debe crear un review solo
 porque pueda editar JSON.
 
+Elige el modo de autoridad según el ownership real del repositorio:
+
+- `team` exige aprobación independiente de CODEOWNER mediante pull request y es
+  el modo predeterminado;
+- `solo-maintainer` exige exactamente un principal declarado y una URL durable
+  de atestación del mantenedor en GitHub. Conserva pull requests, checks
+  obligatorios y ausencia de pushes directos, pero no finge que la auto-review
+  sea independiente.
+
+Inicializa un repositorio individual con `--authority-mode solo-maintainer`. No
+uses ese modo únicamente para evitar a un revisor de equipo disponible.
+
 ## 8. Bootstrap y expansión del contexto
 
 Se genera el índice inicial con `aak context index`.
@@ -182,8 +194,8 @@ la conversación nunca es necesaria para continuar el trabajo.
 El proyecto inicial no está completo hasta ejecutar:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate
-uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate
+uvx --from agentic-architecture-kit==0.4.1 aak validate --base-ref origin/main --fail-on-review
 ```
 
 `aak explain RULE_ID` muestra hallazgos, scopes, evidencia, digest, referencia y

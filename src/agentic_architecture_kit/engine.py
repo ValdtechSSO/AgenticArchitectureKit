@@ -855,8 +855,16 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
                 results.append(_finding("REV001", "FAIL", review["scope"], "Review was attributed to principals outside the declared authority.", review=review_id, unknownReviewers=unknown_reviewers))
             if not any(_scope_matches(scope, review["scope"]) for scope in authority["protectedScopes"]):
                 results.append(_finding("REV001", "FAIL", review["scope"], "Declared authority does not cover the reviewed scope.", review=review_id, authorityId=review["authorityId"]))
-        if context.authorities["enforcement"]["provider"] == "github" and not review["approvalEvidence"].startswith("github-pr-review:"):
-            results.append(_finding("REV001", "FAIL", review["scope"], "GitHub-governed review requires github-pr-review approval evidence.", review=review_id, approvalEvidence=review["approvalEvidence"]))
+        enforcement = context.authorities["enforcement"]
+        authority_mode = enforcement.get("mode", "team")
+        approval_evidence = review["approvalEvidence"]
+        if enforcement["provider"] == "github" and authority_mode == "team" and not approval_evidence.startswith("github-pr-review:"):
+            results.append(_finding("REV001", "FAIL", review["scope"], "Team-mode GitHub review requires github-pr-review approval evidence.", review=review_id, approvalEvidence=approval_evidence))
+        if enforcement["provider"] == "github" and authority_mode == "solo-maintainer":
+            prefix = "github-maintainer-attestation:"
+            evidence_url = approval_evidence.removeprefix(prefix)
+            if not approval_evidence.startswith(prefix) or not evidence_url.startswith("https://github.com/") or any(character.isspace() for character in evidence_url):
+                results.append(_finding("REV001", "FAIL", review["scope"], "Solo-maintainer GitHub review requires a github-maintainer-attestation with a GitHub evidence URL.", review=review_id, approvalEvidence=approval_evidence))
         revision = review["reviewedAtRevision"]
         if not re.fullmatch(r"[0-9a-fA-F]{40}", revision):
             results.append(_finding("REV001", "FAIL", review["scope"], "reviewedAtRevision must be a full 40-character Git commit SHA.", review=review_id, reviewedAtRevision=revision))
@@ -948,7 +956,17 @@ def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
     if duplicates:
         findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Authority ids are duplicated.", duplicates=duplicates))
     enforcement = context.authorities["enforcement"]
-    required = {"pull-request", "code-owner-review", "dismiss-stale-reviews", "no-direct-push", "required-status-checks"}
+    authority_mode = enforcement.get("mode", "team")
+    if authority_mode == "solo-maintainer":
+        required = {"pull-request", "no-direct-push", "required-status-checks"}
+        incompatible = sorted({"code-owner-review", "dismiss-stale-reviews"} & set(enforcement["requirements"]))
+        if incompatible:
+            findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Solo-maintainer governance declares team-only review controls that its sole principal cannot satisfy.", incompatibleRequirements=incompatible))
+        unique_principals = sorted({principal for item in authorities for principal in item["principals"]})
+        if len(unique_principals) != 1:
+            findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Solo-maintainer governance requires exactly one unique authority principal.", principals=unique_principals))
+    else:
+        required = {"pull-request", "code-owner-review", "dismiss-stale-reviews", "no-direct-push", "required-status-checks"}
     missing_requirements = sorted(required - set(enforcement["requirements"]))
     if missing_requirements:
         findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Repository governance omits required anti-self-approval controls.", missingRequirements=missing_requirements))
@@ -1029,7 +1047,7 @@ def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
                     unsafeOverrides=unsafe_overrides,
                 )
             )
-    return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Every declared protected scope is covered by CODEOWNERS principals; platform branch protection remains externally enforced.", authorities=ids, protectedBranches=enforcement["protectedBranches"], coverage=verified_coverage)]
+    return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Every declared protected scope is covered by CODEOWNERS principals and the selected authority mode is internally consistent; platform enforcement remains external evidence.", authorityMode=authority_mode, authorities=ids, protectedBranches=enforcement["protectedBranches"], coverage=verified_coverage)]
 
 
 def _rule_document_references(context: ValidationContext) -> list[Finding]:

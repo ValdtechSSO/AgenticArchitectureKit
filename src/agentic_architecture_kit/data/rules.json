@@ -154,7 +154,7 @@
     {
       "id": "AUT001",
       "title": "Architecture authority is declared and repository-protected",
-      "description": "Review authorities resolve to CODEOWNERS principals and declare pull-request, stale-review, direct-push, and required-check protections.",
+      "description": "Review authorities resolve to CODEOWNERS principals and declare controls consistent with either team or solo-maintainer governance.",
       "evaluator": "authorities_valid",
       "automatic": true,
       "inputs": ["authorities", "codeowners", "filesystem"],
@@ -164,7 +164,7 @@
     {
       "id": "REV001",
       "title": "Semantic reviews are explicit and current",
-      "description": "Review acknowledgements bind current rule semantics, a known finding fingerprint, scope, authority, and repository revision.",
+      "description": "Review acknowledgements bind current rule semantics, a known finding fingerprint, scope, authority, repository revision, and mode-specific platform evidence.",
       "evaluator": "reviews_valid",
       "automatic": true,
       "inputs": ["reviews", "rule-catalog", "filesystem"],

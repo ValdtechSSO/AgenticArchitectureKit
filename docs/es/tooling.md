@@ -24,7 +24,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.0",
+  "toolVersion": "0.4.1",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -33,8 +33,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.0 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak context locate "order lifecycle"
 ```
 
 `aak` rechaza validación y contexto si la herramienta, el catálogo o una

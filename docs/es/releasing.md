@@ -26,7 +26,8 @@ una identidad efímera.
 2. Revisa cambios de reglas, schemas, migración y compatibilidad.
 3. Ejecuta la suite, autovalidación estricta, build del package y validación del
    wheel aislado contra los ejemplos.
-4. Integra mediante la rama protegida con la revisión arquitectónica requerida.
+4. Integra mediante la rama protegida usando el flujo configurado de revisión de
+   equipo o atestación del mantenedor individual.
 5. Publica una GitHub release cuyo tag sea exactamente `v{versión-del-package}`.
    Crear o subir el tag no inicia por sí solo la publicación; la release de
    GitHub debe pasar al estado publicado.

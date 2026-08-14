@@ -70,7 +70,7 @@ authority must be escalated.
 Choose a released kit version and execute it directly, preferably with `uvx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @your-org/architecture
 ```
 
 The initializer creates `.agentic/toolchain.json`, empty governance records, and
@@ -150,6 +150,18 @@ requires an exact fingerprint, current `ruleDigest`, a full reachable ancestor
 SHA, a declared principal, and approval evidence from the platform. The agent
 must not create a review record merely because it can edit JSON.
 
+Choose the authority mode from the repository's real ownership:
+
+- `team` requires independent CODEOWNER pull-request approval and is the
+  default;
+- `solo-maintainer` requires exactly one declared principal and a durable GitHub
+  maintainer-attestation URL. It keeps pull requests, required checks, and no
+  direct pushes, but does not pretend self-review is independent.
+
+Initialize a single-maintainer repository with
+`--authority-mode solo-maintainer`. Do not use that mode merely to bypass an
+available team reviewer.
+
 ## 8. Context bootstrap and expansion
 
 Generate the initial repository index with `aak context index`. Use `locate` for the declared
@@ -177,8 +189,8 @@ and open questions. Conversational memory is never required to continue work.
 The initial project is incomplete until these checks run:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.0 aak validate
-uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.4.1 aak validate
+uvx --from agentic-architecture-kit==0.4.1 aak validate --base-ref origin/main --fail-on-review
 ```
 
 Use `aak explain RULE_ID` to inspect the current findings, scopes, evidence,
