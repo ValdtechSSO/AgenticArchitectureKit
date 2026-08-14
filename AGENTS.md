@@ -12,18 +12,19 @@ created and evolved by coding agents.
 - Read `docs/team-guide.md` before changing human governance guidance.
 - Read `docs/github-governance.md` before changing review authority or CI enforcement.
 - Read `docs/language-policy.md` before changing public documentation.
-- Portable rule semantics live in `tools/architecture/rules.json` and the
-  validator engine.
-- Neutral bootstrap templates belong under `.agentic/templates/project/`;
+- Portable rule semantics, schemas, and templates live in the installable
+  `agentic_architecture_kit` package under `src/`.
+- Neutral bootstrap templates belong under the package's `data/templates/project/`;
   executable conformance examples belong under `examples/`.
 
 ## Authoritative commands
 
-- Validator tests: `python3 -m unittest discover -s tools/architecture/tests -v`
-- Architecture check: `python3 tools/architecture/validate.py --fail-on-review`
-- Context index: `python3 tools/architecture/context.py index`
-- CLI help: `python3 tools/architecture/validate.py --help`
-- Syntax check: `python3 -m py_compile tools/architecture/validate.py tools/architecture/validator/*.py tools/architecture/validator/adapters/*.py`
+- Install locally: `python3 -m pip install --no-deps -e .`
+- Validator tests: `python3 -m unittest discover -s tests -v`
+- Architecture check: `aak validate --fail-on-review`
+- Context index: `aak context index`
+- CLI help: `aak --help`
+- Syntax check: `python3 -m compileall -q src tests tools`
 
 ## Critical rules
 

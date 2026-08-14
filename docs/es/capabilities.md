@@ -1,6 +1,6 @@
 # Estado de implementación
 
-Agentic Architecture Kit está actualmente en **preview 0.2**. El manifiesto es
+Agentic Architecture Kit está actualmente en **preview 0.3**. El manifiesto es
 el objetivo normativo; esta página declara qué puede demostrar hoy la
 implementación de referencia. Un requisito del manifiesto no se presenta como
 implementado solo porque esté documentado.
@@ -8,12 +8,13 @@ implementado solo porque esté documentado.
 | Capacidad | Estado | Garantía actual |
 |---|---|---|
 | Reglas portables / policy de proyecto / waivers | Implementado | Entradas separadas y validadas por schema; un waiver produce `WAIVED`, nunca `PASS` |
+| Distribución versionada | Implementado | Un package Python agrupa CLI, reglas, schemas, plantillas y adaptadores; se comprueban los pins del consumidor y existe export offline explícito con manifiesto de digests |
 | Autovalidación | Implementado | Smoke test estructural y autorización de imports reales host CLI → validator; los casos prohibidos y entre módulos se ejercitan en tests/ejemplos, no inventándolos en el kit |
 | Observación .NET | Implementado | Proyectos SDK, `ProjectReference`, namespaces C# y directivas `using` |
 | Observación Python | Implementado | `pyproject.toml`, paquetes/CLI directos e imports obtenidos del AST |
 | Dependencias dentro de un assembly | Inicial | Correspondencia exacta de namespace/import en C# y Python; no es un modelo semántico completo del compilador |
 | Protección del crecimiento de policy | Implementado | `--base-ref` detecta nuevos límites y permisos; CI compara PR con su base y push con su SHA anterior |
-| Integridad de entradas y resultados | Implementado | Los resultados contienen digests canónicos de policy, waivers, reviews, autoridades, catálogo y observaciones |
+| Integridad de entradas y resultados | Implementado | Los resultados contienen digests canónicos de toolchain, policy, waivers, reviews, autoridades, catálogo y observaciones |
 | Revisiones semánticas persistentes | Implementado | La integridad local exige huella exacta, SHA ancestro alcanzable, autoridad declarada, principal CODEOWNER y evidencia; la aprobación real se aplica externamente |
 | Aplicación de autoridad | Garantía dividida | Se validan declaraciones y CODEOWNERS; la protección de rama y aprobación registrada en GitHub son hechos externos que deben configurarse en la plataforma |
 | Higiene de waivers | Implementado | Waivers sin uso, inválidos, caducados o demasiado amplios permanecen visibles |
@@ -44,7 +45,7 @@ producción. El comportamiento solo documentado permanece en **Hoja de ruta**.
 - **Tests de conformidad:** demuestran la mecánica de reglas, reviews obsoletas,
   revisiones inalcanzables, autoridad inválida, crecimiento de policy, waivers
   amplios y dependencias permitidas o prohibidas.
-- **Ejemplos:** demuestran la instalación portable: un repositorio .NET pasa y
+- **Ejemplos:** demuestran el consumo sin vendorización: un repositorio .NET pasa y
   otro, compilable y de un solo assembly, falla por dependencia módulo → host.
 - **Controles de plataforma:** demuestran quién aprobó y si se impidió la
   mutación directa. El repositorio los declara, pero no puede observar por sí

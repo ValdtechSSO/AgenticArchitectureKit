@@ -8,7 +8,7 @@
   "structureSearchRoots": ["src"],
   "moduleContract": {
     "fileName": "module.contract.yml",
-    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "schema": "package:module-contract.schema.json",
     "forbiddenStructuralFields": ["projects", "dependencies", "files", "namespaces"]
   },
   "technicalModuleNames": ["Git", "Providers", "Validation", "Infrastructure", "Shared", "Common", "Utils"],

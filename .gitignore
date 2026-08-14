@@ -1,5 +1,10 @@
 __pycache__/
 *.pyc
+build/
+dist/
+*.egg-info/
+bin/
+obj/
 .DS_Store
 .agentic/runtime/
 .agentic/generated/

@@ -60,35 +60,37 @@ o el ownership sí requiere dirección.
 
 ## 4. Instalar la base ejecutable
 
-Desde este kit se copian al proyecto sin cambiar su semántica:
+Elige una versión publicada y ejecútala directamente, preferiblemente con
+`uvx`:
 
-```text
-tools/architecture/
-tools/scripts/validate-architecture.sh
-.agentic/contracts/schemas/
+```bash
+uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @tu-org/architecture
 ```
 
-Después se materializan, adaptando las plantillas:
+El inicializador crea `.agentic/toolchain.json`, registros de gobernanza vacíos
+y cobertura CODEOWNERS. No copia al proyecto el motor, catálogo, schemas ni
+plantillas portables. Después se materializan solo los elementos aplicables:
 
 ```text
 AGENTS.md
 architecture/system-overview.md
 architecture/decisions/
 domain/global-invariants.md
-src/Modules/{CurrentModule}/AGENTS.md
-src/Modules/{CurrentModule}/module.contract.yml
+.agentic/toolchain.json
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
 .agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
 .github/CODEOWNERS
+{raíz-real-del-módulo}/AGENTS.md
+{raíz-real-del-módulo}/module.contract.yml
 ```
 
 Las rutas opcionales se omiten si no tienen contenido actual.
 
 ## 5. Construir la política específica
 
-El agente copia `project-policy.template.json` a:
+El agente crea la policy descubierta en:
 
 ```text
 .agentic/policies/architecture/project-policy.json
@@ -110,16 +112,18 @@ violación general.
 
 ## 6. Adaptador tecnológico
 
-Si existe adaptador para la tecnología, se usa tal cual. Si falta, el agente crea
-`tools/architecture/validator/adapters/{technology}.py` con una función:
+Si existe adaptador incluido para la tecnología, se usa tal cual. Si falta, se
+crea una distribución Python versionada que exponga un entry point del grupo
+`agentic_architecture_kit.adapters`:
 
-```python
-def observe(root, policy) -> ObservedArchitecture:
-    ...
+```toml
+[project.entry-points."agentic_architecture_kit.adapters"]
+technology = "my_aak_adapter:observe"
 ```
 
 El adaptador solo descubre módulos, hosts, proyectos, dependencias y archivos
-fuente. No decide qué arquitectura es válida ni redefine reglas.
+fuente. No decide qué arquitectura es válida ni redefine reglas. Su distribución
+y versión exacta se fijan en `.agentic/toolchain.json`.
 
 ## 7. Licencias
 
@@ -138,7 +142,7 @@ de la plataforma. El agente no debe crear un review solo porque pueda editar JSO
 
 ## 8. Bootstrap y expansión del contexto
 
-Se genera el índice inicial con `python3 tools/architecture/context.py index`.
+Se genera el índice inicial con `aak context index`.
 `locate` ofrece el punto de partida declarado y `references`, `tests` e `impact`
 permiten ampliar el contexto conservando procedencia y confianza.
 
@@ -165,12 +169,13 @@ la conversación nunca es necesaria para continuar el trabajo.
 El proyecto inicial no está completo hasta ejecutar:
 
 ```bash
-python3 -m unittest discover -s tools/architecture/tests -v
-./tools/scripts/validate-architecture.sh
-./tools/scripts/validate-architecture.sh --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.3.0 aak validate
+uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --fail-on-review
 ```
 
-Además se ejecutan el build y los tests propios del proyecto. Los resultados
+La suite de conformidad de la distribución se ejecuta antes de publicarla; los
+consumidores no la copian ni la repiten. Además se ejecutan el build, los tests
+propios y los tests arquitectónicos específicos del proyecto. Los resultados
 `REVIEW_REQUIRED` se enumeran y se revisan; no se presentan como verificaciones
 automáticas superadas. Una revisión semántica dentro de la autoridad ya delegada
 no requiere por sí sola interacción con el usuario.

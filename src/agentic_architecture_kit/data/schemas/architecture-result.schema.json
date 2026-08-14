@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "toolVersion", "generatedAt", "repositoryRoot", "repositoryRevision", "project", "adapter", "policy", "waivers", "reviews", "authorities", "toolchain", "policyDigest", "waiverDigest", "reviewDigest", "authorityDigest", "toolchainDigest", "catalogDigest", "observedDigest", "summary", "results"],
+  "properties": {
+    "tool": { "type": "string", "enum": ["agentic-architecture-validator"] },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "repositoryRoot": { "type": "string", "minLength": 1 },
+    "repositoryRevision": { "type": "string", "minLength": 1 },
+    "project": { "type": "string", "minLength": 1 },
+    "adapter": { "type": "string", "minLength": 1 },
+    "policy": { "type": "string", "minLength": 1 },
+    "waivers": { "type": "string", "minLength": 1 },
+    "reviews": { "type": "string", "minLength": 1 },
+    "authorities": { "type": "string", "minLength": 1 },
+    "toolchain": { "type": "string", "minLength": 1 },
+    "policyDigest": { "type": "string", "minLength": 64 },
+    "waiverDigest": { "type": "string", "minLength": 64 },
+    "reviewDigest": { "type": "string", "minLength": 64 },
+    "authorityDigest": { "type": "string", "minLength": 64 },
+    "toolchainDigest": { "type": "string", "minLength": 64 },
+    "catalogDigest": { "type": "string", "minLength": 64 },
+    "observedDigest": { "type": "string", "minLength": 64 },
+    "baseRevision": { "type": "string", "minLength": 1 },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["PASS", "FAIL", "WAIVED", "REVIEWED", "NOT_APPLICABLE", "REVIEW_REQUIRED"],
+      "properties": {
+        "PASS": { "type": "integer" },
+        "FAIL": { "type": "integer" },
+        "WAIVED": { "type": "integer" },
+        "REVIEWED": { "type": "integer" },
+        "NOT_APPLICABLE": { "type": "integer" },
+        "REVIEW_REQUIRED": { "type": "integer" }
+      }
+    },
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "status", "scope", "message", "evidence"],
+        "properties": {
+          "rule": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "WAIVED", "REVIEWED", "NOT_APPLICABLE", "REVIEW_REQUIRED"] },
+          "scope": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "object" },
+          "waiver": { "type": "string", "minLength": 1 },
+          "review": { "type": "string", "minLength": 1 },
+          "reviewFingerprint": { "type": "string", "minLength": 64 }
+        }
+      }
+    }
+  }
+}

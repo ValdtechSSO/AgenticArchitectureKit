@@ -2,7 +2,7 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
-> **Estado de implementación:** preview 0.2. El manifiesto es normativo; la
+> **Estado de implementación:** preview 0.3. El manifiesto es normativo; la
 > [matriz de capacidades](capabilities.md) distingue comportamiento implementado,
 > inicial y de hoja de ruta.
 
@@ -48,15 +48,16 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
   de ruta de las herramientas de referencia.
 - [`github-governance.md`](github-governance.md): controles requeridos de
   CODEOWNERS, revisión y protección de rama que no pueden demostrarse localmente.
+- [`releasing.md`](releasing.md): procedimiento de release y publicación segura
+  en PyPI para mantenedores.
 - [`create-project-from-zero.md`](create-project-from-zero.md):
   procedimiento operativo que debe seguir el agente.
-- [`tools/architecture/`](../../tools/architecture/): validador portable, catálogo de
-  reglas, adaptadores tecnológicos y tests de conformidad.
-- [`.agentic/contracts/schemas/`](../../.agentic/contracts/schemas/): contratos de la
-  policy, los waivers, las autoridades, las revisiones semánticas, el resultado
-  y los módulos.
-- [`.agentic/templates/project/`](../../.agentic/templates/project/): plantillas para
-  materializar únicamente las decisiones aplicables al proyecto.
+- [`src/agentic_architecture_kit/`](../../src/agentic_architecture_kit/):
+  distribución Python versionada con CLI, reglas portables, schemas, plantillas
+  y adaptadores tecnológicos incluidos.
+- [`tests/`](../../tests/): suite de conformidad de la distribución.
+- [`examples/`](../../examples/): repositorios consumidores que ejercitan las
+  reglas instaladas sin vendorizar la implementación.
 
 ## Cómo usarlo para crear un proyecto
 
@@ -66,7 +67,8 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
    `docs/create-project-from-zero.md`.
 4. El agente descubre capacidades, hosts y límites actuales antes de crear
    estructura.
-5. Copia el validador y los schemas sin modificar su semántica general.
+5. Fija y ejecuta una versión publicada del validador sin copiar su
+   implementación al proyecto.
 6. Adapta las plantillas para declarar la arquitectura específica del proyecto.
 7. Ejecuta los tests del validador y la validación arquitectónica del proyecto.
 
@@ -84,55 +86,60 @@ decisión material de producto, riesgo, ownership o autoridad que no esté
 definida.
 ```
 
-## Payload que recibe el proyecto
+## Distribución y payload propio del proyecto
 
-El agente copia sin reinterpretar:
+El código portable, los schemas, el catálogo y las plantillas neutrales se
+publican juntos como `agentic-architecture-kit`. El consumidor fija la versión
+exacta en `.agentic/toolchain.json` y la ejecuta con `uvx` o `pipx`:
 
-```text
-tools/architecture/
-tools/scripts/validate-architecture.sh
-.agentic/contracts/schemas/
+```bash
+uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
 ```
 
-Después genera para ese proyecto:
+En el repositorio consumidor solo viven decisiones y contexto propios:
 
 ```text
 AGENTS.md
 architecture/system-overview.md
 architecture/decisions/
 domain/global-invariants.md
-src/Modules/{CurrentModule}/AGENTS.md
-src/Modules/{CurrentModule}/module.contract.yml
+.agentic/toolchain.json
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
 .agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
 .github/CODEOWNERS
+{raíz-real-del-módulo}/AGENTS.md
+{raíz-real-del-módulo}/module.contract.yml
 ```
 
 Solo se crean los elementos aplicables. No se añaden carpetas vacías,
 abstracciones especulativas, módulos técnicos ni assemblies sin un límite actual
 verificable.
 
+Para entornos desconectados, `aak export-offline --output <directorio>` genera
+una copia explícita y versionada con manifiesto SHA-256. Es una excepción
+operativa, no el modelo de adopción predeterminado.
+
 ## Verificar el kit
 
 Requiere Python 3.9 o posterior y no instala dependencias de terceros.
 
 ```bash
-python3 -m unittest discover -s tools/architecture/tests -v
-python3 tools/architecture/validate.py --help
-python3 tools/architecture/validate.py --fail-on-review
-python3 tools/architecture/context.py index
-python3 tools/architecture/context.py locate "architecture validation"
-python3 tools/architecture/validate.py --root examples/dotnet-valid
+python3 -m pip install --no-deps -e .
+python3 -m unittest discover -s tests -v
+aak --help
+aak validate --fail-on-review
+aak context index
+aak context locate "architecture validation"
+aak validate --root examples/dotnet-valid
 ```
 
-Una vez instalado en un proyecto:
+Para inicializar la gobernanza en un proyecto existente y dejar que el agente
+descubra y escriba después su policy:
 
 ```bash
-./tools/scripts/validate-architecture.sh
-./tools/scripts/validate-architecture.sh --format json
-./tools/scripts/validate-architecture.sh --fail-on-review
+uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @tu-org/architecture
 ```
 
 La implementación de referencia soporta proyectos .NET SDK-style y Python.

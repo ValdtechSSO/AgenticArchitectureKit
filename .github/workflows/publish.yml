@@ -1,0 +1,51 @@
+name: Publish Python distribution
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify release tag matches package version
+        run: |
+          AAK_PACKAGE_VERSION=$(python3 -c 'import pathlib, re; print(re.search(r"^version = \"([^\"]+)\"", pathlib.Path("pyproject.toml").read_text(), re.MULTILINE).group(1))')
+          test "v${AAK_PACKAGE_VERSION}" = "${GITHUB_REF_NAME}"
+      - name: Build distribution
+        run: |
+          python3 -m pip install build twine
+          python3 -m build
+          python3 -m twine check dist/*
+      - name: Verify wheel in isolation
+        run: |
+          python3 -m venv /tmp/aak-release
+          /tmp/aak-release/bin/pip install --no-deps dist/*.whl
+          /tmp/aak-release/bin/aak --version
+          /tmp/aak-release/bin/aak validate --root examples/dotnet-valid
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distribution
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/agentic-architecture-kit
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-distribution
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

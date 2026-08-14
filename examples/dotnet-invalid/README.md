@@ -6,8 +6,7 @@ any `ProjectReference`, demonstrating that dependency rules also have teeth in
 the compact structure preferred by the manifesto.
 
 ```sh
-python3 tools/architecture/validate.py \
-  --root examples/dotnet-invalid
+aak validate --root examples/dotnet-invalid
 ```
 
 The expected exit code is `1` and the result contains `FAIL DEP001`.

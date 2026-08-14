@@ -50,17 +50,18 @@ portable, específico del proyecto o generado.
 
 ### 2.1 Activos portables del kit
 
-Proceden de Agentic Architecture Kit y conservan la misma semántica en todos los
-proyectos:
+Proceden de la distribución fijada `agentic-architecture-kit` y conservan la
+misma semántica en todos los proyectos:
 
 ```text
-tools/architecture/
-tools/scripts/validate-architecture.sh
-.agentic/contracts/schemas/
+CLI y motor de validación
+catálogo portable y schemas
+plantillas neutrales
+adaptadores tecnológicos incluidos
 ```
 
-Incluyen el catálogo de reglas, motor de validación, adaptadores tecnológicos,
-schemas y tests del validador. El proyecto los consume; no los reinterpreta.
+Se instalan o ejecutan por versión exacta; no se copian al repositorio
+consumidor. El proyecto los consume y no los reinterpreta.
 
 Los cambios de reglas portables pertenecen al kit y deben llegar a los proyectos
 como una actualización explícita. Una necesidad específica de un proyecto no
@@ -74,8 +75,9 @@ Describen el producto real y evolucionan con él:
 AGENTS.md
 architecture/
 domain/
-src/Modules/*/AGENTS.md
-src/Modules/*/module.contract.yml
+.agentic/toolchain.json
+{raíz-de-módulo}/AGENTS.md
+{raíz-de-módulo}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
 .agentic/policies/architecture/authorities.json
@@ -115,6 +117,7 @@ Los datos generados son evidencia útil, pero no autoridad semántica. Si un
 | `domain/contexts/*.md` | Vocabulario e invariantes de una capacidad | Equipo propietario o agente autorizado | Significado de dominio y ownership |
 | `AGENTS.md` del módulo | Ruta de lectura, comandos y reglas críticas locales | Equipo propietario o agente autorizado | Que un agente nuevo pueda empezar con seguridad |
 | `module.contract.yml` | Propósito, vocabulario, ownership, riesgo, invariantes y ADR no derivables | Equipo propietario o agente autorizado | Verdad semántica, no duplicación estructural |
+| `.agentic/toolchain.json` | Fija las versiones del kit, catálogo y extensiones | Owners del repositorio o agente autorizado | Intención de upgrade y reproducibilidad |
 | `project-policy.json` | Declara módulos, hosts, proyectos, features y dependencias permitidas | Agente autorizado o responsable de arquitectura | Que un límite nuevo esté justificado, no solo observado |
 | `waivers.json` | Registra desviaciones acotadas y autorizadas | Autoridad definida por la política del equipo | Scope, riesgo, autoridad, caducidad y eliminación |
 | `authorities.json` | Declara principals, scopes protegidos, ramas y controles requeridos | Owners del repositorio | Coincidencia entre declaración y configuración real de plataforma |
@@ -243,14 +246,14 @@ realmente la aprobación. La protección descrita en
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-./tools/scripts/validate-architecture.sh --fail-on-review
+uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-./tools/scripts/validate-architecture.sh --format json
-./tools/scripts/validate-architecture.sh --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.3.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un
@@ -356,16 +359,16 @@ delegado o trasladar ownership sin fundamento explícito.
 
 ## 12. Actualizar el kit en un proyecto
 
-Los schemas, catálogo, adaptadores y validador portable deben tratarse como una
-dependencia versionada aunque estén copiados dentro del repositorio.
+Los schemas, catálogo, adaptadores y validador portable se tratan como una única
+dependencia versionada. No se vendorizan en el repositorio consumidor.
 
 Flujo recomendado:
 
 1. identificar las versiones actual y destino del kit;
 2. revisar cambios de reglas y schemas portables;
-3. actualizar el payload portable sin sobrescribir la política del proyecto;
+3. actualizar la versión exacta en `.agentic/toolchain.json` y en CI;
 4. migrar la política solo si el schema nuevo lo requiere;
-5. ejecutar los tests del validador;
+5. apoyarse en la suite de conformidad y procedencia de la distribución publicada;
 6. ejecutar la validación arquitectónica del proyecto;
 7. revisar nuevos `FAIL` o `REVIEW_REQUIRED`;
 8. registrar decisiones materiales de adopción en un ADR.
@@ -410,7 +413,7 @@ este orden:
 4. revisar cada `module.contract.yml` para vocabulario, ownership y riesgo;
 5. revisar `project-policy.json` para módulos, proyectos y dependencias;
 6. confirmar que `waivers.json` está vacío o cada licencia está autorizada;
-7. ejecutar `./tools/scripts/validate-architecture.sh`;
+7. ejecutar la versión exacta declarada en `.agentic/toolchain.json` con `aak validate`;
 8. revisar todos los resultados `FAIL`, `WAIVED` y `REVIEW_REQUIRED`;
 9. confirmar que pasan el build y los tests del proyecto;
 10. confirmar que otro agente podría continuar solo con el repositorio.

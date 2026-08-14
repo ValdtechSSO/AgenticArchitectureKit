@@ -47,17 +47,18 @@ portable, project-specific, or generated.
 
 ### 2.1 Portable kit assets
 
-These come from Agentic Architecture Kit and have the same semantics in every
-project:
+These come from the pinned `agentic-architecture-kit` distribution and have the
+same semantics in every project:
 
 ```text
-tools/architecture/
-tools/scripts/validate-architecture.sh
-.agentic/contracts/schemas/
+CLI and validation engine
+portable rule catalog and schemas
+neutral templates
+built-in technology adapters
 ```
 
-They include the rule catalog, validation engine, technology adapters, schemas,
-and validator tests. A project consumes them; it does not reinterpret them.
+They are installed or run by exact version; they are not copied into the
+consumer repository. A project consumes them and does not reinterpret them.
 
 Portable rule changes belong in the kit and should be brought into projects as
 an explicit kit update. A project-specific need is not a reason to edit the
@@ -71,8 +72,9 @@ These describe the actual product and evolve with it:
 AGENTS.md
 architecture/
 domain/
-src/Modules/*/AGENTS.md
-src/Modules/*/module.contract.yml
+.agentic/toolchain.json
+{module-root}/AGENTS.md
+{module-root}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
 .agentic/policies/architecture/authorities.json
@@ -112,6 +114,7 @@ index disagrees with current source or revision, it is stale.
 | `domain/contexts/*.md` | Vocabulary and invariants owned by one capability | Owning team or authorized agent | Domain meaning and ownership |
 | Module `AGENTS.md` | Local reading path, commands, and critical rules | Owning team or authorized agent | Whether an unfamiliar agent can start safely |
 | `module.contract.yml` | Non-derivable purpose, vocabulary, ownership, risk, invariants, and ADR links | Owning team or authorized agent | Semantic truth, not structural duplication |
+| `.agentic/toolchain.json` | Pins the kit, catalog, and extension versions used by the project | Repository owners or authorized agent | Upgrade intent and reproducibility |
 | `project-policy.json` | Declares the project's modules, hosts, projects, feature roots, and allowed dependencies | Authorized agent or architecture owner | Whether a changed boundary is justified rather than merely observed |
 | `waivers.json` | Records bounded, authorized deviations from portable rules | Authority named by team policy | Exact scope, risk, owner, expiry, and removal condition |
 | `authorities.json` | Declares approval principals, protected scopes, branches, and required platform controls | Repository owners | Whether the declared authority matches actual platform configuration |
@@ -242,14 +245,14 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-./tools/scripts/validate-architecture.sh --fail-on-review
+uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-./tools/scripts/validate-architecture.sh --format json
-./tools/scripts/validate-architecture.sh --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.3.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This
@@ -354,16 +357,16 @@ or moving ownership without an explicit basis.
 
 ## 12. Updating the kit in a project
 
-Treat the portable validator, schemas, rule catalog, and adapters as a versioned
-dependency even when they are vendored into the repository.
+Treat the portable validator, schemas, rule catalog, and adapters as one
+versioned dependency. Do not vendor them into the consumer repository.
 
 Recommended update flow:
 
 1. identify the current and target kit versions;
 2. review portable rule and schema changes;
-3. update the portable payload without overwriting project policy;
+3. update the exact version in `.agentic/toolchain.json` and the CI invocation;
 4. migrate project policy only when the new schema requires it;
-5. run the validator's own tests;
+5. rely on the published distribution's conformance suite and provenance;
 6. run project architecture validation;
 7. review new `FAIL` or `REVIEW_REQUIRED` results;
 8. record material adoption decisions in an ADR.
@@ -407,7 +410,7 @@ this order:
 4. inspect each `module.contract.yml` for vocabulary, ownership, and risk;
 5. inspect `project-policy.json` for declared modules, projects, and dependencies;
 6. confirm `waivers.json` is empty or every entry is explicitly authorized;
-7. run `./tools/scripts/validate-architecture.sh`;
+7. run the exact version declared in `.agentic/toolchain.json` with `aak validate`;
 8. review all `FAIL`, `WAIVED`, and `REVIEW_REQUIRED` results;
 9. confirm build and project tests pass;
 10. confirm another agent could continue from repository content alone.

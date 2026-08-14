@@ -1,45 +1,38 @@
 {
-  "$schema": "../../contracts/schemas/architecture-policy.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.3.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
   "version": 1,
   "project": "AgenticArchitectureKit",
   "adapter": "python",
   "adapterConfig": {
-    "packageRoots": ["tools/architecture"]
+    "packageRoots": ["src", "tools", "tests"]
   },
   "roots": {
-    "modules": "tools/architecture",
-    "hosts": "tools/architecture"
+    "modules": "src",
+    "hosts": "tools"
   },
-  "projectSearchRoots": ["pyproject.toml", "tools/architecture"],
-  "structureSearchRoots": ["tools/architecture", ".agentic"],
+  "projectSearchRoots": ["pyproject.toml", "src", "tools", "tests"],
+  "structureSearchRoots": ["src", "tools", "tests", ".agentic"],
   "moduleContract": {
     "fileName": "module.contract.yml",
-    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "schema": "package:module-contract.schema.json",
     "forbiddenStructuralFields": ["projects", "dependencies", "files", "namespaces"]
   },
   "technicalModuleNames": ["git", "providers", "validation", "infrastructure", "persistence", "shared", "common", "utils"],
   "forbiddenDirectoryNames": ["Helpers", "Utils", "Common", "Misc", "General"],
   "modules": [
     {
-      "id": "validator",
-      "root": "tools/architecture/validator",
-      "namespacePatterns": ["validator", "validator.*"],
+      "id": "agentic_architecture_kit",
+      "root": "src/agentic_architecture_kit",
+      "namespacePatterns": ["agentic_architecture_kit", "agentic_architecture_kit.*"],
       "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
     }
   ],
   "hosts": [
     {
-      "id": "validation-cli",
-      "root": "tools/architecture/validate.py",
-      "allowedSourcePatterns": ["validate.py"],
-      "namespacePatterns": ["validate"],
-      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
-    },
-    {
-      "id": "context-cli",
-      "root": "tools/architecture/context.py",
-      "allowedSourcePatterns": ["context.py"],
-      "namespacePatterns": ["context"],
+      "id": "aak-cli",
+      "root": "tools/aak.py",
+      "allowedSourcePatterns": ["aak.py"],
+      "namespacePatterns": ["aak"],
       "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
     }
   ],
@@ -47,7 +40,7 @@
     {
       "path": "pyproject.toml",
       "name": "agentic-architecture-kit",
-      "owner": { "kind": "module", "id": "validator" },
+      "owner": { "kind": "module", "id": "agentic_architecture_kit" },
       "role": "application",
       "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
     }

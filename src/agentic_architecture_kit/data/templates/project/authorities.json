@@ -15,9 +15,9 @@
   },
   "authorities": [
     {
-      "id": "kit-maintainers",
-      "displayName": "Agentic Architecture Kit maintainers",
-      "principals": ["@valdtechsecurity"],
+      "id": "architecture-maintainers",
+      "displayName": "Replace with the accountable architecture maintainers",
+      "principals": ["@replace-with-codeowner"],
       "protectedScopes": ["."]
     }
   ]

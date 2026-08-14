@@ -6,8 +6,7 @@ reference the module; the module cannot reference the host.
 From the kit root:
 
 ```sh
-python3 tools/architecture/validate.py \
-  --root examples/dotnet-valid
+aak validate --root examples/dotnet-valid
 ```
 
 The run has no `FAIL` result. Semantic findings remain visible until a project

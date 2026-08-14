@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "distribution", "toolVersion", "catalogVersion", "extensions"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "enum": [1] },
+    "distribution": { "type": "string", "enum": ["agentic-architecture-kit"] },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "catalogVersion": { "type": "integer", "enum": [1] },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["distribution", "version"],
+        "properties": {
+          "distribution": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

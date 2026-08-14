@@ -287,7 +287,7 @@ La política cumple `architecture-policy.schema.json`. Ejemplo abreviado:
 
 ```json
 {
-  "$schema": "../../contracts/schemas/architecture-policy.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.3.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
   "version": 1,
   "project": "acme",
   "adapter": "dotnet",
@@ -299,7 +299,7 @@ La política cumple `architecture-policy.schema.json`. Ejemplo abreviado:
   "structureSearchRoots": ["src"],
   "moduleContract": {
     "fileName": "module.contract.yml",
-    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "schema": "package:module-contract.schema.json",
     "forbiddenStructuralFields": ["paths", "handlers", "classes", "tests"]
   },
   "technicalModuleNames": ["Git", "Providers", "Validation"],
@@ -743,7 +743,7 @@ La conformidad del contrato incluye forma y significado:
 
 # 9. Arquitectura observada e índice generado
 
-La implementación de referencia 0.2 genera `repository`, `projects`, `modules`,
+La implementación de referencia 0.3 genera `repository`, `projects`, `modules`,
 `dependencies`, `tests` y `documents`. Los demás índices de la lista siguiente
 son puntos de extensión normativos y permanecen en la hoja de ruta hasta que un
 adaptador pueda observarlos.
@@ -858,33 +858,27 @@ aprobación externa ni la protección de rama; CODEOWNERS y la rama protegida
 
 ## 10.4 Implementación de referencia suministrada
 
-El manifiesto `MUST` distribuirse con un validador general versionado. Un agente
-no reimplementa sus reglas para cada repositorio:
+El manifiesto `MUST` distribuirse con un validador general publicado y
+versionado. Su código, catálogo, schemas, plantillas neutrales y adaptadores
+incluidos forman una única distribución inmutable. Un agente no reimplementa ni
+vendoriza estos activos portables en cada repositorio:
 
 ```text
-tools/architecture/
-├── rules.json                    # catálogo portable y estable
-├── validate.py                   # CLI y ensamblaje del pipeline
-├── validator/
-│   ├── engine.py                 # evaluación y aplicación de licencias
-│   ├── contracts.py              # contratos de entrada y salida
-│   └── adapters/
-│       ├── dotnet.py             # observación .NET
-│       └── python.py             # observación Python
-├── context.py                    # CLI de contexto progresivo
-└── tests/                        # conformidad del propio validador
+agentic-architecture-kit=={versión}
+├── aak                            # validación, contexto, init y export offline
+├── catálogo portable
+├── motor de evaluación
+├── schemas de entrada y salida
+├── plantillas neutrales
+└── adaptadores tecnológicos incluidos
 ```
 
-El proyecto suministra únicamente:
+El repositorio consumidor `MUST` fijar las versiones exactas de distribución y
+catálogo. Solo aporta decisiones, autoridad y contexto propios:
 
 ```text
 .agentic/
-├── contracts/schemas/
-│   ├── architecture-policy.schema.json
-│   ├── architecture-waivers.schema.json
-│   ├── architecture-reviews.schema.json
-│   ├── architecture-authorities.schema.json
-│   └── architecture-result.schema.json
+├── toolchain.json
 └── policies/architecture/
     ├── project-policy.json
     ├── waivers.json
@@ -892,19 +886,29 @@ El proyecto suministra únicamente:
     └── reviews.json
 ```
 
-El agente puede añadir un adaptador tecnológico ausente o una comprobación
-específica del proyecto. No puede redefinir silenciosamente el significado de
-una regla general. Una regla no demostrable produce `REVIEW_REQUIRED`.
+El validador `MUST` rechazar versiones de herramienta, catálogo o extensiones
+distintas de `.agentic/toolchain.json`. Los schemas para soporte del editor
+`SHOULD` usar URLs inmutables de release; en ejecución se usan los incluidos en
+la distribución fijada.
+
+Un adaptador ausente `MAY` llegar como plugin versionado y declarado en
+`toolchain.json`. Una comprobación específica permanece en los tests de
+arquitectura del consumidor. Ninguno puede redefinir silenciosamente una regla
+portable. Una regla no demostrable produce `REVIEW_REQUIRED`.
+
+Una exportación offline explícita `MAY` copiar la distribución completa y
+versionada con manifiesto de digests. Conserva su identidad y `MUST NOT`
+convertirse en un fork editado y sin versión.
 
 Comandos de referencia:
 
 ```bash
-./tools/scripts/validate-architecture.sh
-./tools/scripts/validate-architecture.sh --format json
-./tools/scripts/validate-architecture.sh --base-ref origin/main
-./tools/scripts/validate-architecture.sh --task-id TASK-123
-./tools/scripts/validate-architecture.sh --fail-on-review
-./tools/scripts/validate-architecture.sh --list-rules
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate --format json
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate --base-ref origin/main
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate --task-id TASK-123
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate --fail-on-review
+uvx --from agentic-architecture-kit=={versión-fijada} aak validate --list-rules
 ```
 
 `FAIL` devuelve código 1. Una entrada o configuración inválida devuelve código
@@ -916,7 +920,7 @@ Comandos de referencia:
 La validación se divide físicamente:
 
 ```text
-tools/architecture/tests/             # reglas y motor portables
+tests/ de la distribución del kit     # reglas y motor portables
 tests/Architecture/                   # decisiones específicas del proyecto
 ```
 
@@ -1017,7 +1021,7 @@ agentic decisions find "classification ordering"
 ```
 
 La CLI de referencia incluida expone el subconjunto actual mediante
-`python3 tools/architecture/context.py index|locate|symbol|references|tests|impact`.
+`aak context index|locate|symbol|references|tests|impact`.
 La búsqueda de símbolos es una observación de texto exacto, no un grafo semántico
 de compilador, y la salida declara esa confianza. La búsqueda rica de datos y
 decisiones sigue siendo un punto de extensión de los adaptadores.
@@ -1074,7 +1078,7 @@ Ejemplo:
   "revision": "73a9c45",
   "check": "architecture",
   "tool": "agentic",
-  "command": "./tools/scripts/validate-architecture.sh --format json",
+  "command": "aak validate --format json",
   "exitCode": 0,
   "result": "PASS"
 }

@@ -1,9 +1,39 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "agentic-architecture-kit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Executable architecture governance for autonomous coding agents"
+readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+authors = [{ name = "Valdtech" }]
+keywords = ["architecture", "agents", "governance", "validation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
 
-[tool.agentic-architecture-kit]
-validator = "tools/architecture/validate.py"
+[project.urls]
+Repository = "https://github.com/ValdtechSSO/AgenticArchitectureKit"
+Documentation = "https://github.com/ValdtechSSO/AgenticArchitectureKit#readme"
+
+[project.scripts]
+aak = "agentic_architecture_kit.cli:main"
+
+[project.entry-points."agentic_architecture_kit.adapters"]
+dotnet = "agentic_architecture_kit.adapters.dotnet:observe"
+python = "agentic_architecture_kit.adapters.python:observe"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+agentic_architecture_kit = [
+  "data/rules.json",
+  "data/schemas/*.json",
+  "data/templates/project/*",
+]

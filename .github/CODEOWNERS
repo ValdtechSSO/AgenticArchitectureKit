@@ -1,8 +1,9 @@
 # Architecture authority. Replace this principal if repository ownership changes.
 /.agentic/policies/architecture/ @valdtechsecurity
-/.agentic/contracts/schemas/architecture-*.json @valdtechsecurity
+/.agentic/toolchain.json @valdtechsecurity
 /architecture/decisions/ @valdtechsecurity
 /domain/ @valdtechsecurity
-/tools/architecture/ @valdtechsecurity
+/src/agentic_architecture_kit/ @valdtechsecurity
+/pyproject.toml @valdtechsecurity
 /MANIFESTO.md @valdtechsecurity
 /docs/capabilities.md @valdtechsecurity

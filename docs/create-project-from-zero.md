@@ -60,35 +60,37 @@ authority must be escalated.
 
 ## 4. Install the executable foundation
 
-Copy these portable assets from the kit without changing their semantics:
+Choose a released kit version and execute it directly, preferably with `uvx`:
 
-```text
-tools/architecture/
-tools/scripts/validate-architecture.sh
-.agentic/contracts/schemas/
+```bash
+uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @your-org/architecture
 ```
 
-Then materialize the applicable project-specific assets from the templates:
+The initializer creates `.agentic/toolchain.json`, empty governance records, and
+CODEOWNERS coverage. It does not copy the portable engine, catalog, schemas, or
+templates into the project. Then materialize only applicable project-specific
+assets:
 
 ```text
 AGENTS.md
 architecture/system-overview.md
 architecture/decisions/
 domain/global-invariants.md
-src/Modules/{CurrentModule}/AGENTS.md
-src/Modules/{CurrentModule}/module.contract.yml
+.agentic/toolchain.json
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
 .agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
 .github/CODEOWNERS
+{actual-module-root}/AGENTS.md
+{actual-module-root}/module.contract.yml
 ```
 
 Optional paths are omitted when they have no current content or responsibility.
 
 ## 5. Build the project-specific policy
 
-Copy `project-policy.template.json` to:
+Create the discovered policy at:
 
 ```text
 .agentic/policies/architecture/project-policy.json
@@ -109,16 +111,18 @@ compares both. Policy must never be written to hide a portable-rule violation.
 
 ## 6. Technology adapter
 
-Use an existing adapter unchanged when one supports the technology. Otherwise,
-create `tools/architecture/validator/adapters/{technology}.py` with:
+Use a built-in adapter unchanged when one supports the technology. Otherwise,
+create a separately versioned Python distribution exposing an entry point in
+the `agentic_architecture_kit.adapters` group:
 
-```python
-def observe(root, policy) -> ObservedArchitecture:
-    ...
+```toml
+[project.entry-points."agentic_architecture_kit.adapters"]
+technology = "my_aak_adapter:observe"
 ```
 
 The adapter only discovers modules, hosts, projects, dependencies, and source
-files. It does not decide which architecture is valid or redefine rules.
+files. It does not decide which architecture is valid or redefine rules. Pin
+the extension distribution and exact version in `.agentic/toolchain.json`.
 
 ## 7. Waivers
 
@@ -137,8 +141,7 @@ review record merely because it can edit JSON.
 
 ## 8. Context bootstrap and expansion
 
-Generate the initial repository index with
-`python3 tools/architecture/context.py index`. Use `locate` for the declared
+Generate the initial repository index with `aak context index`. Use `locate` for the declared
 starting point and expand with `references`, `tests`, and `impact`; keep the
 reported declared/observed provenance and confidence.
 
@@ -163,12 +166,13 @@ and open questions. Conversational memory is never required to continue work.
 The initial project is incomplete until these checks run:
 
 ```bash
-python3 -m unittest discover -s tools/architecture/tests -v
-./tools/scripts/validate-architecture.sh
-./tools/scripts/validate-architecture.sh --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.3.0 aak validate
+uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --fail-on-review
 ```
 
-The project's own build and tests also run. `REVIEW_REQUIRED` results are listed
+The distribution's conformance suite runs before publication; consumers do not
+copy or rerun those tests. The project's own build, tests, and project-specific
+architecture tests also run. `REVIEW_REQUIRED` results are listed
 and reviewed; they are not presented as automatic passes. A semantic review
 within already delegated authority does not by itself require user interaction.
 Persist that acceptance in `reviews.json` using the exact emitted fingerprint;

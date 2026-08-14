@@ -701,7 +701,7 @@ Contract conformance covers form and meaning:
 
 # 9. Observed architecture and generated index
 
-The shipped 0.2 reference implementation generates `repository`, `projects`,
+The shipped 0.3 reference implementation generates `repository`, `projects`,
 `modules`, `dependencies`, `tests`, and `documents`. The remaining indices below
 are normative extension points and remain roadmap until an adapter observes them.
 
@@ -815,33 +815,27 @@ protected-branch enforcement `MUST` provide that guarantee.
 
 ## 10.4 Supplied reference implementation
 
-The manifesto `MUST` ship with a versioned general validator. An agent does not
-reimplement portable rules for each repository:
+The manifesto `MUST` ship with a published, versioned general validator. Its
+executable code, rule catalog, schemas, neutral templates, and built-in adapters
+form one immutable distribution. An agent does not reimplement or vendor these
+portable assets into each repository:
 
 ```text
-tools/architecture/
-├── rules.json                    # stable portable catalog
-├── validate.py                   # CLI and pipeline assembly
-├── validator/
-│   ├── engine.py                 # evaluation and waiver application
-│   ├── contracts.py              # input and output contracts
-│   └── adapters/
-│       ├── dotnet.py             # .NET observation
-│       └── python.py             # Python observation
-├── context.py                    # progressive context CLI
-└── tests/                        # validator conformance
+agentic-architecture-kit=={version}
+├── aak                            # validation, context, init, offline export
+├── portable rule catalog
+├── evaluation engine
+├── input and output schemas
+├── neutral bootstrap templates
+└── built-in technology adapters
 ```
 
-The project supplies only project-specific configuration:
+A consumer repository `MUST` pin the exact distribution and catalog versions.
+It supplies only project-specific decisions, authority, and context:
 
 ```text
 .agentic/
-├── contracts/schemas/
-│   ├── architecture-policy.schema.json
-│   ├── architecture-waivers.schema.json
-│   ├── architecture-reviews.schema.json
-│   ├── architecture-authorities.schema.json
-│   └── architecture-result.schema.json
+├── toolchain.json
 └── policies/architecture/
     ├── project-policy.json
     ├── waivers.json
@@ -849,19 +843,29 @@ The project supplies only project-specific configuration:
     └── reviews.json
 ```
 
-An agent may add a missing technology adapter or project-specific check. It may
-not silently redefine a portable rule. A rule that cannot be demonstrated
-returns `REVIEW_REQUIRED`.
+The validator `MUST` refuse a tool, catalog, or extension version that differs
+from `.agentic/toolchain.json`. Schemas referenced for editor support `SHOULD`
+use immutable release URLs; runtime validation uses the schemas bundled with the
+pinned distribution.
+
+A missing technology adapter `MAY` be supplied by a separately versioned plugin
+declared in `toolchain.json`. A project-specific check stays in the consumer's
+architecture tests. Neither may silently redefine a portable rule. A rule that
+cannot be demonstrated returns `REVIEW_REQUIRED`.
+
+An explicit offline export `MAY` copy a complete versioned distribution with a
+content-digest manifest. Such a snapshot retains its distribution identity and
+`MUST NOT` become an edited, unversioned fork.
 
 Reference commands:
 
 ```bash
-./tools/scripts/validate-architecture.sh
-./tools/scripts/validate-architecture.sh --format json
-./tools/scripts/validate-architecture.sh --base-ref origin/main
-./tools/scripts/validate-architecture.sh --task-id TASK-123
-./tools/scripts/validate-architecture.sh --fail-on-review
-./tools/scripts/validate-architecture.sh --list-rules
+uvx --from agentic-architecture-kit=={pinned-version} aak validate
+uvx --from agentic-architecture-kit=={pinned-version} aak validate --format json
+uvx --from agentic-architecture-kit=={pinned-version} aak validate --base-ref origin/main
+uvx --from agentic-architecture-kit=={pinned-version} aak validate --task-id TASK-123
+uvx --from agentic-architecture-kit=={pinned-version} aak validate --fail-on-review
+uvx --from agentic-architecture-kit=={pinned-version} aak validate --list-rules
 ```
 
 `FAIL` returns exit code 1. Invalid input or configuration returns exit code 2.
@@ -871,7 +875,7 @@ Reference commands:
 ## 10.5 Portable and project tests
 
 ```text
-tools/architecture/tests/             # portable rules and engine
+tests/ in the kit distribution        # portable rules and engine
 tests/Architecture/                   # project-specific decisions
 ```
 
@@ -976,7 +980,7 @@ These commands illustrate capabilities, not a mandatory tool brand. Ordinary
 repository search and language tooling may provide them.
 
 The shipped reference CLI exposes the current subset as
-`python3 tools/architecture/context.py index|locate|symbol|references|tests|impact`.
+`aak context index|locate|symbol|references|tests|impact`.
 Its symbol search is an exact-text observation, not a compiler-grade symbol
 graph; the output declares that confidence. Rich data and decision search remain
 adapter extension points.
@@ -1037,7 +1041,7 @@ Example:
   "revision": "73a9c45",
   "check": "architecture",
   "tool": "agentic-architecture-validator",
-  "command": "./tools/scripts/validate-architecture.sh --format json",
+  "command": "aak validate --format json",
   "exitCode": 0,
   "result": "PASS"
 }

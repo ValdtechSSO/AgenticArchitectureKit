@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.3.0/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+  "version": 1,
+  "distribution": "agentic-architecture-kit",
+  "toolVersion": "0.3.0",
+  "catalogVersion": 1,
+  "extensions": []
+}
