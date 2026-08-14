@@ -2,7 +2,7 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
-> **Estado de implementación:** preview 0.4.2. La distribución publicada es
+> **Estado de implementación:** preview 0.4.3. La distribución publicada es
 > autosuficiente para el bootstrap y la evolución por agentes. El núcleo de
 > decisiones y las referencias de reglas incluidas son normativos; el manifiesto
 > es su mapa para personas. La [matriz de capacidades](capabilities.md) distingue
@@ -108,9 +108,9 @@ El consumidor fija la versión exacta en `.agentic/toolchain.json` y la ejecuta
 con `uvx` o `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.2 aak core
-uvx --from agentic-architecture-kit==0.4.2 aak guide bootstrap
-uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.3 aak core
+uvx --from agentic-architecture-kit==0.4.3 aak guide bootstrap
+uvx --from agentic-architecture-kit==0.4.3 aak validate --fail-on-review
 ```
 
 El agente no necesita acceso a este checkout fuente. La distribución fijada
@@ -144,6 +144,47 @@ una copia explícita y versionada con el mismo código, guías, schemas, reglas 
 plantillas, además de un manifiesto SHA-256. Es una excepción operativa, no el
 modelo de adopción predeterminado.
 
+## Adoptar AAK en un proyecto existente
+
+Ejecuta primero la simulación desde la raíz del repositorio existente, antes de
+modificar el proyecto. El comando observa la estructura actual de Python o .NET
+SDK-style y muestra cada archivo que añadiría, la política propuesta, la
+integración de CI, el resultado de validación y el trabajo semántico que aún
+necesita una decisión real:
+
+```bash
+uvx --from agentic-architecture-kit==0.4.3 aak adopt \
+  --root . \
+  --codeowner @tu-org/architecture \
+  --ci github \
+  --dry-run
+```
+
+Revisa el plan JSON y aplica después el mismo comando sin `--dry-run`:
+
+```bash
+uvx --from agentic-architecture-kit==0.4.3 aak adopt \
+  --root . \
+  --codeowner @tu-org/architecture \
+  --ci github
+```
+
+En un repositorio con un único responsable, añade
+`--authority-mode solo-maintainer` y usa ese mantenedor como `--codeowner`.
+`aak adopt` rechaza un worktree con cambios salvo que se indique
+`--allow-dirty`. Conserva los archivos y workflows existentes, así que puede
+repetirse con seguridad; si un workflow existente no contiene el gate de AAK,
+lo señala para integración en vez de sobrescribirlo.
+
+El comando automatiza el bootstrap mecánico: registros de gobernanza, propuesta
+de política observada, gate opcional de GitHub Actions, validación estricta e
+índice de contexto. Termina con código distinto de cero cuando quedan problemas
+de conformidad o trabajo semántico y los enumera en `requiredActions`. Nunca
+inventa contratos de módulo, contenido local de `AGENTS.md`, waivers ni
+aprobaciones semánticas. Completa esos elementos con conocimiento real del
+proyecto, ejecuta su build y sus tests y repite
+`aak validate --fail-on-review` antes del merge.
+
 ## Verificar el kit
 
 Requiere Python 3.9 o posterior y no instala dependencias de terceros.
@@ -159,25 +200,26 @@ aak guide bootstrap
 aak guide github-governance
 aak template
 aak template AGENTS.md
+aak adopt --help
 aak explain DEP001
 aak context index
 aak context locate "architecture validation"
 aak validate --root examples/dotnet-valid
 ```
 
-Para inicializar la gobernanza en un proyecto existente, el inicializador
-selecciona el adaptador a partir de sus artefactos y escribe una propuesta de
-`project-policy.json` con módulos, hosts, proyectos y referencias observadas:
+Para una inicialización de bajo nivel o de un proyecto nuevo, `aak init` crea
+los archivos de gobernanza y escribe una propuesta observada de
+`project-policy.json` sin ejecutar el flujo completo de adopción:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.2 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.3 aak init --root . --codeowner @tu-org/architecture
 ```
 
 Para un repositorio mantenido por una sola persona, declara esa restricción de
 forma honesta en lugar de configurar una auto-review imposible:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.2 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.3 aak init --root . \
   --codeowner @tu-usuario --authority-mode solo-maintainer
 ```
 

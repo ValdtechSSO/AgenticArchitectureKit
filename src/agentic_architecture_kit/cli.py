@@ -4,7 +4,7 @@ import argparse
 import sys
 
 from . import __version__
-from . import context_cli, explain_cli, guide_cli, init_cli, validate_cli
+from . import adopt_cli, context_cli, explain_cli, guide_cli, init_cli, validate_cli
 from .resources import read_text as read_bundled_text
 
 
@@ -22,6 +22,7 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("guide", add_help=False, help="Read packaged operational guidance.")
     commands.add_parser("template", add_help=False, help="Read or list packaged project templates.")
     commands.add_parser("init", add_help=False, help="Initialize project-owned governance files.")
+    commands.add_parser("adopt", add_help=False, help="Adopt AAK in an existing repository.")
     commands.add_parser("export-offline", add_help=False, help="Export an explicit versioned offline payload.")
     return parser
 
@@ -50,6 +51,8 @@ def main(arguments: list[str] | None = None) -> int:
         return guide_cli.run_template(remaining)
     if namespace.command == "init":
         return init_cli.run(remaining)
+    if namespace.command == "adopt":
+        return adopt_cli.run(remaining)
     if namespace.command == "export-offline":
         return init_cli.export_offline(remaining)
     parser.print_help()

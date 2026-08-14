@@ -13,6 +13,37 @@ En uno nuevo, la inicialización y la declaración mínima son escrituras de
 bootstrap; el gate se ejecuta inmediatamente después y antes de crear estructura
 o implementación de producto. Se repite antes de finalizar.
 
+## Adopción automatizada de un repositorio existente
+
+Usa el comando de orquestación en lugar de montar a mano los pasos de bootstrap.
+Primero ejecuta la simulación, que no escribe archivos:
+
+```bash
+aak adopt --root . --codeowner @tu-org/architecture --ci github --dry-run
+```
+
+Revisa `projectPolicy` y `requiredActions` completos en el informe JSON y aplica
+después el plan:
+
+```bash
+aak adopt --root . --codeowner @tu-org/architecture --ci github
+```
+
+En un repositorio con un único responsable real, añade
+`--authority-mode solo-maintainer`. El comando no mezcla la adopción con cambios
+sin commit salvo que `--allow-dirty` sea explícito. Conserva los archivos de
+gobernanza y CI existentes y puede ejecutarse de nuevo con seguridad.
+
+La adopción crea la gobernanza propia que falte, una propuesta de política
+observada, un gate opcional de GitHub Actions, el índice de contexto y un informe
+de validación estricta. Un código de salida distinto de cero después de escribir
+significa que el informe contiene trabajo de conformidad o semántico pendiente;
+no indica que haya que revertir. El comando nunca inventa contratos de módulo,
+contexto local del agente, waivers ni aprobaciones de review. Créalo únicamente
+a partir de hechos actuales y decisiones autorizadas. No pases `--base-ref` en
+la primera adopción salvo que esa revisión ya contenga una política AAK válida;
+el workflow de CI generado detecta si existe una baseline comparativa.
+
 ## 1. Entradas obligatorias
 
 Antes de crear código o carpetas, el agente reúne:

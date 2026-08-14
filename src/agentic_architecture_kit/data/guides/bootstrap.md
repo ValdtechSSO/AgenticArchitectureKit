@@ -10,6 +10,37 @@ modification. For a new repository, initialization and the minimum declaration
 are bootstrap writes; run the gate immediately afterward and before creating
 product structure or implementation. Run it again before completion.
 
+## Automated adoption of an existing repository
+
+Use the orchestration command instead of assembling the bootstrap steps by
+hand. Preview first; the dry run does not write files:
+
+```bash
+aak adopt --root . --codeowner @your-org/architecture --ci github --dry-run
+```
+
+Review the complete `projectPolicy` and `requiredActions` in the JSON report,
+then apply the plan:
+
+```bash
+aak adopt --root . --codeowner @your-org/architecture --ci github
+```
+
+For a repository with one real owner, add
+`--authority-mode solo-maintainer`. The command refuses to mix adoption with
+uncommitted changes unless `--allow-dirty` is explicit. It preserves existing
+governance and CI files and can be rerun safely.
+
+Adoption creates the missing project-owned governance, an observed policy
+proposal, an optional GitHub Actions gate, a context index, and a strict
+validation report. A nonzero exit after writing means the report contains
+conformance or semantic work to complete; it is not a rollback signal. The
+command never invents module contracts, local agent context, waivers, or review
+approvals. Create those only from current project facts and authorized
+decisions. Do not pass `--base-ref` on first adoption unless that revision
+already contains a valid AAK policy; the generated CI workflow detects whether
+a comparative baseline is available.
+
 ## 1. Required inputs
 
 Before creating code or directories, gather:

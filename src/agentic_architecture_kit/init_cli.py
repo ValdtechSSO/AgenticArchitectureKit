@@ -15,7 +15,7 @@ from .contracts import ContractError
 from .resources import files as package_files, read_json
 
 
-_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
+_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.3/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
 _TECHNICAL_MODULE_NAMES = [
     "Git", "Providers", "Repositories", "Validation", "Services", "Infrastructure",
 ]
@@ -276,7 +276,7 @@ def _observed_policy(root: Path, adapter: str) -> tuple[dict[str, Any], dict[str
     }
 
 
-def initialize(
+def _initialization_plan(
     root: Path,
     codeowner: str,
     authority_id: str = "architecture-maintainers",
@@ -289,6 +289,8 @@ def initialize(
         raise ContractError(f"Repository root does not exist: {root}")
     if not codeowner.startswith("@"):
         raise ContractError("codeowner must be a GitHub user or team beginning with @")
+    if authority_mode not in ("team", "solo-maintainer"):
+        raise ContractError("authority_mode must be team or solo-maintainer")
     policy_path = root / ".agentic/policies/architecture/project-policy.json"
     if policy_path.is_file():
         try:
@@ -308,12 +310,12 @@ def initialize(
         policy, observation = _observed_policy(root, selected_adapter)
         proposal_basis = "observed"
     toolchain = {
-            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
-            "version": 1,
-            "distribution": "agentic-architecture-kit",
-            "toolVersion": __version__,
-            "catalogVersion": 2,
-            "extensions": [],
+        "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.3/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+        "version": 1,
+        "distribution": "agentic-architecture-kit",
+        "toolVersion": __version__,
+        "catalogVersion": 2,
+        "extensions": [],
     }
     authorities = read_json("data/templates/project/authorities.json")
     authorities["enforcement"]["mode"] = authority_mode
@@ -333,20 +335,76 @@ def initialize(
         root / ".agentic/policies/architecture/reviews.json": _json(read_json("data/templates/project/reviews.json")),
         root / ".agentic/policies/architecture/authorities.json": _json(authorities),
     }
-    created = [path.relative_to(root).as_posix() for path, content in documents.items() if _write_new(path, content)]
     codeowners = root / ".github/CODEOWNERS"
-    if not codeowners.exists():
-        created.append(codeowners.relative_to(root).as_posix())
-        _write_new(
-            codeowners,
-            "# Architecture governance\n"
-            f"* {codeowner}\n",
-        )
     return {
+        "rootPath": root,
+        "documents": documents,
+        "codeownersPath": codeowners,
+        "codeownersContent": "# Architecture governance\n" f"* {codeowner}\n",
         "root": str(root),
         "toolVersion": __version__,
         "adapter": selected_adapter,
         "policyProposal": {"basis": proposal_basis, **observation},
+    }
+
+
+def preview_initialization(
+    root: Path,
+    codeowner: str,
+    authority_id: str = "architecture-maintainers",
+    protected_branch: str = "main",
+    adapter: str = "auto",
+    authority_mode: str = "team",
+) -> dict[str, Any]:
+    plan = _initialization_plan(
+        root,
+        codeowner,
+        authority_id,
+        protected_branch,
+        adapter,
+        authority_mode,
+    )
+    root_path = plan["rootPath"]
+    paths = [*plan["documents"], plan["codeownersPath"]]
+    return {
+        "root": plan["root"],
+        "toolVersion": plan["toolVersion"],
+        "adapter": plan["adapter"],
+        "policyProposal": plan["policyProposal"],
+        "projectPolicy": json.loads(plan["documents"][root_path / ".agentic/policies/architecture/project-policy.json"]),
+        "planned": [path.relative_to(root_path).as_posix() for path in paths if not path.exists()],
+        "existing": [path.relative_to(root_path).as_posix() for path in paths if path.exists()],
+    }
+
+
+def initialize(
+    root: Path,
+    codeowner: str,
+    authority_id: str = "architecture-maintainers",
+    protected_branch: str = "main",
+    adapter: str = "auto",
+    authority_mode: str = "team",
+) -> dict[str, Any]:
+    plan = _initialization_plan(
+        root,
+        codeowner,
+        authority_id,
+        protected_branch,
+        adapter,
+        authority_mode,
+    )
+    root = plan["rootPath"]
+    documents = plan["documents"]
+    created = [path.relative_to(root).as_posix() for path, content in documents.items() if _write_new(path, content)]
+    codeowners = plan["codeownersPath"]
+    if not codeowners.exists():
+        created.append(codeowners.relative_to(root).as_posix())
+        _write_new(codeowners, plan["codeownersContent"])
+    return {
+        "root": plan["root"],
+        "toolVersion": plan["toolVersion"],
+        "adapter": plan["adapter"],
+        "policyProposal": plan["policyProposal"],
         "created": created,
         "next": [
             "Run aak core and read the complete preventive decision context.",

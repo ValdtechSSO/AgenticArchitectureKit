@@ -15,6 +15,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from agentic_architecture_kit import __version__  # noqa: E402
+from agentic_architecture_kit.adopt_cli import adopt  # noqa: E402
 from agentic_architecture_kit.cli import main as cli  # noqa: E402
 from agentic_architecture_kit.contracts import ContractError, load_yaml_subset  # noqa: E402
 from agentic_architecture_kit.context import locate, references, write_index  # noqa: E402
@@ -74,7 +75,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.3/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -307,6 +308,7 @@ architecture_decisions:
             code = cli(["template"])
         self.assertEqual(0, code)
         self.assertIn("AGENTS.md", output.getvalue().splitlines())
+        self.assertIn("github-architecture.yml", output.getvalue().splitlines())
         self.assertIn("module.contract.yml", output.getvalue().splitlines())
 
         output = io.StringIO()
@@ -860,6 +862,134 @@ architecture_decisions:
             authorities["enforcement"]["requirements"],
         )
 
+    def _existing_python_repository(self, name: str) -> Path:
+        target = self.root / name
+        package = target / "src/acme_orders"
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text("", encoding="utf-8")
+        (package / "orders.py").write_text("class Order:\n    pass\n", encoding="utf-8")
+        (target / "pyproject.toml").write_text(
+            '[project]\nname = "acme-orders"\nversion = "1.0.0"\n',
+            encoding="utf-8",
+        )
+        return target
+
+    def test_adopt_dry_run_plans_existing_repository_without_writes(self) -> None:
+        target = self._existing_python_repository("adopt-dry-run")
+        before = sorted(path.relative_to(target).as_posix() for path in target.rglob("*") if path.is_file())
+        report, code = adopt(
+            target,
+            "@architecture-team",
+            ci_provider="github",
+            dry_run=True,
+        )
+        after = sorted(path.relative_to(target).as_posix() for path in target.rglob("*") if path.is_file())
+        self.assertEqual(0, code)
+        self.assertEqual("PLAN", report["result"])
+        self.assertEqual("PLANNED", report["ci"]["status"])
+        self.assertIn(".agentic/toolchain.json", report["initialization"]["planned"])
+        self.assertEqual("python", report["initialization"]["projectPolicy"]["adapter"])
+        self.assertTrue(report["initialization"]["projectPolicy"]["modules"])
+        self.assertTrue(any(item["kind"] == "MODULE_CONTEXT" for item in report["requiredActions"]))
+        self.assertEqual(before, after)
+        self.assertFalse((target / ".agentic").exists())
+
+    def test_adopt_is_dispatched_by_the_public_cli(self) -> None:
+        target = self._existing_python_repository("adopt-public-cli")
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = cli([
+                "adopt",
+                "--root", str(target),
+                "--codeowner", "@architecture-team",
+                "--dry-run",
+            ])
+        self.assertEqual(0, code, stderr.getvalue())
+        self.assertEqual("PLAN", json.loads(stdout.getvalue())["result"])
+        self.assertFalse((target / ".agentic").exists())
+        self.assertFalse((target / ".github").exists())
+
+    def test_adopt_applies_mechanics_reports_semantics_and_is_idempotent(self) -> None:
+        target = self._existing_python_repository("adopt-apply")
+        report, code = adopt(
+            target,
+            "@solo-owner",
+            authority_mode="solo-maintainer",
+            ci_provider="github",
+            allow_dirty=True,
+        )
+        self.assertEqual(1, code)
+        self.assertEqual("ACTION_REQUIRED", report["result"])
+        self.assertEqual("CREATED", report["ci"]["status"])
+        self.assertEqual("GENERATED", report["contextIndex"]["status"])
+        self.assertIn(".agentic/toolchain.json", report["initialization"]["created"])
+        self.assertTrue(any(item["kind"] == "SEMANTIC_REVIEW" for item in report["requiredActions"]))
+        self.assertTrue(any(item["kind"] == "MODULE_CONTEXT" for item in report["requiredActions"]))
+        workflow = (target / ".github/workflows/architecture.yml").read_text(encoding="utf-8")
+        self.assertIn(f"agentic-architecture-kit=={__version__}", workflow)
+        self.assertIn("actions/checkout@v7", workflow)
+        self.assertIn("actions/upload-artifact@v7", workflow)
+        policy_before = (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8")
+
+        repeated, repeated_code = adopt(
+            target,
+            "@solo-owner",
+            authority_mode="solo-maintainer",
+            ci_provider="github",
+            allow_dirty=True,
+        )
+        self.assertEqual(1, repeated_code)
+        self.assertEqual([], repeated["initialization"]["created"])
+        self.assertEqual("EXISTING", repeated["ci"]["status"])
+        self.assertEqual(
+            policy_before,
+            (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8"),
+        )
+
+    def test_adopt_preserves_existing_ci_and_reports_missing_gate(self) -> None:
+        target = self._existing_python_repository("adopt-existing-ci")
+        workflow = target / ".github/workflows/architecture.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text("name: Existing workflow\n", encoding="utf-8")
+        report, code = adopt(
+            target,
+            "@architecture-team",
+            ci_provider="github",
+            dry_run=True,
+        )
+        self.assertEqual(0, code)
+        self.assertEqual("REVIEW_REQUIRED", report["ci"]["status"])
+        self.assertTrue(any(item["kind"] == "CI_INTEGRATION" for item in report["requiredActions"]))
+        self.assertEqual("name: Existing workflow\n", workflow.read_text(encoding="utf-8"))
+
+    def test_adopt_refuses_to_mix_with_dirty_git_work_without_authorization(self) -> None:
+        target = self.root / "adopt-dirty"
+        target.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=target, check=True)
+        source = target / "app.py"
+        source.write_text("value = 1\n", encoding="utf-8")
+        subprocess.run(["git", "add", "app.py"], cwd=target, check=True)
+        subprocess.run(
+            ["git", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial"],
+            cwd=target,
+            check=True,
+        )
+        source.write_text("value = 2\n", encoding="utf-8")
+        with self.assertRaisesRegex(ContractError, "uncommitted changes"):
+            adopt(target, "@architecture-team", adapter="python")
+        self.assertFalse((target / ".agentic").exists())
+
+    def test_adopt_rejects_an_external_report_path_before_writing(self) -> None:
+        target = self._existing_python_repository("adopt-external-report")
+        with self.assertRaisesRegex(ContractError, "must stay inside"):
+            adopt(
+                target,
+                "@architecture-team",
+                output=str(self.root / "outside.json"),
+            )
+        self.assertFalse((target / ".agentic").exists())
+
     def test_solo_maintainer_review_template_uses_declared_authority_and_attestation(self) -> None:
         self._write_authorities(mode="solo-maintainer")
         code, _, error = self._run("--write-review-template", "solo-reviews.json")
@@ -903,6 +1033,7 @@ architecture_decisions:
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/bootstrap.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/AGENTS.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/github-architecture.yml").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/schemas/architecture-policy.schema.json").is_file())
         self.assertEqual(__version__, manifest["toolVersion"])
 

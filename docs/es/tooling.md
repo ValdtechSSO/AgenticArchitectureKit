@@ -27,7 +27,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.2",
+  "toolVersion": "0.4.3",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -36,8 +36,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.2 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.3 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.3 aak context locate "order lifecycle"
 ```
 
 La misma distribución contiene todo lo necesario para que un agente inicialice
@@ -62,6 +62,15 @@ repositorio y escribe una propuesta de `project-policy.json` con los módulos,
 hosts, proyectos y referencias exactas que ha encontrado. Es andamiaje factual:
 el agente o el equipo elimina los límites accidentales o injustificados, sin
 tratar la observación como aprobación arquitectónica.
+
+`aak adopt --root . --codeowner @equipo/arquitectura --ci github` orquesta la
+adopción de un repositorio existente. Ejecuta la inicialización, añade
+opcionalmente el gate de GitHub Actions incluido, crea el índice de contexto,
+ejecuta la validación estricta y devuelve un único informe JSON con las acciones
+posteriores explícitas. `--dry-run` genera un plan sin escrituras. El comando
+conserva los archivos existentes, rechaza un worktree con cambios salvo que
+`--allow-dirty` sea explícito y nunca inventa contratos semánticos, waivers ni
+aprobaciones.
 
 El adaptador se selecciona automáticamente si ya hay `.csproj`,
 `pyproject.toml` o código Python. Antes de que existan artefactos tecnológicos,
