@@ -28,6 +28,8 @@ una identidad efímera.
    wheel aislado contra los ejemplos.
 4. Integra mediante la rama protegida con la revisión arquitectónica requerida.
 5. Publica una GitHub release cuyo tag sea exactamente `v{versión-del-package}`.
+   Crear o subir el tag no inicia por sí solo la publicación; la release de
+   GitHub debe pasar al estado publicado.
 6. El workflow `Publish Python distribution` comprueba tag y versión, construye,
    verifica y publica mediante trusted publishing de PyPI.
 7. Confirma el artefacto y actualiza consumidores mediante un cambio explícito

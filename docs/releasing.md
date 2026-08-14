@@ -28,6 +28,8 @@ short-lived identity token only in its publish job.
    isolated wheel validation against the examples.
 4. Merge through the protected branch with the required architecture review.
 5. Publish a GitHub release whose tag is exactly `v{package-version}`.
+   Creating or pushing the tag alone does not trigger publication; the GitHub
+   release must transition to the published state.
 6. The `Publish Python distribution` workflow builds from that release, checks
    the tag/version match, verifies artifacts, and publishes through PyPI trusted
    publishing.
