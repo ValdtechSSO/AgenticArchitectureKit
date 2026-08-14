@@ -36,6 +36,11 @@ La alcanzabilidad y la huella impiden reutilizaciones accidentales. CODEOWNERS y
 la protección de rama impiden que un agente acepte su propia revisión. El JSON
 por sí solo no demuestra aprobación humana.
 
+Una revisión solo se comprueba como obsoleta cuando su regla objetivo es
+aplicable. Por ejemplo, una revisión de `CHG001` se conserva sin emitir un aviso
+de revisión obsoleta durante una autovalidación sin `--base-ref`; la ejecución
+comparativa sigue siendo responsable de contrastar su huella exacta.
+
 ## Checks en push
 
 El workflow compara los pull requests con su SHA base y los pushes con

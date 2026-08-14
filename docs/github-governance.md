@@ -35,6 +35,11 @@ Reachability and fingerprints prevent accidental reuse. CODEOWNERS plus protecte
 branches prevent an agent from accepting its own review. JSON alone is not proof
 of human approval.
 
+A review is checked for staleness only when its target rule is applicable. For
+example, a `CHG001` review is retained without a stale-review finding during a
+self-validation run that has no `--base-ref`; the comparative run remains
+responsible for matching its exact fingerprint.
+
 ## Push checks
 
 The workflow compares pull requests with their base SHA and pushes with

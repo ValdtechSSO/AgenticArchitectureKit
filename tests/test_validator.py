@@ -339,6 +339,53 @@ architecture_decisions:
         self.assertEqual(1, code)
         self.assertIn("[FAIL] REV001", output)
 
+    def test_base_dependent_review_is_not_stale_without_a_base(self) -> None:
+        self.policy["dependencyRules"] = [{
+            "from": {"ownerKind": "host"},
+            "to": {"ownerKind": "module"},
+            "decisionRefs": ["architecture/decisions/ADR-001-orders.md"],
+        }]
+        self._write_policy()
+        _, output, error = self._run("--base-ref", "HEAD", "--format", "json")
+        self.assertFalse(error)
+        report = json.loads(output)
+        reviews = []
+        for index, finding in enumerate(
+            result for result in report["results"]
+            if result["status"] == "REVIEW_REQUIRED"
+        ):
+            reviews.append({
+                "id": f"BASE-REVIEW-{index}",
+                "rule": finding["rule"],
+                "scope": finding["scope"],
+                "subjectFingerprint": finding["reviewFingerprint"],
+                "decision": "Accepted for this exact test subject.",
+                "authorityId": "test-owner",
+                "reviewedBy": ["@test-owner"],
+                "approvalEvidence": "github-pr-review:test-approved-review",
+                "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+                "reviewedAtRevision": self.initial_revision,
+                "reviewWhen": ["The subject fingerprint changes"],
+            })
+        self.assertTrue(any(review["rule"] == "CHG001" for review in reviews))
+        self._write_reviews(reviews)
+
+        code, output, error = self._run("--base-ref", "HEAD", "--fail-on-review")
+        self.assertEqual(0, code, error)
+        self.assertIn("[REVIEWED] CHG001", output)
+
+        code, output, error = self._run("--format", "json", "--fail-on-review")
+        self.assertEqual(0, code, error)
+        results = json.loads(output)["results"]
+        self.assertTrue(any(
+            item["rule"] == "CHG001" and item["status"] == "NOT_APPLICABLE"
+            for item in results
+        ))
+        self.assertFalse(any(
+            item["rule"] == "REV001" and item["status"] == "REVIEW_REQUIRED"
+            for item in results
+        ))
+
     def test_declared_authority_must_exist_in_codeowners(self) -> None:
         (self.root / ".github/CODEOWNERS").write_text("* @someone-else\n", encoding="utf-8")
         code, output, _ = self._run()

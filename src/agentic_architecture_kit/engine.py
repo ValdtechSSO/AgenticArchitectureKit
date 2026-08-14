@@ -1009,6 +1009,15 @@ def evaluate(context: ValidationContext) -> list[Finding]:
                 break
     for review in context.reviews:
         if review["id"] in valid_review_ids and matched_reviews[review["id"]] == 0:
+            reviewed_rule_findings = [
+                finding for finding in findings
+                if finding.rule == review["rule"]
+            ]
+            if reviewed_rule_findings and all(
+                finding.status == "NOT_APPLICABLE"
+                for finding in reviewed_rule_findings
+            ):
+                continue
             findings.append(
                 _finding(
                     "REV001",
