@@ -2,10 +2,11 @@
 
 [Español](docs/es/README.md) · [Language policy](docs/language-policy.md)
 
-> **Implementation status:** 0.4 preview. The packaged decision core and rule
-> references are normative; the manifesto is their human-facing map. The
-> [capability matrix](docs/capabilities.md) distinguishes implemented, initial,
-> and roadmap behavior.
+> **Implementation status:** 0.4.2 preview. The published distribution is
+> self-contained for agent bootstrap and evolution. The packaged decision core
+> and rule references are normative; the manifesto is their human-facing map.
+> The [capability matrix](docs/capabilities.md) distinguishes implemented,
+> initial, and roadmap behavior.
 
 An executable architecture standard for projects created and evolved by coding
 agents.
@@ -72,7 +73,7 @@ should arrive when the task requires it.
    read both completely before initialization or the first modification.
 4. The agent discovers current capabilities, hosts, and boundaries before
    creating structure.
-5. It pins and executes a published validator version without copying its
+5. It pins and executes a published kit version without copying its
    implementation into the project.
 6. It adapts the templates to declare the project's actual architecture.
 7. It runs the project's build and tests and validates the resulting
@@ -102,8 +103,14 @@ templates are published together as `agentic-architecture-kit`. A consumer pins
 the exact version in `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
+uvx --from agentic-architecture-kit==0.4.2 aak core
+uvx --from agentic-architecture-kit==0.4.2 aak guide bootstrap
 uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
 ```
+
+The agent does not need access to this source checkout. The pinned distribution
+contains the preventive core, operational guides, rules, schemas, templates,
+adapters, and validation engine required for bootstrap and later evolution.
 
 Only project-owned decisions and context live in the consumer repository:
 

@@ -2,11 +2,11 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
-> **Estado de implementación:** preview 0.4. El núcleo de decisiones y las
-> referencias de reglas incluidas en el paquete son normativos; el manifiesto es
-> su mapa para personas. La
-> [matriz de capacidades](capabilities.md) distingue comportamiento implementado,
-> inicial y de hoja de ruta.
+> **Estado de implementación:** preview 0.4.2. La distribución publicada es
+> autosuficiente para el bootstrap y la evolución por agentes. El núcleo de
+> decisiones y las referencias de reglas incluidas son normativos; el manifiesto
+> es su mapa para personas. La [matriz de capacidades](capabilities.md) distingue
+> comportamiento implementado, inicial y de hoja de ruta.
 
 Estándar de arquitectura ejecutable para proyectos creados y evolucionados por
 agentes de programación.
@@ -74,7 +74,7 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
    ambos por completo antes de inicializar o realizar la primera modificación.
 4. El agente descubre capacidades, hosts y límites actuales antes de crear
    estructura.
-5. Fija y ejecuta una versión publicada del validador sin copiar su
+5. Fija y ejecuta una versión publicada del kit sin copiar su
    implementación al proyecto.
 6. Adapta las plantillas para declarar la arquitectura específica del proyecto.
 7. Ejecuta el build y los tests del proyecto y valida su arquitectura
@@ -108,8 +108,15 @@ El consumidor fija la versión exacta en `.agentic/toolchain.json` y la ejecuta
 con `uvx` o `pipx`:
 
 ```bash
+uvx --from agentic-architecture-kit==0.4.2 aak core
+uvx --from agentic-architecture-kit==0.4.2 aak guide bootstrap
 uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
 ```
+
+El agente no necesita acceso a este checkout fuente. La distribución fijada
+contiene el núcleo preventivo, guías operativas, reglas, schemas, plantillas,
+adaptadores y motor de validación necesarios para el bootstrap y la evolución
+posterior.
 
 En el repositorio consumidor solo viven decisiones y contexto propios:
 
