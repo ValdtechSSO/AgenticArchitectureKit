@@ -44,12 +44,14 @@ should arrive when the task requires it.
   reviewing, and governing the artifacts created by the kit.
 - [`docs/capabilities.md`](docs/capabilities.md): honest implementation and
   roadmap matrix for the reference tools.
+- [`docs/github-governance.md`](docs/github-governance.md): required CODEOWNERS,
+  review, and protected-branch controls that cannot be proven locally.
 - [`docs/create-project-from-zero.md`](docs/create-project-from-zero.md): the
   operational procedure an agent follows to bootstrap a project.
 - [`tools/architecture/`](tools/architecture/): portable validator, rule
   catalog, technology adapters, and conformance tests.
 - [`.agentic/contracts/schemas/`](.agentic/contracts/schemas/): contracts for
-  project policy, waivers, semantic reviews, results, and modules.
+  project policy, waivers, authorities, semantic reviews, results, and modules.
 - [`.agentic/templates/project/`](.agentic/templates/project/): neutral
   templates used to materialize only the decisions that apply to a project.
 
@@ -100,7 +102,9 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 ```
 
 Only applicable artifacts are created. Empty directories, speculative
@@ -117,6 +121,7 @@ python3 tools/architecture/validate.py --help
 python3 tools/architecture/validate.py --fail-on-review
 python3 tools/architecture/context.py index
 python3 tools/architecture/context.py locate "architecture validation"
+python3 tools/architecture/validate.py --root examples/dotnet-valid
 ```
 
 After installation in a project:

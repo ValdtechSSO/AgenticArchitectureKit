@@ -7,8 +7,7 @@ From the kit root:
 
 ```sh
 python3 tools/architecture/validate.py \
-  --root examples/dotnet-valid \
-  --catalog ../../tools/architecture/rules.json
+  --root examples/dotnet-valid
 ```
 
 The run has no `FAIL` result. Semantic findings remain visible until a project

@@ -100,9 +100,9 @@
     {
       "id": "STR001",
       "title": "Speculative structure is prohibited",
-      "description": "Catch-all directories and generated structural fields in semantic contracts are prohibited; boundary necessity remains reviewable.",
+      "description": "Catch-all directories and generated structural fields in semantic contracts are prohibited; material boundary changes are reviewed through CHG001 and repository governance.",
       "evaluator": "no_speculative_structure",
-      "automatic": false,
+      "automatic": true,
       "inputs": ["project-policy", "module-contracts", "filesystem"]
     },
     {
@@ -120,6 +120,14 @@
       "evaluator": "waivers_valid",
       "automatic": true,
       "inputs": ["waivers", "rule-catalog", "filesystem"]
+    },
+    {
+      "id": "AUT001",
+      "title": "Architecture authority is declared and repository-protected",
+      "description": "Review authorities resolve to CODEOWNERS principals and declare pull-request, stale-review, direct-push, and required-check protections.",
+      "evaluator": "authorities_valid",
+      "automatic": true,
+      "inputs": ["authorities", "codeowners", "filesystem"]
     },
     {
       "id": "REV001",

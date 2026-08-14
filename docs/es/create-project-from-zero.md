@@ -79,7 +79,9 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 ```
 
 Las rutas opcionales se omiten si no tienen contenido actual.
@@ -125,6 +127,14 @@ fuente. No decide qué arquitectura es válida ni redefine reglas.
 desviación concreta y autorizada. Debe identificar regla, scope, decisión,
 motivo, riesgo, ADR autorizador y condiciones de revisión. Su resultado será
 `WAIVED`, nunca `PASS`.
+
+## 7.1 Autoridad y revisiones semánticas
+
+Sustituye los principals de la plantilla por usuarios o equipos reales y
+refléjalos en `.github/CODEOWNERS`. Configura cada rama protegida declarada según
+[`github-governance.md`](github-governance.md). Un review requiere huella exacta,
+SHA completo y ancestro alcanzable, principal declarado y evidencia de aprobación
+de la plataforma. El agente no debe crear un review solo porque pueda editar JSON.
 
 ## 8. Bootstrap y expansión del contexto
 

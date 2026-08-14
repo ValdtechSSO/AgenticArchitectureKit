@@ -46,12 +46,15 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
   gobernar los artefactos creados por el kit.
 - [`capabilities.md`](capabilities.md): matriz honesta de implementación y hoja
   de ruta de las herramientas de referencia.
+- [`github-governance.md`](github-governance.md): controles requeridos de
+  CODEOWNERS, revisión y protección de rama que no pueden demostrarse localmente.
 - [`create-project-from-zero.md`](create-project-from-zero.md):
   procedimiento operativo que debe seguir el agente.
 - [`tools/architecture/`](../../tools/architecture/): validador portable, catálogo de
   reglas, adaptadores tecnológicos y tests de conformidad.
 - [`.agentic/contracts/schemas/`](../../.agentic/contracts/schemas/): contratos de la
-  policy, los waivers, las revisiones semánticas, el resultado y los módulos.
+  policy, los waivers, las autoridades, las revisiones semánticas, el resultado
+  y los módulos.
 - [`.agentic/templates/project/`](../../.agentic/templates/project/): plantillas para
   materializar únicamente las decisiones aplicables al proyecto.
 
@@ -102,7 +105,9 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 ```
 
 Solo se crean los elementos aplicables. No se añaden carpetas vacías,
@@ -119,6 +124,7 @@ python3 tools/architecture/validate.py --help
 python3 tools/architecture/validate.py --fail-on-review
 python3 tools/architecture/context.py index
 python3 tools/architecture/context.py locate "architecture validation"
+python3 tools/architecture/validate.py --root examples/dotnet-valid
 ```
 
 Una vez instalado en un proyecto:

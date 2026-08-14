@@ -848,10 +848,13 @@ deterministas:
 El analizador puede producir evidencia y heurísticas, pero el resultado será
 `REVIEW_REQUIRED` cuando no pueda demostrar la regla.
 
-Una autoridad delegada puede persistir una revisión semántica aceptada en
-`reviews.json`. Solo se aplica a la regla, scope y huella exacta del hallazgo y
-se informa como `REVIEWED`, nunca `PASS`. Si cambia la evidencia, la revisión
-queda obsoleta y vuelve a aparecer `REVIEW_REQUIRED`.
+Una autoridad declarada puede persistir una revisión semántica aceptada en
+`reviews.json`. Solo se aplica a regla, scope, huella y revisión Git alcanzable
+exactas y se informa como `REVIEWED`, nunca `PASS`. El registro identifica al
+principal que aprobó y la evidencia de plataforma. Si cambia la evidencia queda
+obsoleto y vuelve `REVIEW_REQUIRED`. La validación local no puede demostrar la
+aprobación externa ni la protección de rama; CODEOWNERS y la rama protegida
+`MUST` aportar esa garantía.
 
 ## 10.4 Implementación de referencia suministrada
 
@@ -880,10 +883,12 @@ El proyecto suministra únicamente:
 │   ├── architecture-policy.schema.json
 │   ├── architecture-waivers.schema.json
 │   ├── architecture-reviews.schema.json
+│   ├── architecture-authorities.schema.json
 │   └── architecture-result.schema.json
 └── policies/architecture/
     ├── project-policy.json
     ├── waivers.json
+    ├── authorities.json
     └── reviews.json
 ```
 
@@ -1039,6 +1044,7 @@ Las políticas pueden residir en:
 ├── architecture/
 │   ├── project-policy.json
 │   ├── waivers.json
+│   ├── authorities.json
 │   └── reviews.json
 ├── risk-levels.yml
 ├── permissions.yml

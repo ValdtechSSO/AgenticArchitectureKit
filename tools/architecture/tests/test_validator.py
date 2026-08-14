@@ -31,6 +31,7 @@ class ArchitectureValidatorTests(unittest.TestCase):
             "architecture-policy.schema.json",
             "architecture-waivers.schema.json",
             "architecture-reviews.schema.json",
+            "architecture-authorities.schema.json",
             "architecture-result.schema.json",
             "module-contract.schema.json",
         ):
@@ -135,10 +136,24 @@ architecture_decisions:
         self.policy_path = self.root / ".agentic/policies/architecture/project-policy.json"
         self.waiver_path = self.root / ".agentic/policies/architecture/waivers.json"
         self.review_path = self.root / ".agentic/policies/architecture/reviews.json"
+        self.authority_path = self.root / ".agentic/policies/architecture/authorities.json"
         self.policy_path.parent.mkdir(parents=True)
         self._write_policy()
         self._write_waivers([])
         self._write_reviews([])
+        self._write_authorities()
+        (self.root / ".github").mkdir()
+        (self.root / ".github/CODEOWNERS").write_text("* @test-owner\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
+        subprocess.run(
+            ["git", "-c", "user.name=Validator Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"],
+            cwd=self.root,
+            check=True,
+        )
+        self.initial_revision = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=self.root, check=True, capture_output=True, text=True
+        ).stdout.strip()
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -156,6 +171,26 @@ architecture_decisions:
             json.dumps({"version": 1, "reviews": reviews}), encoding="utf-8"
         )
 
+    def _write_authorities(self) -> None:
+        self.authority_path.write_text(json.dumps({
+            "version": 1,
+            "enforcement": {
+                "provider": "github",
+                "codeOwnersFile": ".github/CODEOWNERS",
+                "protectedBranches": ["main"],
+                "requirements": [
+                    "pull-request", "code-owner-review", "dismiss-stale-reviews",
+                    "no-direct-push", "required-status-checks",
+                ],
+            },
+            "authorities": [{
+                "id": "test-owner",
+                "displayName": "Test architecture owner",
+                "principals": ["@test-owner"],
+                "protectedScopes": ["."],
+            }],
+        }), encoding="utf-8")
+
     def _run(self, *arguments: str) -> tuple[int, str, str]:
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -164,8 +199,6 @@ architecture_decisions:
                 [
                     "--root",
                     str(self.root),
-                    "--catalog",
-                    str(TOOL_ROOT / "rules.json"),
                     *arguments,
                 ]
             )
@@ -178,7 +211,7 @@ architecture_decisions:
         self.assertEqual(0, report["summary"]["FAIL"])
         self.assertGreater(report["summary"]["PASS"], 0)
         self.assertGreater(report["summary"]["REVIEW_REQUIRED"], 0)
-        for field in ("policyDigest", "waiverDigest", "reviewDigest", "catalogDigest", "observedDigest"):
+        for field in ("policyDigest", "waiverDigest", "reviewDigest", "authorityDigest", "catalogDigest", "observedDigest"):
             self.assertTrue(report[field].startswith("sha256:"), field)
 
     def test_unapproved_project_dependency_fails(self) -> None:
@@ -256,9 +289,11 @@ architecture_decisions:
                 "scope": finding["scope"],
                 "subjectFingerprint": finding["reviewFingerprint"],
                 "decision": "Accepted for this exact test subject.",
-                "authority": "Test architecture owner",
+                "authorityId": "test-owner",
+                "reviewedBy": ["@test-owner"],
+                "approvalEvidence": "github-pr-review:test-approved-review",
                 "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
-                "reviewedAtRevision": "test-revision",
+                "reviewedAtRevision": self.initial_revision,
                 "reviewWhen": ["The subject fingerprint changes"],
             })
         self._write_reviews(reviews)
@@ -275,6 +310,35 @@ architecture_decisions:
         self.assertEqual(1, code)
         self.assertIn("[REVIEW_REQUIRED] REV001", output)
 
+    def test_review_revision_must_be_a_reachable_commit_and_authority_must_match(self) -> None:
+        _, output, _ = self._run("--format", "json")
+        finding = next(
+            item for item in json.loads(output)["results"]
+            if item["status"] == "REVIEW_REQUIRED"
+        )
+        self._write_reviews([{
+            "id": "UNREACHABLE-REVIEW",
+            "rule": finding["rule"],
+            "scope": finding["scope"],
+            "subjectFingerprint": finding["reviewFingerprint"],
+            "decision": "This record must not be accepted.",
+            "authorityId": "test-owner",
+            "reviewedBy": ["@not-the-codeowner"],
+            "approvalEvidence": "github-pr-review:test-invalid",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewedAtRevision": "0" * 40,
+            "reviewWhen": ["The subject changes"],
+        }])
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] REV001", output)
+
+    def test_declared_authority_must_exist_in_codeowners(self) -> None:
+        (self.root / ".github/CODEOWNERS").write_text("* @someone-else\n", encoding="utf-8")
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] AUT001", output)
+
     def test_source_import_detects_module_to_host_without_project_reference(self) -> None:
         source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
         source.write_text(
@@ -286,13 +350,6 @@ architecture_decisions:
         self.assertIn("[FAIL] DEP001 src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs", output)
 
     def test_policy_growth_without_decision_reference_fails_against_git_base(self) -> None:
-        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
-        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
-        subprocess.run(
-            ["git", "-c", "user.name=Validator Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"],
-            cwd=self.root,
-            check=True,
-        )
         self.policy["allowedProjectDependencies"].append({
             "from": "src/Modules/Orders/Orders.csproj",
             "to": "src/Hosts/Cli/Cli.csproj",
@@ -302,6 +359,19 @@ architecture_decisions:
         code, output, _ = self._run("--base-ref", "HEAD")
         self.assertEqual(1, code)
         self.assertIn("[FAIL] CHG001", output)
+
+    def test_dependency_selector_growth_emits_a_valid_review_finding(self) -> None:
+        self.policy["dependencyRules"] = [{
+            "from": {"ownerKind": "host"},
+            "to": {"ownerKind": "module"},
+            "decisionRefs": ["architecture/decisions/ADR-001-orders.md"],
+        }]
+        self._write_policy()
+        code, output, error = self._run("--base-ref", "HEAD", "--format", "json")
+        self.assertEqual(0, code, error)
+        change = next(item for item in json.loads(output)["results"] if item["rule"] == "CHG001")
+        self.assertEqual("REVIEW_REQUIRED", change["status"])
+        self.assertEqual(".agentic/policies/architecture/project-policy.json", change["scope"])
 
     def test_scalable_dependency_rule_can_replace_exact_edge_allowlist(self) -> None:
         self.policy["allowedProjectDependencies"] = []
@@ -345,7 +415,7 @@ architecture_decisions:
     def test_task_evidence_is_retained_with_a_manifest(self) -> None:
         code, _, error = self._run("--task-id", "test-task")
         self.assertEqual(0, code, error)
-        evidence = self.root / ".agentic/runtime/evidence/test-task/unknown"
+        evidence = self.root / ".agentic/runtime/evidence/test-task" / self.initial_revision
         self.assertTrue((evidence / "architecture.json").is_file())
         self.assertTrue((evidence / "manifest.json").is_file())
 
@@ -362,7 +432,6 @@ class ExampleRepositoryTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             code = run([
                 "--root", str(REPOSITORY_ROOT / "examples" / name),
-                "--catalog", str(TOOL_ROOT / "rules.json"),
             ])
         return code, output.getvalue()
 
@@ -375,6 +444,20 @@ class ExampleRepositoryTests(unittest.TestCase):
         code, output = self._run_example("dotnet-invalid")
         self.assertEqual(1, code)
         self.assertIn("[FAIL] DEP001", output)
+
+    def test_kit_self_validation_exercises_real_host_to_module_source_edges(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = run(["--root", str(REPOSITORY_ROOT), "--format", "json"])
+        self.assertEqual(0, code)
+        report = json.loads(output.getvalue())
+        dependency = next(item for item in report["results"] if item["rule"] == "DEP003")
+        self.assertEqual("PASS", dependency["status"])
+        self.assertGreater(len(dependency["evidence"]["sourceDependencies"]), 0)
+        self.assertEqual(
+            {"host:context-cli", "host:validation-cli"},
+            {item["from"] for item in dependency["evidence"]["sourceDependencies"]},
+        )
 
 
 if __name__ == "__main__":

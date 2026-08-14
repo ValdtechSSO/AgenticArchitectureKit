@@ -10,7 +10,8 @@ translation conflicts with its English source, the English source is
 authoritative.
 
 Changes to `README.md`, `MANIFESTO.md`, `docs/team-guide.md`, or
-`docs/create-project-from-zero.md`, or `docs/capabilities.md` should update the corresponding Spanish
+`docs/create-project-from-zero.md`, `docs/capabilities.md`, or
+`docs/github-governance.md` should update the corresponding Spanish
 translation in the same change. A translation that cannot be updated atomically
 must be marked as out of date at its beginning; silent divergence is prohibited.
 

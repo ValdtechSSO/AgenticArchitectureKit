@@ -4,6 +4,7 @@ import fnmatch
 import hashlib
 import json
 import re
+import subprocess
 from collections import Counter, deque
 from datetime import date
 from pathlib import Path
@@ -412,7 +413,14 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                 )
             )
     return violations or [
-        _finding("DEP001", "PASS", ".", "No module project depends on a host project.")
+        _finding(
+            "DEP001",
+            "PASS",
+            ".",
+            "No module-owned project or source namespace depends on a host.",
+            evaluatedProjectEdges=sum(len(item.references) for item in context.observed.projects),
+            evaluatedSourceEdges=len(context.observed.source_dependencies),
+        )
     ]
 
 
@@ -480,7 +488,15 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
     }
     declarations = _declared_projects(context)
     dependency_rules = context.policy.get("dependencyRules", [])
-    unexpected = []
+    allowed_owner_pairs = {
+        (
+            (declarations[source]["owner"]["kind"], declarations[source]["owner"]["id"]),
+            (declarations[target]["owner"]["kind"], declarations[target]["owner"]["id"]),
+        )
+        for source, target in allowed
+        if source in declarations and target in declarations
+    }
+    unexpected: list[tuple[str, str]] = []
     for source, target in sorted(actual - allowed):
         if source not in declarations or target not in declarations:
             unexpected.append((source, target))
@@ -494,8 +510,7 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
         ):
             continue
         unexpected.append((source, target))
-    if unexpected:
-        return [
+    findings = [
             _finding(
                 "DEP003",
                 "FAIL",
@@ -505,13 +520,58 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
             )
             for source, target in unexpected
         ]
+
+    source_evidence: list[dict[str, str]] = []
+    for dependency in context.observed.source_dependencies:
+        source_owner = _namespace_owner(context, dependency.source_namespace)
+        target_owner = _namespace_owner(context, dependency.target_namespace)
+        if not source_owner or not target_owner or source_owner[:2] == target_owner[:2]:
+            continue
+        source_declaration = {
+            "owner": {"kind": source_owner[0], "id": source_owner[1]},
+            "role": "host" if source_owner[0] == "host" else "contracts" if source_owner[2] else "application",
+            "path": dependency.source_path,
+        }
+        target_declaration = {
+            "owner": {"kind": target_owner[0], "id": target_owner[1]},
+            "role": "host" if target_owner[0] == "host" else "contracts" if target_owner[2] else "application",
+            "path": dependency.target_namespace,
+        }
+        edge = ((source_owner[0], source_owner[1]), (target_owner[0], target_owner[1]))
+        authorized = edge in allowed_owner_pairs or any(
+            _project_matches(source_declaration, rule["from"])
+            and _project_matches(target_declaration, rule["to"])
+            for rule in dependency_rules
+        )
+        evidence = {
+            "from": f"{source_owner[0]}:{source_owner[1]}",
+            "to": f"{target_owner[0]}:{target_owner[1]}",
+            "sourcePath": dependency.source_path,
+            "targetNamespace": dependency.target_namespace,
+            "confidence": dependency.confidence,
+        }
+        source_evidence.append(evidence)
+        if not authorized:
+            findings.append(
+                _finding(
+                    "DEP003",
+                    "FAIL",
+                    dependency.source_path,
+                    "Observed source dependency is not allowed by project policy.",
+                    **evidence,
+                )
+            )
+
+    if findings:
+        return findings
     return [
         _finding(
             "DEP003",
             "PASS",
             ".",
-            "Every observed project dependency is allowed by project policy.",
-            dependencies=[{"from": source, "to": target} for source, target in sorted(actual)],
+            "Every observed project and owned source dependency is allowed by project policy.",
+            projectDependencies=[{"from": source, "to": target} for source, target in sorted(actual)],
+            sourceDependencies=source_evidence,
         )
     ]
 
@@ -590,9 +650,9 @@ def _rule_no_speculative_structure(context: ValidationContext) -> list[Finding]:
     return violations or [
         _finding(
             "STR001",
-            "REVIEW_REQUIRED",
+            "PASS",
             ".",
-            "Mechanical speculative-structure checks passed; necessity of existing boundaries requires review.",
+            "Mechanical speculative-structure checks passed; material boundary changes are governed by CHG001 and repository approval policy.",
             directories=list(context.observed.directories),
             modules=list(context.observed.modules),
             hosts=list(context.observed.hosts),
@@ -626,7 +686,11 @@ def _rule_policy_growth(context: ValidationContext) -> list[Finding]:
         for key in sorted(set(current_items) - set(base[kind])):
             item = current_items[key]
             references = item.get("decisionRefs", [])
-            scope = item.get("root") or item.get("path") or item.get("from") or ".agentic/policies/architecture/project-policy.json"
+            scope_candidates = (item.get("root"), item.get("path"), item.get("from"))
+            scope = next(
+                (candidate for candidate in scope_candidates if isinstance(candidate, str)),
+                ".agentic/policies/architecture/project-policy.json",
+            )
             if not references:
                 findings.append(
                     _finding(
@@ -671,6 +735,7 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
     results: list[Finding] = []
     seen: set[str] = set()
     known_rules = set(context.catalog)
+    authorities = {item["id"]: item for item in context.authorities["authorities"]}
     today = date.today()
     for review in context.reviews:
         review_id = review["id"]
@@ -680,6 +745,28 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
         seen.add(review_id)
         if review["rule"] not in known_rules or review["rule"] == "REV001":
             results.append(_finding("REV001", "FAIL", review["scope"], "Review references an unknown or non-reviewable rule.", review=review_id, reviewedRule=review["rule"]))
+        authority = authorities.get(review["authorityId"])
+        if authority is None:
+            results.append(_finding("REV001", "FAIL", review["scope"], "Review references an unknown authority.", review=review_id, authorityId=review["authorityId"]))
+        else:
+            unknown_reviewers = sorted(set(review["reviewedBy"]) - set(authority["principals"]))
+            if unknown_reviewers:
+                results.append(_finding("REV001", "FAIL", review["scope"], "Review was attributed to principals outside the declared authority.", review=review_id, unknownReviewers=unknown_reviewers))
+            if not any(_scope_matches(scope, review["scope"]) for scope in authority["protectedScopes"]):
+                results.append(_finding("REV001", "FAIL", review["scope"], "Declared authority does not cover the reviewed scope.", review=review_id, authorityId=review["authorityId"]))
+        if context.authorities["enforcement"]["provider"] == "github" and not review["approvalEvidence"].startswith("github-pr-review:"):
+            results.append(_finding("REV001", "FAIL", review["scope"], "GitHub-governed review requires github-pr-review approval evidence.", review=review_id, approvalEvidence=review["approvalEvidence"]))
+        revision = review["reviewedAtRevision"]
+        if not re.fullmatch(r"[0-9a-fA-F]{40}", revision):
+            results.append(_finding("REV001", "FAIL", review["scope"], "reviewedAtRevision must be a full 40-character Git commit SHA.", review=review_id, reviewedAtRevision=revision))
+        else:
+            try:
+                subprocess.run(["git", "cat-file", "-e", f"{revision}^{{commit}}"], cwd=context.root, check=True, capture_output=True)
+                ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", revision, "HEAD"], cwd=context.root, capture_output=True).returncode == 0
+            except (OSError, subprocess.CalledProcessError):
+                ancestor = False
+            if not ancestor:
+                results.append(_finding("REV001", "FAIL", review["scope"], "reviewedAtRevision is not a reachable ancestor of the current repository revision.", review=review_id, reviewedAtRevision=revision))
         missing = _references_resolve(context, review["authorizedBy"])
         if missing:
             results.append(_finding("REV001", "FAIL", review["scope"], "Review authority reference does not exist.", review=review_id, missing=missing))
@@ -691,6 +778,34 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
             except ValueError:
                 results.append(_finding("REV001", "FAIL", review["scope"], "Review expiry is not an ISO date.", review=review_id, expiresOn=expiry))
     return results or [_finding("REV001", "PASS", _display_path(context, context.review_path), "Architecture review acknowledgements are structurally valid.", count=len(context.reviews))]
+
+
+def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
+    findings: list[Finding] = []
+    authorities = context.authorities["authorities"]
+    ids = [item["id"] for item in authorities]
+    duplicates = sorted(item for item, count in Counter(ids).items() if count > 1)
+    if duplicates:
+        findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Authority ids are duplicated.", duplicates=duplicates))
+    enforcement = context.authorities["enforcement"]
+    required = {"pull-request", "code-owner-review", "dismiss-stale-reviews", "no-direct-push", "required-status-checks"}
+    missing_requirements = sorted(required - set(enforcement["requirements"]))
+    if missing_requirements:
+        findings.append(_finding("AUT001", "FAIL", _display_path(context, context.authority_path), "Repository governance omits required anti-self-approval controls.", missingRequirements=missing_requirements))
+    codeowners_path = _repo_path(context, enforcement["codeOwnersFile"])
+    if not codeowners_path.is_file():
+        findings.append(_finding("AUT001", "FAIL", enforcement["codeOwnersFile"], "Declared CODEOWNERS file does not exist."))
+    else:
+        tokens = {
+            token
+            for raw in codeowners_path.read_text(encoding="utf-8").splitlines()
+            if raw.strip() and not raw.lstrip().startswith("#")
+            for token in raw.split()[1:]
+        }
+        missing_principals = sorted({principal for item in authorities for principal in item["principals"] if principal not in tokens})
+        if missing_principals:
+            findings.append(_finding("AUT001", "FAIL", enforcement["codeOwnersFile"], "Declared authority principals are absent from CODEOWNERS.", missingPrincipals=missing_principals))
+    return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Repository-side authority declarations and CODEOWNERS are consistent; platform branch protection remains externally enforced.", authorities=ids, protectedBranches=enforcement["protectedBranches"])]
 
 
 def _markdown_anchor_exists(path: Path, anchor: str) -> bool:
@@ -800,6 +915,7 @@ EVALUATORS: dict[str, Callable[[ValidationContext], list[Finding]]] = {
     "document_references": _rule_document_references,
     "waivers_valid": _rule_waivers_valid,
     "reviews_valid": _rule_reviews_valid,
+    "authorities_valid": _rule_authorities_valid,
 }
 
 

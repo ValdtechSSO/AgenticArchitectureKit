@@ -21,13 +21,12 @@ jobs:
         run: python3 -m unittest discover -s tools/architecture/tests -v
       - name: Validate the kit
         run: python3 tools/architecture/validate.py --fail-on-review --task-id architecture-ci
-      - name: Guard policy growth against the pull request base
-        if: github.event_name == 'pull_request'
+      - name: Guard policy changes against the previous accepted revision
         env:
-          BASE_REVISION: ${{ github.event.pull_request.base.sha }}
+          BASE_REVISION: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
-          if git cat-file -e "$BASE_REVISION:.agentic/policies/architecture/project-policy.json"; then
-            python3 tools/architecture/validate.py --base-ref "$BASE_REVISION" --fail-on-review --task-id architecture-pr
+          if [ -n "$BASE_REVISION" ] && git cat-file -e "$BASE_REVISION:.agentic/policies/architecture/project-policy.json"; then
+            python3 tools/architecture/validate.py --base-ref "$BASE_REVISION" --fail-on-review --task-id architecture-change
           else
             echo "Base revision predates architecture policy; bootstrap is covered by the strict self-validation step."
           fi

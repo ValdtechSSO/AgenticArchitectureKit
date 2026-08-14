@@ -94,9 +94,11 @@ class ValidationContext:
     policy_path: Path
     waiver_path: Path
     review_path: Path
+    authority_path: Path
     policy: dict[str, Any]
     waivers: list[dict[str, Any]]
     reviews: list[dict[str, Any]]
+    authorities: dict[str, Any]
     catalog: dict[str, dict[str, Any]]
     observed: ObservedArchitecture
     contracts: dict[str, dict[str, Any]]

@@ -78,7 +78,9 @@ src/Modules/*/AGENTS.md
 src/Modules/*/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 tests/Architecture/
 ```
 
@@ -115,6 +117,9 @@ Los datos generados son evidencia útil, pero no autoridad semántica. Si un
 | `module.contract.yml` | Propósito, vocabulario, ownership, riesgo, invariantes y ADR no derivables | Equipo propietario o agente autorizado | Verdad semántica, no duplicación estructural |
 | `project-policy.json` | Declara módulos, hosts, proyectos, features y dependencias permitidas | Agente autorizado o responsable de arquitectura | Que un límite nuevo esté justificado, no solo observado |
 | `waivers.json` | Registra desviaciones acotadas y autorizadas | Autoridad definida por la política del equipo | Scope, riesgo, autoridad, caducidad y eliminación |
+| `authorities.json` | Declara principals, scopes protegidos, ramas y controles requeridos | Owners del repositorio | Coincidencia entre declaración y configuración real de plataforma |
+| `.github/CODEOWNERS` | Enruta cambios arquitectónicos protegidos hacia los principals declarados | Owners del repositorio | Usuarios o equipos válidos y cobertura de rutas sensibles |
+| `reviews.json` | Registra una aprobación semántica respaldada por plataforma para huella y commit exactos | Autoridad declarada | Identidad, evidencia, SHA, scope y obsolescencia |
 | `rules.json` | Catálogo estable de reglas portables | Mantenedores del kit | Semántica común y compatibilidad entre proyectos |
 | Adaptador tecnológico | Convierte estructura tecnológica al modelo observado común | Mantenedor del kit o colaborador del adaptador | Precisión de observación; ninguna decisión de política |
 | Tests arquitectónicos | Protegen decisiones específicas que el validador común no expresa | Equipo o agente autorizado | Que protejan comportamiento y no detalles accidentales |
@@ -224,13 +229,16 @@ son automáticamente motivos para preguntar al usuario.
 | `PASS` | El validador ha demostrado la regla para el scope y revisión actuales | Conservar la evidencia |
 | `FAIL` | La arquitectura observada viola una regla o declaración | Corregir código o declaración; no suprimir el check |
 | `WAIVED` | Una licencia explícita válida autoriza la desviación | Confirmar que scope y condiciones siguen siendo correctos |
-| `REVIEWED` | Una autoridad delegada aceptó la huella exacta del hallazgo semántico | Conservar el acuse; un cambio de evidencia lo dejará obsoleto |
+| `REVIEWED` | Un CODEOWNER declarado aceptó la huella exacta en un commit alcanzable y aportó evidencia de plataforma | Conservar el acuse; un cambio de evidencia lo dejará obsoleto |
 | `NOT_APPLICABLE` | La regla no tiene objeto relevante en el proyecto | Ninguna acción salvo cambio arquitectónico |
 | `REVIEW_REQUIRED` | La herramienta no puede demostrar una decisión semántica | El agente o una persona revisa según la autoridad delegada |
 
 `PASS` no afirma que toda la arquitectura sea buena: se aplica a una regla,
 scope y revisión. `REVIEW_REQUIRED` tampoco es un fallo; impide presentar una
 incertidumbre semántica como certeza mecánica.
+El validador local demuestra coherencia del registro, no que GitHub haya aplicado
+realmente la aprobación. La protección descrita en
+[`github-governance.md`](github-governance.md) aporta esa garantía externa.
 
 Modo estricto cuando la política exige resolver toda revisión semántica:
 

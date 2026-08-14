@@ -221,9 +221,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Accepted semantic reviews, relative to root.",
     )
     parser.add_argument(
+        "--authorities",
+        default=".agentic/policies/architecture/authorities.json",
+        help="Declared review authorities and external enforcement requirements, relative to root.",
+    )
+    parser.add_argument(
         "--catalog",
-        default="tools/architecture/rules.json",
-        help="Portable rule catalog, relative to root.",
+        help="Portable rule catalog. Defaults to rules.json beside this validator; an explicit relative path is resolved from root.",
     )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", help="Also write the structured JSON result to this path.")
@@ -258,7 +262,8 @@ def run(arguments: list[str] | None = None) -> int:
         policy_path = _path(root, args.policy)
         waiver_path = _path(root, args.waivers)
         review_path = _path(root, args.reviews)
-        catalog_path = _path(root, args.catalog)
+        authority_path = _path(root, args.authorities)
+        catalog_path = _path(root, args.catalog) if args.catalog else Path(__file__).resolve().with_name("rules.json")
         catalog = _load_catalog(catalog_path)
 
         if args.list_rules:
@@ -270,13 +275,16 @@ def run(arguments: list[str] | None = None) -> int:
         policy = load_json(policy_path)
         waiver_document = load_json(waiver_path)
         review_document = load_json(review_path)
+        authority_document = load_json(authority_path)
         policy_schema = root / ".agentic/contracts/schemas/architecture-policy.schema.json"
         waiver_schema = root / ".agentic/contracts/schemas/architecture-waivers.schema.json"
         review_schema = root / ".agentic/contracts/schemas/architecture-reviews.schema.json"
+        authority_schema = root / ".agentic/contracts/schemas/architecture-authorities.schema.json"
         result_schema = root / ".agentic/contracts/schemas/architecture-result.schema.json"
         _validate_with_schema(policy, policy_schema, "Architecture policy")
         _validate_with_schema(waiver_document, waiver_schema, "Architecture waivers")
         _validate_with_schema(review_document, review_schema, "Architecture reviews")
+        _validate_with_schema(authority_document, authority_schema, "Architecture authorities")
         _validate_policy_semantics(root, policy)
         base_policy, base_revision = _load_base_policy(root, policy_path, args.base_ref)
         if base_policy is not None:
@@ -313,9 +321,11 @@ def run(arguments: list[str] | None = None) -> int:
             policy_path=policy_path,
             waiver_path=waiver_path,
             review_path=review_path,
+            authority_path=authority_path,
             policy=policy,
             waivers=waiver_document["waivers"],
             reviews=review_document["reviews"],
+            authorities=authority_document,
             catalog=catalog,
             observed=observed,
             contracts=contracts,
@@ -338,9 +348,11 @@ def run(arguments: list[str] | None = None) -> int:
             "policy": _display_path(root, policy_path),
             "waivers": _display_path(root, waiver_path),
             "reviews": _display_path(root, review_path),
+            "authorities": _display_path(root, authority_path),
             "policyDigest": _canonical_digest(policy),
             "waiverDigest": _canonical_digest(waiver_document),
             "reviewDigest": _canonical_digest(review_document),
+            "authorityDigest": _canonical_digest(authority_document),
             "catalogDigest": _canonical_digest({"version": 1, "rules": list(catalog.values())}),
             "observedDigest": _canonical_digest(observed.as_dict()),
             "summary": {status: counts[status] for status in STATUSES},
@@ -370,7 +382,9 @@ def run(arguments: list[str] | None = None) -> int:
                     "scope": finding.scope,
                     "subjectFingerprint": finding.review_fingerprint,
                     "decision": "Replace with the accepted semantic judgment.",
-                    "authority": "Replace with the accountable role or team.",
+                    "authorityId": "replace-with-authority-id",
+                    "reviewedBy": ["@replace-with-approved-principal"],
+                    "approvalEvidence": "github-pr-review:replace-with-review-url-or-id",
                     "authorizedBy": ["architecture/decisions/ADR-XXX.md"],
                     "reviewedAtRevision": revision,
                     "reviewWhen": ["The reviewed subject or its evidence changes."],

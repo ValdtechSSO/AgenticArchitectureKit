@@ -53,5 +53,11 @@
     }
   ],
   "allowedProjectDependencies": [],
-  "dependencyRules": []
+  "dependencyRules": [
+    {
+      "from": { "ownerKind": "host" },
+      "to": { "ownerKind": "module" },
+      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
+    }
+  ]
 }

@@ -805,10 +805,13 @@ automatically a request for user input: the agent completes the review when the
 decision falls within delegated authority and escalates only when material
 authority is missing.
 
-A delegated authority may persist an accepted semantic judgment in
-`reviews.json`. It applies only to the exact rule, scope, and finding fingerprint
-and is reported as `REVIEWED`, never `PASS`. Changed evidence makes the record
-stale and restores `REVIEW_REQUIRED`.
+A declared authority may persist an accepted semantic judgment in
+`reviews.json`. It applies only to the exact rule, scope, finding fingerprint,
+and reachable reviewed Git revision and is reported as `REVIEWED`, never `PASS`.
+The record identifies the approving principal and platform approval evidence.
+Changed evidence makes it stale and restores `REVIEW_REQUIRED`. Repository-side
+validation cannot prove external approval or branch protection; CODEOWNERS and
+protected-branch enforcement `MUST` provide that guarantee.
 
 ## 10.4 Supplied reference implementation
 
@@ -837,10 +840,12 @@ The project supplies only project-specific configuration:
 │   ├── architecture-policy.schema.json
 │   ├── architecture-waivers.schema.json
 │   ├── architecture-reviews.schema.json
+│   ├── architecture-authorities.schema.json
 │   └── architecture-result.schema.json
 └── policies/architecture/
     ├── project-policy.json
     ├── waivers.json
+    ├── authorities.json
     └── reviews.json
 ```
 
@@ -1002,6 +1007,7 @@ Policies may live at:
 ├── architecture/
 │   ├── project-policy.json
 │   ├── waivers.json
+│   ├── authorities.json
 │   └── reviews.json
 ├── risk-levels.yml
 ├── permissions.yml

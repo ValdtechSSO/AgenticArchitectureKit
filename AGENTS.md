@@ -10,6 +10,7 @@ created and evolved by coding agents.
 - Read `MANIFESTO.md` completely.
 - Read `docs/create-project-from-zero.md` before changing bootstrap guidance.
 - Read `docs/team-guide.md` before changing human governance guidance.
+- Read `docs/github-governance.md` before changing review authority or CI enforcement.
 - Read `docs/language-policy.md` before changing public documentation.
 - Portable rule semantics live in `tools/architecture/rules.json` and the
   validator engine.

@@ -75,7 +75,9 @@ src/Modules/*/AGENTS.md
 src/Modules/*/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 tests/Architecture/
 ```
 
@@ -112,6 +114,9 @@ index disagrees with current source or revision, it is stale.
 | `module.contract.yml` | Non-derivable purpose, vocabulary, ownership, risk, invariants, and ADR links | Owning team or authorized agent | Semantic truth, not structural duplication |
 | `project-policy.json` | Declares the project's modules, hosts, projects, feature roots, and allowed dependencies | Authorized agent or architecture owner | Whether a changed boundary is justified rather than merely observed |
 | `waivers.json` | Records bounded, authorized deviations from portable rules | Authority named by team policy | Exact scope, risk, owner, expiry, and removal condition |
+| `authorities.json` | Declares approval principals, protected scopes, branches, and required platform controls | Repository owners | Whether the declared authority matches actual platform configuration |
+| `.github/CODEOWNERS` | Routes protected architecture changes to declared principals | Repository owners | Valid users or teams and complete sensitive-path coverage |
+| `reviews.json` | Records a platform-backed semantic approval for an exact fingerprint and reachable commit | Declared authority | Identity, approval evidence, SHA, scope, and staleness |
 | `rules.json` | Stable portable rule catalog | Kit maintainers | Cross-project semantics and compatibility |
 | Technology adapter | Converts technology-specific structure into the common observed model | Kit maintainer or adapter contributor | Observation accuracy; no policy decisions |
 | Architecture tests | Enforce project-specific decisions the common validator cannot express | Team or authorized agent | Whether they protect behavior rather than implementation trivia |
@@ -222,13 +227,16 @@ automatically a reason to ask the user.
 | `PASS` | The validator demonstrated the rule for the current scope and revision | No action beyond retaining evidence |
 | `FAIL` | Observed architecture violates a rule or declaration | Correct code or declaration; do not suppress the check |
 | `WAIVED` | A valid explicit waiver authorizes the deviation | Confirm scope and review condition remain correct |
-| `REVIEWED` | Delegated authority accepted this exact semantic finding fingerprint | Keep the acknowledgement; changed evidence will make it stale |
+| `REVIEWED` | A declared CODEOWNER accepted this exact semantic fingerprint at a reachable commit and supplied platform evidence | Keep the acknowledgement; changed evidence will make it stale |
 | `NOT_APPLICABLE` | The rule has no relevant subject in this project | No action unless architecture changed |
 | `REVIEW_REQUIRED` | The tool cannot prove a semantic decision | Agent or person reviews the evidence according to delegated authority |
 
 `PASS` is not a claim that the whole architecture is good; it applies to a rule,
 scope, and repository revision. Likewise, `REVIEW_REQUIRED` is not failure. It
 prevents semantic uncertainty from being presented as mechanical certainty.
+The local validator proves record consistency, not that GitHub actually enforced
+approval. Branch protection described in
+[`github-governance.md`](github-governance.md) supplies that external guarantee.
 
 Use strict mode when team policy requires every semantic review to be resolved
 before delivery:

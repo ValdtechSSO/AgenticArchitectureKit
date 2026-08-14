@@ -1,0 +1,24 @@
+{
+  "$schema": "../../contracts/schemas/architecture-authorities.schema.json",
+  "version": 1,
+  "enforcement": {
+    "provider": "github",
+    "codeOwnersFile": ".github/CODEOWNERS",
+    "protectedBranches": ["main"],
+    "requirements": [
+      "pull-request",
+      "code-owner-review",
+      "dismiss-stale-reviews",
+      "no-direct-push",
+      "required-status-checks"
+    ]
+  },
+  "authorities": [
+    {
+      "id": "architecture-maintainers",
+      "displayName": "Replace with the accountable architecture maintainers",
+      "principals": ["@replace-with-codeowner"],
+      "protectedScopes": ["."]
+    }
+  ]
+}

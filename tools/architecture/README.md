@@ -1,12 +1,13 @@
 # Architecture tools
 
-The reference tools separate five inputs:
+The reference tools separate six inputs:
 
 1. portable rule semantics in `rules.json` and `validator/engine.py`;
 2. project architecture in `.agentic/policies/architecture/project-policy.json`;
 3. explicit exceptions in `waivers.json`;
 4. fingerprint-bound semantic acknowledgements in `reviews.json`;
-5. technology observation in `validator/adapters/`.
+5. review authority and enforcement requirements in `authorities.json`;
+6. technology observation in `validator/adapters/`.
 
 Python 3.9 or newer is required. There are no third-party runtime dependencies.
 The included adapters support SDK-style .NET repositories and Python packages.
@@ -36,6 +37,13 @@ the exam” visible and makes unrecorded architecture growth fail.
 `--task-id` retains `architecture.json` and `manifest.json` under
 `.agentic/runtime/evidence/{task-id}/{revision}/`.
 
+The default catalog is resolved beside `validate.py`, so validating a nested
+example works without copying `rules.json` into the example root:
+
+```bash
+python3 tools/architecture/validate.py --root examples/dotnet-valid
+```
+
 ## Progressive context
 
 ```bash
@@ -57,10 +65,15 @@ confidence explicitly. They are not represented as compiler-grade semantics.
 - An unused waiver produces `REVIEW_REQUIRED`; invalid, expired, or missing-scope
   waivers fail. A repository-wide or multi-owner scope requires review.
 - A semantic review matches the rule, exact scope, and subject fingerprint. When
-  evidence changes, the old review becomes stale.
+  evidence changes, the old review becomes stale. It also requires a full
+  reachable ancestor SHA, a declared authority, an allowed CODEOWNER principal,
+  and platform approval evidence.
+- `AUT001` validates repository-side authority declarations and CODEOWNERS
+  consistency. It does not claim to observe GitHub branch protection; configure
+  that separately as described in `docs/github-governance.md`.
 - `HOST001` proves source path placement only. It does not prove that a file
   named `Endpoints/OrderService.cs` lacks domain behavior.
-- `DEP001` and `DEP002` use project references plus namespace/import evidence.
+- `DEP001`, `DEP002`, and `DEP003` use project references plus namespace/import evidence.
   C# parsing is intentionally lexical; Python imports use the standard AST.
 - Observed data writes and compiler-grade symbol identity remain roadmap items.
 

@@ -79,7 +79,9 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/authorities.json
 .agentic/policies/architecture/reviews.json
+.github/CODEOWNERS
 ```
 
 Optional paths are omitted when they have no current content or responsibility.
@@ -123,6 +125,15 @@ files. It does not decide which architecture is valid or redefine rules.
 `waivers.json` starts empty. Add a waiver only for a concrete, authorized
 deviation. It identifies the rule, exact scope, decision, reason, risk,
 authorizing ADR, and review conditions. Its result is `WAIVED`, never `PASS`.
+
+## 7.1 Authority and semantic reviews
+
+Replace the authority template principals with real repository users or teams
+and mirror them in `.github/CODEOWNERS`. Configure every declared protected
+branch using [`github-governance.md`](github-governance.md). A review record
+requires an exact fingerprint, a full reachable ancestor SHA, a declared
+principal, and approval evidence from the platform. The agent must not create a
+review record merely because it can edit JSON.
 
 ## 8. Context bootstrap and expansion
 

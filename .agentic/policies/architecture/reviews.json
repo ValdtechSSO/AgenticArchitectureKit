@@ -1,19 +1,5 @@
 {
   "$schema": "../../contracts/schemas/architecture-reviews.schema.json",
   "version": 1,
-  "reviews": [
-    {
-      "id": "REVIEW-001-initial-compact-boundary",
-      "rule": "STR001",
-      "scope": ".",
-      "subjectFingerprint": "4e3f7a3cf7ab4cd2b541e127029085f392b81d15c8261ef01a12ee21ed26da75",
-      "decision": "The single validator module and its thin CLI host are necessary, cohesive boundaries for the current capability set.",
-      "authority": "Agentic Architecture Kit maintainers",
-      "authorizedBy": ["architecture/decisions/ADR-001-portable-validator-boundary.md"],
-      "reviewedAtRevision": "initial-bootstrap",
-      "reviewWhen": [
-        "A module, host, project boundary, or top-level architecture directory is added, removed, or renamed."
-      ]
-    }
-  ]
+  "reviews": []
 }
