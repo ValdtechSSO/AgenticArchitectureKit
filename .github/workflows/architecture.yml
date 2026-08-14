@@ -11,10 +11,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Build and install the distribution
@@ -43,7 +43,7 @@ jobs:
           fi
       - name: Retain architecture evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: architecture-evidence-${{ github.run_id }}
           path: .agentic/runtime/evidence/
