@@ -25,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.2",
+  "toolVersion": "0.4.3",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -34,8 +34,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.2 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.3 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.3 aak context locate "order lifecycle"
 ```
 
 The same distribution contains everything an agent needs to bootstrap a new
@@ -61,6 +61,14 @@ observe the repository and writes a `project-policy.json` proposal containing
 the modules, hosts, projects, and exact project-reference edges it found. The
 proposal is factual scaffolding: the agent or team must remove accidental or
 unjustified boundaries instead of treating observation as architectural approval.
+
+`aak adopt --root . --codeowner @team/architecture --ci github` orchestrates
+existing-repository adoption. It performs the initializer work, optionally adds
+the packaged GitHub Actions gate, creates the context index, runs strict
+validation, and returns one JSON report with explicit follow-up actions. Use
+`--dry-run` for a no-write plan. It preserves existing files, refuses a dirty
+worktree unless `--allow-dirty` is explicit, and never fabricates semantic
+contracts, waivers, or approvals.
 
 Adapter selection is automatic when `.csproj`, `pyproject.toml`, or Python
 sources exist. Before technology artifacts exist, pass `--adapter dotnet` or

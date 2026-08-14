@@ -10,6 +10,7 @@ represented as implemented.
 | Portable rules / project policy / waivers | Implemented | Separate schema-validated inputs; waivers produce `WAIVED`, never `PASS` |
 | Versioned distribution | Implemented | One Python package bundles CLI, agent core, operational guides, rules, schemas, templates, and adapters; consumer toolchain pins are enforced and an explicit digest-manifested offline export is available |
 | Self-contained agent bootstrap | Implemented | `aak core`, `aak guide`, and `aak template` expose the version-matched decision context, operating procedure, GitHub governance, and neutral assets without source-repository access |
+| Existing-repository adoption | Implemented | `aak adopt` provides a no-write preview and idempotently orchestrates observed policy, governance, optional GitHub CI, context indexing, strict validation, and explicit semantic follow-up without overwriting existing files |
 | Self-validation | Implemented | Structural smoke test plus authorization of real CLI-host → validator imports; prohibited and cross-module cases are exercised by tests/examples, not invented in the kit |
 | .NET observation | Implemented | SDK-style projects, `ProjectReference`, C# namespaces and `using` directives |
 | Python observation | Implemented | `pyproject.toml`, direct packages/CLI files and AST import directives |
