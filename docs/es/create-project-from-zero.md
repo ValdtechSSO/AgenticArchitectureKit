@@ -2,9 +2,16 @@
 
 [English — canonical](../create-project-from-zero.md) · [Política lingüística](language-policy.md)
 
-Esta guía es el procedimiento operativo que acompaña al manifiesto. Su resultado
-no es un árbol predeterminado, sino la arquitectura mínima que puede justificarse
-con la información disponible del producto.
+Esta guía acompaña al
+[`núcleo de decisiones`](../../src/agentic_architecture_kit/data/norms/agent-core.md)
+incluido. El agente lee ese núcleo completamente antes de decidir estructura.
+Los detalles del validador se cargan mediante referencias de hallazgos o
+`aak explain`, no leyendo un manifiesto completo.
+
+En un repositorio existente se ejecuta el gate antes de la primera modificación.
+En uno nuevo, la inicialización y la declaración mínima son escrituras de
+bootstrap; el gate se ejecuta inmediatamente después y antes de crear estructura
+o implementación de producto. Se repite antes de finalizar.
 
 ## 1. Entradas obligatorias
 
@@ -64,7 +71,7 @@ Elige una versión publicada y ejecútala directamente, preferiblemente con
 `uvx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org/architecture
 ```
 
 El inicializador crea `.agentic/toolchain.json`, registros de gobernanza vacíos
@@ -128,9 +135,10 @@ y versión exacta se fijan en `.agentic/toolchain.json`.
 ## 7. Licencias
 
 `waivers.json` comienza vacío. Una licencia solo se añade cuando existe una
-desviación concreta y autorizada. Debe identificar regla, scope, decisión,
-motivo, riesgo, ADR autorizador y condiciones de revisión. Su resultado será
-`WAIVED`, nunca `PASS`.
+desviación concreta y autorizada. Debe identificar regla, `ruleDigest` actual,
+scope, decisión, motivo, riesgo, ADR autorizador y condiciones de revisión. Su
+resultado será `WAIVED`, nunca `PASS`. Un digest ausente u obsoleto impide
+aplicarla.
 
 ## 7.1 Autoridad y revisiones semánticas
 
@@ -138,7 +146,8 @@ Sustituye los principals de la plantilla por usuarios o equipos reales y
 refléjalos en `.github/CODEOWNERS`. Configura cada rama protegida declarada según
 [`github-governance.md`](github-governance.md). Un review requiere huella exacta,
 SHA completo y ancestro alcanzable, principal declarado y evidencia de aprobación
-de la plataforma. El agente no debe crear un review solo porque pueda editar JSON.
+de la plataforma y `ruleDigest` actual. El agente no debe crear un review solo
+porque pueda editar JSON.
 
 ## 8. Bootstrap y expansión del contexto
 
@@ -169,9 +178,13 @@ la conversación nunca es necesaria para continuar el trabajo.
 El proyecto inicial no está completo hasta ejecutar:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate
-uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak validate
+uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --fail-on-review
 ```
+
+`aak explain RULE_ID` muestra hallazgos, scopes, evidencia, digest, referencia y
+waiver o review aplicado. Si una referencia normativa no resuelve, la validación
+falla; el agente no infiere su posible significado.
 
 La suite de conformidad de la distribución se ejecuta antes de publicarla; los
 consumidores no la copian ni la repiten. Además se ejecutan el build, los tests

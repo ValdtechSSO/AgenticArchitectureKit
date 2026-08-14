@@ -2,7 +2,9 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
-> **Estado de implementación:** preview 0.3. El manifiesto es normativo; la
+> **Estado de implementación:** preview 0.4. El núcleo de decisiones y las
+> referencias de reglas incluidas en el paquete son normativos; el manifiesto es
+> su mapa para personas. La
 > [matriz de capacidades](capabilities.md) distingue comportamiento implementado,
 > inicial y de hoja de ruta.
 
@@ -40,8 +42,12 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
 
 ## Qué incluye
 
-- [`MANIFESTO.md`](MANIFESTO.md): reglas normativas de inicialización, evolución
-  y conformidad.
+- [`MANIFESTO.md`](MANIFESTO.md): propósito, modelo de enforcement y mapa para
+  personas.
+- [`agent-core.md`](../../src/agentic_architecture_kit/data/norms/agent-core.md):
+  contexto preventivo completo que lee el agente antes de decidir estructura.
+- [`portable-rules.md`](../../src/agentic_architecture_kit/data/norms/portable-rules.md):
+  normas del validador cargadas progresivamente mediante hallazgos.
 - [`team-guide.md`](team-guide.md): guía humana para comprender, revisar y
   gobernar los artefactos creados por el kit.
 - [`capabilities.md`](capabilities.md): matriz honesta de implementación y hoja
@@ -63,8 +69,8 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
 
 1. Da al agente acceso a este repositorio y al directorio del nuevo proyecto.
 2. Proporciónale el objetivo, requisitos y restricciones conocidos del producto.
-3. Pídele que lea primero `MANIFESTO.md` y
-   `docs/create-project-from-zero.md`.
+3. Pídele que ejecute `aak core`, lea completamente el núcleo de decisiones y use
+   `docs/create-project-from-zero.md` para la inicialización.
 4. El agente descubre capacidades, hosts y límites actuales antes de crear
    estructura.
 5. Fija y ejecuta una versión publicada del validador sin copiar su
@@ -76,11 +82,17 @@ Prompt inicial recomendado:
 
 ```text
 Usa Agentic Architecture Kit para crear la arquitectura mínima justificable de
-este proyecto. Lee MANIFESTO.md y docs/create-project-from-zero.md por completo.
+este proyecto. Ejecuta aak core, lee por completo el núcleo de decisiones y usa
+docs/create-project-from-zero.md para inicializarlo.
 No copies una estructura de ejemplo mecánicamente: descubre capacidades, hosts,
 límites y riesgos a partir de los requisitos y la evidencia actuales. Instala el
 validador general sin redefinir sus reglas, crea la política específica del
-proyecto y deja explícitos los supuestos y las revisiones semánticas pendientes.
+proyecto y ejecuta el gate antes de crear estructura o implementación de
+producto. En un repositorio existente, ejecútalo antes de la primera
+modificación. Repítelo antes de declarar la tarea completa. Sigue la referencia
+normativa de un hallazgo solo cuando sea necesaria; una referencia que no
+resuelve es un fallo, nunca permiso para inferir la regla de memoria. Deja
+explícitos los supuestos y las revisiones semánticas pendientes.
 Trabaja autónomamente dentro de la autoridad declarada y escala únicamente una
 decisión material de producto, riesgo, ownership o autoridad que no esté
 definida.
@@ -93,7 +105,7 @@ publican juntos como `agentic-architecture-kit`. El consumidor fija la versión
 exacta en `.agentic/toolchain.json` y la ejecuta con `uvx` o `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
 ```
 
 En el repositorio consumidor solo viven decisiones y contexto propios:
@@ -130,6 +142,8 @@ python3 -m pip install --no-deps -e .
 python3 -m unittest discover -s tests -v
 aak --help
 aak validate --fail-on-review
+aak core
+aak explain DEP001
 aak context index
 aak context locate "architecture validation"
 aak validate --root examples/dotnet-valid
@@ -139,7 +153,7 @@ Para inicializar la gobernanza en un proyecto existente y dejar que el agente
 descubra y escriba después su policy:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org/architecture
 ```
 
 La implementación de referencia soporta proyectos .NET SDK-style y Python.

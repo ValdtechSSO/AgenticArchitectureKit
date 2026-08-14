@@ -4,7 +4,8 @@ import argparse
 import sys
 
 from . import __version__
-from . import context_cli, init_cli, validate_cli
+from . import context_cli, explain_cli, init_cli, validate_cli
+from .resources import read_text as read_bundled_text
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -16,6 +17,8 @@ def _parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("validate", add_help=False, help="Validate a repository against portable rules.")
     commands.add_parser("context", add_help=False, help="Retrieve minimum sufficient repository context.")
+    commands.add_parser("explain", add_help=False, help="Explain a rule and its current repository state.")
+    commands.add_parser("core", add_help=False, help="Print the complete preventive decision core.")
     commands.add_parser("init", add_help=False, help="Initialize project-owned governance files.")
     commands.add_parser("export-offline", add_help=False, help="Export an explicit versioned offline payload.")
     return parser
@@ -32,6 +35,13 @@ def main(arguments: list[str] | None = None) -> int:
         return validate_cli.run(remaining)
     if namespace.command == "context":
         return context_cli.run(remaining)
+    if namespace.command == "explain":
+        return explain_cli.run(remaining)
+    if namespace.command == "core":
+        if remaining:
+            parser.error("aak core does not accept arguments")
+        print(read_bundled_text("data/norms/agent-core.md"), end="")
+        return 0
     if namespace.command == "init":
         return init_cli.run(remaining)
     if namespace.command == "export-offline":

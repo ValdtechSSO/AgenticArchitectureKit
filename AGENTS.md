@@ -7,7 +7,9 @@ created and evolved by coding agents.
 
 ## Start here
 
-- Read `MANIFESTO.md` completely.
+- Read `src/agentic_architecture_kit/data/norms/agent-core.md` completely before
+  making structural decisions. Load validator-owned rules through finding
+  references or `aak explain`.
 - Read `docs/create-project-from-zero.md` before changing bootstrap guidance.
 - Read `docs/team-guide.md` before changing human governance guidance.
 - Read `docs/github-governance.md` before changing review authority or CI enforcement.

@@ -43,9 +43,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["rule", "status", "scope", "message", "evidence"],
+        "required": ["rule", "ruleDigest", "reference", "status", "scope", "message", "evidence"],
         "properties": {
           "rule": { "type": "string", "minLength": 1 },
+          "ruleDigest": { "type": "string", "minLength": 71 },
+          "reference": { "type": "string", "minLength": 1 },
           "status": { "type": "string", "enum": ["PASS", "FAIL", "WAIVED", "REVIEWED", "NOT_APPLICABLE", "REVIEW_REQUIRED"] },
           "scope": { "type": "string", "minLength": 1 },
           "message": { "type": "string", "minLength": 1 },

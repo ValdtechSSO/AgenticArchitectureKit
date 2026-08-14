@@ -5,8 +5,8 @@
 La implementación de referencia se publica como la distribución Python
 versionada `agentic-architecture-kit`. El package mantiene separados:
 
-1. la semántica portable de reglas y el motor;
-2. los contratos JSON y plantillas neutrales incluidos;
+1. la semántica portable, referencias normativas y el motor;
+2. el núcleo de decisiones, contratos JSON y plantillas neutrales incluidos;
 3. la arquitectura propia en `project-policy.json`;
 4. licencias y revisiones semánticas ligadas a huella;
 5. autoridad y controles externos declarados;
@@ -24,8 +24,8 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.3.0",
-  "catalogVersion": 1,
+  "toolVersion": "0.4.0",
+  "catalogVersion": 2,
   "extensions": []
 }
 ```
@@ -33,8 +33,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.3.0 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak context locate "order lifecycle"
 ```
 
 `aak` rechaza validación y contexto si la herramienta, el catálogo o una
@@ -51,6 +51,8 @@ de descubrir la arquitectura real.
 aak validate --format json
 aak validate --base-ref origin/main --fail-on-review
 aak validate --task-id TASK-123
+aak core
+aak explain DEP001
 aak context index
 aak context locate "order lifecycle"
 aak context references CreateOrder
@@ -62,6 +64,10 @@ aak context impact src/Modules/Orders
 devuelve 1. La configuración inválida o un pin incompatible devuelve 2. Cada
 resultado incluye digests canónicos de toolchain, policy, licencias, reviews,
 autoridades, catálogo y observación.
+
+Cada hallazgo contiene `reference` normativa resoluble y `ruleDigest`.
+`aak explain` combina la definición con estado actual, scopes, evidencia y
+waiver o review aplicado. Una referencia ausente hace fallar la validación.
 
 ## Extensiones tecnológicas
 

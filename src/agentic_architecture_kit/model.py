@@ -70,6 +70,8 @@ class Finding:
     waiver: str | None = None
     review: str | None = None
     review_fingerprint: str | None = None
+    reference: str | None = None
+    rule_digest: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -85,6 +87,10 @@ class Finding:
             result["review"] = self.review
         if self.review_fingerprint is not None:
             result["reviewFingerprint"] = self.review_fingerprint
+        if self.reference is not None:
+            result["reference"] = self.reference
+        if self.rule_digest is not None:
+            result["ruleDigest"] = self.rule_digest
         return result
 
 
@@ -100,8 +106,10 @@ class ValidationContext:
     reviews: list[dict[str, Any]]
     authorities: dict[str, Any]
     catalog: dict[str, dict[str, Any]]
+    norms: dict[str, Any]
     observed: ObservedArchitecture
     contracts: dict[str, dict[str, Any]]
     contract_errors: dict[str, list[str]]
     base_policy: dict[str, Any] | None = None
     base_revision: str | None = None
+    base_norms: dict[str, Any] | None = None

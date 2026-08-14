@@ -2,15 +2,16 @@
 
 [English — canonical](../language-policy.md)
 
-El inglés es el idioma canónico de los documentos normativos, herramientas,
-contratos, schemas, identificadores de reglas, plantillas y resultados legibles
-por máquinas de Agentic Architecture Kit.
+El inglés es el idioma canónico del núcleo de decisiones incluido, las
+referencias de reglas portables, herramientas, contratos, schemas,
+identificadores, plantillas y resultados legibles por máquinas. El manifiesto
+raíz es un mapa para personas, no una segunda fuente normativa.
 
 Las traducciones españolas se mantienen bajo `docs/es/` para hacer accesible la
 arquitectura, pero no definen una semántica independiente. Si una traducción
 entra en conflicto con su fuente inglesa, prevalece la fuente inglesa.
 
-Los cambios en `README.md`, `MANIFESTO.md`, `docs/team-guide.md` o
+Los cambios en `README.md`, `MANIFESTO.md`, `docs/team-guide.md`,
 `docs/create-project-from-zero.md`, `docs/capabilities.md` o
 `docs/github-governance.md` deben actualizar su traducción española en el
 mismo cambio. Si no es posible actualizar una traducción de forma atómica, debe

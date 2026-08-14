@@ -25,7 +25,7 @@ equipo responsable del repositorio.
 
 1. Crea un commit con el sujeto que requiere revisión semántica.
 2. Obtén la aprobación CODEOWNER requerida mediante pull request.
-3. Registra la huella exacta emitida por el validador.
+3. Registra la huella exacta y el `ruleDigest` emitidos por el validador.
 4. Usa como `reviewedAtRevision` el SHA completo de 40 caracteres que contiene el
    sujeto revisado.
 5. Usa en `reviewedBy` el principal CODEOWNER que aprobó y en
@@ -35,6 +35,9 @@ equipo responsable del repositorio.
 La alcanzabilidad y la huella impiden reutilizaciones accidentales. CODEOWNERS y
 la protección de rama impiden que un agente acepte su propia revisión. El JSON
 por sí solo no demuestra aprobación humana.
+
+Un `ruleDigest` ausente o modificado impide aplicar el acuse aunque su huella
+anterior todavía pareciera coincidir.
 
 Una revisión solo se comprueba como obsoleta cuando su regla objetivo es
 aplicable. Por ejemplo, una revisión de `CHG001` se conserva sin emitir un aviso

@@ -8,7 +8,7 @@
     "version": { "type": "integer", "enum": [1] },
     "distribution": { "type": "string", "enum": ["agentic-architecture-kit"] },
     "toolVersion": { "type": "string", "minLength": 1 },
-    "catalogVersion": { "type": "integer", "enum": [1] },
+    "catalogVersion": { "type": "integer", "enum": [2] },
     "extensions": {
       "type": "array",
       "items": {

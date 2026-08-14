@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "rules": [
     {
       "id": "POL001",
@@ -7,7 +7,9 @@
       "description": "The project policy conforms to the portable policy contract.",
       "evaluator": "policy_valid",
       "automatic": true,
-      "inputs": ["project-policy"]
+      "inputs": ["project-policy"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#pol001-project-policy-is-valid"
     },
     {
       "id": "ARC001",
@@ -15,7 +17,9 @@
       "description": "Declared modules, hosts, projects, and project names match repository observation.",
       "evaluator": "architecture_matches",
       "automatic": true,
-      "inputs": ["project-policy", "observed-architecture"]
+      "inputs": ["project-policy", "observed-architecture"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#arc001-declared-and-observed-architecture-agree"
     },
     {
       "id": "MOD001",
@@ -23,7 +27,9 @@
       "description": "Every observed module has a schema-valid semantic contract and local AGENTS.md router.",
       "evaluator": "module_contract",
       "automatic": true,
-      "inputs": ["module-contracts", "filesystem"]
+      "inputs": ["module-contracts", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#mod001-modules-have-semantic-contracts"
     },
     {
       "id": "MOD002",
@@ -31,7 +37,9 @@
       "description": "A module contract id is the normalized name of its module root.",
       "evaluator": "module_identity",
       "automatic": true,
-      "inputs": ["module-contracts", "observed-architecture"]
+      "inputs": ["module-contracts", "observed-architecture"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#mod002-module-identity-matches-its-root"
     },
     {
       "id": "MOD003",
@@ -39,7 +47,9 @@
       "description": "Technical categories are not represented as product modules.",
       "evaluator": "functional_modules",
       "automatic": true,
-      "inputs": ["project-policy", "observed-architecture"]
+      "inputs": ["project-policy", "observed-architecture"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#mod003-modules-represent-functional-capabilities"
     },
     {
       "id": "FEAT001",
@@ -47,7 +57,9 @@
       "description": "Observed feature roots match policy; semantic cohesion is surfaced for review.",
       "evaluator": "feature_ownership",
       "automatic": false,
-      "inputs": ["project-policy", "filesystem"]
+      "inputs": ["project-policy", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#feat001-application-behavior-has-a-cohesive-feature-owner"
     },
     {
       "id": "HOST001",
@@ -55,7 +67,9 @@
       "description": "Host source paths are confined to explicitly declared adapter and composition locations. This path rule does not prove behavioral purity.",
       "evaluator": "hosts_are_adapters",
       "automatic": true,
-      "inputs": ["project-policy", "filesystem"]
+      "inputs": ["project-policy", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#host001-host-source-stays-in-declared-adapter-locations"
     },
     {
       "id": "DEP001",
@@ -63,7 +77,9 @@
       "description": "No module-owned project or source namespace has a dependency on a host-owned project or namespace.",
       "evaluator": "modules_do_not_depend_on_hosts",
       "automatic": true,
-      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"]
+      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#dep001-modules-do-not-depend-on-hosts"
     },
     {
       "id": "DEP002",
@@ -71,7 +87,9 @@
       "description": "A cross-module project or source dependency targets a declared contract boundary.",
       "evaluator": "cross_module_contracts",
       "automatic": true,
-      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"]
+      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#dep002-cross-module-access-uses-public-contracts"
     },
     {
       "id": "DEP003",
@@ -79,7 +97,9 @@
       "description": "Every observed project dependency is explicitly allowed by project policy.",
       "evaluator": "allowed_dependencies",
       "automatic": true,
-      "inputs": ["project-policy", "observed-project-dependencies"]
+      "inputs": ["project-policy", "observed-project-dependencies"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#dep003-project-dependencies-are-authorized"
     },
     {
       "id": "OWN001",
@@ -87,15 +107,19 @@
       "description": "Declared ownership is unique and observed writes are reviewed when an analyzer is unavailable.",
       "evaluator": "data_ownership",
       "automatic": false,
-      "inputs": ["module-contracts", "observed-data-access"]
+      "inputs": ["module-contracts", "observed-data-access"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#own001-authoritative-data-has-one-owner"
     },
     {
       "id": "CHG001",
-      "title": "Architecture-policy changes have a recorded decision",
-      "description": "New or materially changed modules, hosts, projects, and dependency permissions relative to a Git base require an existing decision reference and explicit review.",
+      "title": "Architecture changes have a recorded decision",
+      "description": "Material policy growth and reductions in normative enforcement relative to a Git base require an existing decision reference and explicit review.",
       "evaluator": "policy_growth",
       "automatic": false,
-      "inputs": ["project-policy", "base-project-policy", "filesystem"]
+      "inputs": ["project-policy", "base-project-policy", "normative-classification", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#chg001-architecture-changes-have-a-recorded-decision"
     },
     {
       "id": "STR001",
@@ -103,23 +127,29 @@
       "description": "Catch-all directories and generated structural fields in semantic contracts are prohibited; material boundary changes are reviewed through CHG001 and repository governance.",
       "evaluator": "no_speculative_structure",
       "automatic": true,
-      "inputs": ["project-policy", "module-contracts", "filesystem"]
+      "inputs": ["project-policy", "module-contracts", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#str001-speculative-structure-is-prohibited"
     },
     {
       "id": "DOC001",
-      "title": "Architectural references resolve",
-      "description": "Invariant and ADR references from module contracts resolve to existing documents and headings.",
+      "title": "Normative and architectural references resolve",
+      "description": "Rule references, normative classifications, invariants, and ADR references resolve with complete validator-heading coverage.",
       "evaluator": "document_references",
       "automatic": true,
-      "inputs": ["module-contracts", "filesystem"]
+      "inputs": ["rule-catalog", "normative-documents", "module-contracts", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#doc001-normative-and-architectural-references-resolve"
     },
     {
       "id": "WVR001",
-      "title": "Waivers are explicit and valid",
-      "description": "Waivers reference known rules, existing authorities, valid scopes, and unexpired decisions.",
+      "title": "Waivers are explicit, bounded, and current",
+      "description": "Waivers bind current rule semantics, known authority, a valid scope, and an unexpired decision.",
       "evaluator": "waivers_valid",
       "automatic": true,
-      "inputs": ["waivers", "rule-catalog", "filesystem"]
+      "inputs": ["waivers", "rule-catalog", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#wvr001-waivers-are-explicit-bounded-and-current"
     },
     {
       "id": "AUT001",
@@ -127,15 +157,19 @@
       "description": "Review authorities resolve to CODEOWNERS principals and declare pull-request, stale-review, direct-push, and required-check protections.",
       "evaluator": "authorities_valid",
       "automatic": true,
-      "inputs": ["authorities", "codeowners", "filesystem"]
+      "inputs": ["authorities", "codeowners", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#aut001-architecture-authority-is-declared-and-protected"
     },
     {
       "id": "REV001",
       "title": "Semantic reviews are explicit and current",
-      "description": "Review acknowledgements reference a known finding fingerprint, an existing authority record, and remain current.",
+      "description": "Review acknowledgements bind current rule semantics, a known finding fingerprint, scope, authority, and repository revision.",
       "evaluator": "reviews_valid",
       "automatic": true,
-      "inputs": ["reviews", "rule-catalog", "filesystem"]
+      "inputs": ["reviews", "rule-catalog", "filesystem"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#rev001-semantic-reviews-are-explicit-and-current"
     }
   ]
 }

@@ -2,9 +2,16 @@
 
 [Español](es/create-project-from-zero.md)
 
-This guide is the operational procedure that accompanies the manifesto. Its
-result is not a predetermined tree; it is the smallest architecture justified
-by currently available product information.
+This guide accompanies the packaged
+[`architecture decision core`](../src/agentic_architecture_kit/data/norms/agent-core.md).
+Read that core completely before making structural decisions. Validator-owned
+details are loaded through finding references or `aak explain`, not through a
+complete manifesto read.
+
+For an existing repository, run the architecture gate before the first
+modification. For a new repository, initialization and the minimum declaration
+are bootstrap writes; run the gate immediately afterward and before creating
+product structure or implementation. Run it again before completion.
 
 ## 1. Required inputs
 
@@ -63,7 +70,7 @@ authority must be escalated.
 Choose a released kit version and execute it directly, preferably with `uvx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @your-org/architecture
 ```
 
 The initializer creates `.agentic/toolchain.json`, empty governance records, and
@@ -127,17 +134,18 @@ the extension distribution and exact version in `.agentic/toolchain.json`.
 ## 7. Waivers
 
 `waivers.json` starts empty. Add a waiver only for a concrete, authorized
-deviation. It identifies the rule, exact scope, decision, reason, risk,
-authorizing ADR, and review conditions. Its result is `WAIVED`, never `PASS`.
+deviation. It identifies the rule, current `ruleDigest`, exact scope, decision,
+reason, risk, authorizing ADR, and review conditions. Its result is `WAIVED`,
+never `PASS`. A missing or stale digest prevents the waiver from applying.
 
 ## 7.1 Authority and semantic reviews
 
 Replace the authority template principals with real repository users or teams
 and mirror them in `.github/CODEOWNERS`. Configure every declared protected
 branch using [`github-governance.md`](github-governance.md). A review record
-requires an exact fingerprint, a full reachable ancestor SHA, a declared
-principal, and approval evidence from the platform. The agent must not create a
-review record merely because it can edit JSON.
+requires an exact fingerprint, current `ruleDigest`, a full reachable ancestor
+SHA, a declared principal, and approval evidence from the platform. The agent
+must not create a review record merely because it can edit JSON.
 
 ## 8. Context bootstrap and expansion
 
@@ -166,9 +174,13 @@ and open questions. Conversational memory is never required to continue work.
 The initial project is incomplete until these checks run:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate
-uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak validate
+uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --fail-on-review
 ```
+
+Use `aak explain RULE_ID` to inspect the current findings, scopes, evidence,
+digest, reference, and any applied waiver or review. If a normative reference
+does not resolve, validation fails; the agent does not infer its likely meaning.
 
 The distribution's conformance suite runs before publication; consumers do not
 copy or rerun those tests. The project's own build, tests, and project-specific

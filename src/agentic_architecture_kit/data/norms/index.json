@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "sourcePath": "src/agentic_architecture_kit/data/norms/index.json",
+  "documents": [
+    {
+      "reference": "package:data/norms/agent-core.md",
+      "enforcer": "agent",
+      "decisionRefs": ["package:data/norms/decisions/ADR-002-enforcement-oriented-norms.md"]
+    },
+    {
+      "reference": "package:data/norms/portable-rules.md",
+      "enforcer": "validator",
+      "decisionRefs": ["package:data/norms/decisions/ADR-002-enforcement-oriented-norms.md"]
+    },
+    {
+      "reference": "package:data/norms/human-guide.md",
+      "enforcer": "human",
+      "decisionRefs": ["package:data/norms/decisions/ADR-002-enforcement-oriented-norms.md"]
+    }
+  ]
+}

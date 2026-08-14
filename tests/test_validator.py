@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import sys
 
@@ -14,9 +15,14 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from agentic_architecture_kit import __version__  # noqa: E402
+from agentic_architecture_kit.cli import main as cli  # noqa: E402
 from agentic_architecture_kit.contracts import ContractError, load_yaml_subset  # noqa: E402
 from agentic_architecture_kit.context import locate, references, write_index  # noqa: E402
+from agentic_architecture_kit.explain_cli import run as explain  # noqa: E402
+from agentic_architecture_kit.engine import _rule_policy_growth  # noqa: E402
 from agentic_architecture_kit.init_cli import export_payload, initialize  # noqa: E402
+from agentic_architecture_kit.norms import compute_rule_digest  # noqa: E402
+from agentic_architecture_kit.resources import read_json as read_bundled_json  # noqa: E402
 from agentic_architecture_kit.validate_cli import run  # noqa: E402
 
 
@@ -67,7 +73,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.3.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -130,7 +136,7 @@ architecture_decisions:
             "version": 1,
             "distribution": "agentic-architecture-kit",
             "toolVersion": __version__,
-            "catalogVersion": 1,
+            "catalogVersion": 2,
             "extensions": [],
         }), encoding="utf-8")
         self._write_policy()
@@ -149,6 +155,10 @@ architecture_decisions:
         self.initial_revision = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=self.root, check=True, capture_output=True, text=True
         ).stdout.strip()
+        self.rule_digests = {
+            rule["id"]: compute_rule_digest(self.root, rule)
+            for rule in read_bundled_json("data/rules.json")["rules"]
+        }
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -203,6 +213,11 @@ architecture_decisions:
         code, output, error = self._run("--format", "json")
         self.assertEqual(0, code, error)
         report = json.loads(output)
+        self.assertTrue(all(item["reference"].startswith("package:") for item in report["results"]))
+        self.assertTrue(all(item["ruleDigest"].startswith("sha256:") for item in report["results"]))
+        documentation = next(item for item in report["results"] if item["rule"] == "DOC001")
+        self.assertEqual(17, documentation["evidence"]["catalogReferences"])
+        self.assertEqual(3, documentation["evidence"]["normativeDocuments"])
         self.assertEqual(0, report["summary"]["FAIL"])
         self.assertGreater(report["summary"]["PASS"], 0)
         self.assertGreater(report["summary"]["REVIEW_REQUIRED"], 0)
@@ -211,6 +226,25 @@ architecture_decisions:
             "toolchainDigest", "catalogDigest", "observedDigest",
         ):
             self.assertTrue(report[field].startswith("sha256:"), field)
+
+    def test_explain_combines_rule_definition_with_repository_state(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = explain(["DEP003", "--root", str(self.root)])
+        self.assertEqual(0, code)
+        value = output.getvalue()
+        self.assertIn("State: PASS", value)
+        self.assertIn("Rule digest: sha256:", value)
+        self.assertIn("Reference: package:data/norms/portable-rules.md#dep003", value)
+        self.assertIn("Evidence:", value)
+
+    def test_core_is_available_without_repository_validation(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["core"])
+        self.assertEqual(0, code)
+        self.assertIn("# Architecture decision core", output.getvalue())
+        self.assertIn("## Reversal-cost rule", output.getvalue())
 
     def test_tool_version_must_match_the_project_pin(self) -> None:
         toolchain = json.loads(self.toolchain_path.read_text(encoding="utf-8"))
@@ -253,6 +287,7 @@ architecture_decisions:
                 {
                     "id": "EXAMPLE-ARCH-001",
                     "rule": "DEP003",
+                    "ruleDigest": self.rule_digests["DEP003"],
                     "scope": "src/Hosts/Cli/Cli.csproj",
                     "decision": "Allow the CLI dependency during migration.",
                     "reason": "The public application contract is being extracted.",
@@ -268,6 +303,34 @@ architecture_decisions:
         waived = [result for result in report["results"] if result["status"] == "WAIVED"]
         self.assertEqual("EXAMPLE-ARCH-001", waived[0]["waiver"])
         self.assertEqual("DEP003", waived[0]["rule"])
+
+    def test_stale_rule_digest_prevents_waiver_from_silencing_a_violation(self) -> None:
+        self.policy["allowedProjectDependencies"] = []
+        self._write_policy()
+        self._write_waivers([{
+            "id": "STALE-WAIVER",
+            "rule": "DEP003",
+            "ruleDigest": "sha256:" + "0" * 64,
+            "scope": "src/Hosts/Cli/Cli.csproj",
+            "decision": "Previously accepted migration.",
+            "reason": "Exercise semantic invalidation.",
+            "risk": "The dependency remains unapproved under current semantics.",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewWhen": ["The rule semantics change"],
+        }])
+        code, output, _ = self._run("--format", "json")
+        self.assertEqual(1, code)
+        results = json.loads(output)["results"]
+        self.assertTrue(any(
+            item["rule"] == "DEP003" and item["status"] == "FAIL"
+            for item in results
+        ))
+        self.assertTrue(any(
+            item["rule"] == "WVR001"
+            and item["status"] == "REVIEW_REQUIRED"
+            and item["evidence"].get("staleRuleDigest")
+            for item in results
+        ))
 
     def test_missing_document_anchor_is_a_failure(self) -> None:
         contract = self.root / "src/Modules/Orders/module.contract.yml"
@@ -292,6 +355,7 @@ architecture_decisions:
             reviews.append({
                 "id": f"TEST-REVIEW-{index}",
                 "rule": finding["rule"],
+                "ruleDigest": finding["ruleDigest"],
                 "scope": finding["scope"],
                 "subjectFingerprint": finding["reviewFingerprint"],
                 "decision": "Accepted for this exact test subject.",
@@ -325,6 +389,7 @@ architecture_decisions:
         self._write_reviews([{
             "id": "UNREACHABLE-REVIEW",
             "rule": finding["rule"],
+            "ruleDigest": finding["ruleDigest"],
             "scope": finding["scope"],
             "subjectFingerprint": finding["reviewFingerprint"],
             "decision": "This record must not be accepted.",
@@ -338,6 +403,37 @@ architecture_decisions:
         code, output, _ = self._run()
         self.assertEqual(1, code)
         self.assertIn("[FAIL] REV001", output)
+
+    def test_stale_rule_digest_prevents_semantic_review_from_applying(self) -> None:
+        _, output, _ = self._run("--format", "json")
+        finding = next(
+            item for item in json.loads(output)["results"]
+            if item["status"] == "REVIEW_REQUIRED"
+        )
+        self._write_reviews([{
+            "id": "STALE-REVIEW",
+            "rule": finding["rule"],
+            "ruleDigest": "sha256:" + "0" * 64,
+            "scope": finding["scope"],
+            "subjectFingerprint": finding["reviewFingerprint"],
+            "decision": "Accepted under previous semantics.",
+            "authorityId": "test-owner",
+            "reviewedBy": ["@test-owner"],
+            "approvalEvidence": "github-pr-review:test-approved-review",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewedAtRevision": self.initial_revision,
+            "reviewWhen": ["The rule semantics change"],
+        }])
+        code, output, _ = self._run("--format", "json", "--fail-on-review")
+        self.assertEqual(1, code)
+        results = json.loads(output)["results"]
+        self.assertFalse(any(item["status"] == "REVIEWED" for item in results))
+        self.assertTrue(any(
+            item["rule"] == "REV001"
+            and item["status"] == "REVIEW_REQUIRED"
+            and item["evidence"].get("staleRuleDigest")
+            for item in results
+        ))
 
     def test_base_dependent_review_is_not_stale_without_a_base(self) -> None:
         self.policy["dependencyRules"] = [{
@@ -357,6 +453,7 @@ architecture_decisions:
             reviews.append({
                 "id": f"BASE-REVIEW-{index}",
                 "rule": finding["rule"],
+                "ruleDigest": finding["ruleDigest"],
                 "scope": finding["scope"],
                 "subjectFingerprint": finding["reviewFingerprint"],
                 "decision": "Accepted for this exact test subject.",
@@ -426,6 +523,40 @@ architecture_decisions:
         self.assertEqual("REVIEW_REQUIRED", change["status"])
         self.assertEqual(".agentic/policies/architecture/project-policy.json", change["scope"])
 
+    def test_reclassifying_normative_material_as_human_requires_decision_and_review(self) -> None:
+        empty_policy = {
+            "modules": [],
+            "hosts": [],
+            "projects": [],
+            "allowedProjectDependencies": [],
+            "dependencyRules": [],
+        }
+        reference = "package:data/norms/agent-core.md"
+        context = SimpleNamespace(
+            root=self.root,
+            policy=empty_policy,
+            base_policy=empty_policy,
+            norms={"documents": [{
+                "reference": reference,
+                "enforcer": "human",
+                "decisionRefs": ["package:data/norms/decisions/ADR-002-enforcement-oriented-norms.md"],
+            }]},
+            base_norms={"documents": [{
+                "reference": reference,
+                "enforcer": "agent",
+                "decisionRefs": [],
+            }]},
+            base_revision=self.initial_revision,
+        )
+        findings = _rule_policy_growth(context)
+        self.assertEqual(1, len(findings))
+        self.assertEqual("REVIEW_REQUIRED", findings[0].status)
+        self.assertEqual(reference, findings[0].scope)
+
+        context.norms["documents"][0]["decisionRefs"] = []
+        findings = _rule_policy_growth(context)
+        self.assertEqual("FAIL", findings[0].status)
+
     def test_scalable_dependency_rule_can_replace_exact_edge_allowlist(self) -> None:
         self.policy["allowedProjectDependencies"] = []
         self.policy["dependencyRules"] = [{
@@ -444,6 +575,7 @@ architecture_decisions:
         self._write_waivers([{
             "id": "BROAD-001",
             "rule": "DEP003",
+            "ruleDigest": self.rule_digests["DEP003"],
             "scope": ".",
             "decision": "Temporary example only.",
             "reason": "Exercise broad-scope detection.",
@@ -493,6 +625,7 @@ architecture_decisions:
         manifest = export_payload(target)
         exported = target / f"agentic-architecture-kit-{__version__}"
         self.assertTrue((exported / "agentic_architecture_kit/data/rules.json").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/norms/agent-core.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/schemas/architecture-policy.schema.json").is_file())
         self.assertEqual(__version__, manifest["toolVersion"])
 

@@ -9,8 +9,9 @@ repositorio, por qué existe cada artefacto, quién puede modificarlo y cómo pu
 el equipo gobernar el trabajo autónomo de los agentes sin convertirse en un
 cuello de botella de aprobaciones.
 
-No es un segundo manifiesto. El [manifiesto](MANIFESTO.md) es normativo. Esta
-guía traduce ese estándar a la práctica cotidiana del equipo.
+No es una segunda fuente normativa. El núcleo de decisiones y las referencias
+de reglas incluidas son canónicos; el [manifiesto](MANIFESTO.md) explica su
+propósito para personas. Esta guía traduce el estándar a la práctica cotidiana.
 
 ## 1. Modelo operativo
 
@@ -246,14 +247,14 @@ realmente la aprobación. La protección descrita en
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --format json
-uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un
@@ -269,6 +270,7 @@ Una buena licencia responde:
 
 ```text
 ¿Qué regla portable afecta?
+¿Bajo qué `ruleDigest` exacto se autorizó?
 ¿Dónde se aplica exactamente?
 ¿Por qué es necesaria ahora?
 ¿Qué riesgo se acepta?
@@ -288,6 +290,10 @@ Los revisores deberían rechazar licencias que:
 
 Cuando una licencia válida deja de coincidir con una violación, el validador la
 señala para revisión y eliminación.
+
+Un `ruleDigest` ausente o modificado impide aplicar la licencia. La violación
+original permanece visible y la concesión requiere revisión bajo la semántica
+actual.
 
 ## 10. Revisar un cambio del agente
 
@@ -412,7 +418,8 @@ este orden:
 3. revisar `domain/global-invariants.md` y contextos de capacidad;
 4. revisar cada `module.contract.yml` para vocabulario, ownership y riesgo;
 5. revisar `project-policy.json` para módulos, proyectos y dependencias;
-6. confirmar que `waivers.json` está vacío o cada licencia está autorizada;
+6. confirmar que `waivers.json` está vacío o cada licencia está autorizada y
+   ligada al `ruleDigest` actual;
 7. ejecutar la versión exacta declarada en `.agentic/toolchain.json` con `aak validate`;
 8. revisar todos los resultados `FAIL`, `WAIVED` y `REVIEW_REQUIRED`;
 9. confirmar que pasan el build y los tests del proyecto;

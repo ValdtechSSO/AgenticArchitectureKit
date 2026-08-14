@@ -24,7 +24,7 @@ maintaining team differs.
 
 1. Commit the subject that requires semantic review.
 2. Obtain the required CODEOWNER approval through a pull request.
-3. Record the exact subject fingerprint emitted by the validator.
+3. Record the exact subject fingerprint and `ruleDigest` emitted by the validator.
 4. Set `reviewedAtRevision` to the full 40-character SHA containing the reviewed
    subject.
 5. Set `reviewedBy` to the approving CODEOWNER principal and
@@ -34,6 +34,9 @@ maintaining team differs.
 Reachability and fingerprints prevent accidental reuse. CODEOWNERS plus protected
 branches prevent an agent from accepting its own review. JSON alone is not proof
 of human approval.
+
+A changed or missing `ruleDigest` prevents the acknowledgement from applying,
+even when its older finding fingerprint still appears to match.
 
 A review is checked for staleness only when its target rule is applicable. For
 example, a `CHG001` review is retained without a stale-review finding during a

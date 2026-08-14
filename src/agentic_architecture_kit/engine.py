@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable
 
 from .model import Finding, ValidationContext
+from .norms import markdown_sections, read_reference_document, reference_section, split_reference
 
 
 def _finding(
@@ -68,7 +69,16 @@ def _project_matches(declaration: dict, selector: dict) -> bool:
 
 
 def _references_resolve(context: ValidationContext, references: list[str]) -> list[str]:
-    return [reference for reference in references if not _repo_path(context, reference).is_file()]
+    missing: list[str] = []
+    for reference in references:
+        try:
+            _, section = reference_section(context.root, reference)
+            _, anchor = split_reference(reference)
+            if anchor is not None and section is None:
+                missing.append(reference)
+        except (FileNotFoundError, ValueError):
+            missing.append(reference)
+    return missing
 
 
 def _rule_policy_valid(context: ValidationContext) -> list[Finding]:
@@ -728,6 +738,75 @@ def _rule_policy_growth(context: ValidationContext) -> list[Finding]:
                         baseRevision=context.base_revision,
                     )
                 )
+
+    if context.base_norms is not None:
+        current_documents = {
+            item["reference"]: item
+            for item in context.norms.get("documents", [])
+            if isinstance(item, dict) and isinstance(item.get("reference"), str)
+        }
+        base_documents = {
+            item["reference"]: item
+            for item in context.base_norms.get("documents", [])
+            if isinstance(item, dict) and isinstance(item.get("reference"), str)
+        }
+        for reference, previous in sorted(base_documents.items()):
+            if previous.get("enforcer") == "human":
+                continue
+            current_document = current_documents.get(reference)
+            if current_document is None:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "FAIL",
+                        reference,
+                        "Normative material was removed without retaining an explicit enforcement classification.",
+                        previousEnforcer=previous.get("enforcer"),
+                        baseRevision=context.base_revision,
+                    )
+                )
+                continue
+            if current_document.get("enforcer") != "human":
+                continue
+            references = current_document.get("decisionRefs", [])
+            if not references:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "FAIL",
+                        reference,
+                        "Normative material was reclassified as human guidance without a decision reference.",
+                        previousEnforcer=previous.get("enforcer"),
+                        currentEnforcer="human",
+                        baseRevision=context.base_revision,
+                    )
+                )
+                continue
+            missing = _references_resolve(context, references)
+            if missing:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "FAIL",
+                        reference,
+                        "Human reclassification references a missing decision.",
+                        missing=missing,
+                        baseRevision=context.base_revision,
+                    )
+                )
+            else:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "REVIEW_REQUIRED",
+                        reference,
+                        "Reducing normative enforcement to human guidance requires authority review.",
+                        decisionRefs=references,
+                        previousEnforcer=previous.get("enforcer"),
+                        currentEnforcer="human",
+                        baseRevision=context.base_revision,
+                    )
+                )
     return findings or [_finding("CHG001", "PASS", ".", "Project policy introduces no material architecture change relative to the base revision.", baseRevision=context.base_revision)]
 
 
@@ -745,6 +824,19 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
         seen.add(review_id)
         if review["rule"] not in known_rules or review["rule"] == "REV001":
             results.append(_finding("REV001", "FAIL", review["scope"], "Review references an unknown or non-reviewable rule.", review=review_id, reviewedRule=review["rule"]))
+        elif review.get("ruleDigest") != context.catalog[review["rule"]]["ruleDigest"]:
+            results.append(
+                _finding(
+                    "REV001",
+                    "REVIEW_REQUIRED",
+                    review["scope"],
+                    "Review was accepted under different or unspecified rule semantics and cannot be applied.",
+                    review=review_id,
+                    staleRuleDigest=True,
+                    recordedRuleDigest=review.get("ruleDigest"),
+                    currentRuleDigest=context.catalog[review["rule"]]["ruleDigest"],
+                )
+            )
         authority = authorities.get(review["authorityId"])
         if authority is None:
             results.append(_finding("REV001", "FAIL", review["scope"], "Review references an unknown authority.", review=review_id, authorityId=review["authorityId"]))
@@ -808,22 +900,9 @@ def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
     return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Repository-side authority declarations and CODEOWNERS are consistent; platform branch protection remains externally enforced.", authorities=ids, protectedBranches=enforcement["protectedBranches"])]
 
 
-def _markdown_anchor_exists(path: Path, anchor: str) -> bool:
-    for line in path.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
-        if not match:
-            continue
-        heading = match.group(1).strip().casefold()
-        heading = re.sub(r"[`*_~]", "", heading)
-        slug = re.sub(r"[^\w\- ]", "", heading, flags=re.UNICODE)
-        slug = re.sub(r"[\s-]+", "-", slug).strip("-")
-        if slug == anchor.casefold():
-            return True
-    return False
-
-
 def _rule_document_references(context: ValidationContext) -> list[Finding]:
     violations: list[Finding] = []
+    module_reference_count = 0
     file_name = context.policy["moduleContract"]["fileName"]
     for module in context.policy["modules"]:
         contract_path = f"{module['root']}/{file_name}"
@@ -833,6 +912,7 @@ def _rule_document_references(context: ValidationContext) -> list[Finding]:
             if not isinstance(references, list):
                 continue
             for reference in references:
+                module_reference_count += 1
                 document, separator, anchor = str(reference).partition("#")
                 target = _repo_path(context, document)
                 if not target.is_file():
@@ -845,7 +925,10 @@ def _rule_document_references(context: ValidationContext) -> list[Finding]:
                             reference=reference,
                         )
                     )
-                elif separator and not _markdown_anchor_exists(target, anchor):
+                elif separator and not any(
+                    item["anchor"] == anchor.casefold()
+                    for item in markdown_sections(target.read_text(encoding="utf-8"))
+                ):
                     violations.append(
                         _finding(
                             "DOC001",
@@ -855,8 +938,187 @@ def _rule_document_references(context: ValidationContext) -> list[Finding]:
                             reference=reference,
                         )
                     )
+
+    catalog_references: dict[str, list[str]] = {}
+    for rule_id, definition in context.catalog.items():
+        reference = definition["reference"]
+        document, anchor = split_reference(reference)
+        catalog_references.setdefault(reference, []).append(rule_id)
+        try:
+            _, section = reference_section(context.root, reference)
+        except (FileNotFoundError, ValueError):
+            section = None
+        if anchor is None or section is None:
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    "package:data/rules.json",
+                    "Rule catalog reference does not resolve to a Markdown heading.",
+                    catalogRule=rule_id,
+                    reference=reference,
+                )
+            )
+    for reference, rule_ids in catalog_references.items():
+        if len(rule_ids) != 1:
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "A validator-rule heading must be owned by exactly one catalog rule.",
+                    catalogRules=rule_ids,
+                )
+            )
+
+    normative_documents = context.norms.get("documents", [])
+    if context.norms.get("version") != 1 or not isinstance(normative_documents, list):
+        violations.append(
+            _finding(
+                "DOC001",
+                "FAIL",
+                "package:data/norms/index.json",
+                "Normative index must declare version 1 and a document list.",
+            )
+        )
+        normative_documents = []
+    classified_references: set[str] = set()
+    classifications: dict[str, str] = {}
+    classified_heading_count = 0
+    for document in normative_documents:
+        reference = document.get("reference")
+        enforcer = document.get("enforcer")
+        if not isinstance(reference, str) or enforcer not in {"agent", "validator", "human"}:
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    "package:data/norms/index.json",
+                    "Normative document classification is invalid.",
+                    document=document,
+                )
+            )
+            continue
+        if reference in classified_references:
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "Normative document is classified more than once.",
+                )
+            )
+            continue
+        classified_references.add(reference)
+        classifications[reference] = enforcer
+        missing_decisions = _references_resolve(context, document.get("decisionRefs", []))
+        if missing_decisions:
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "Normative classification references a missing decision.",
+                    missing=missing_decisions,
+                )
+            )
+        try:
+            document_name, text = read_reference_document(context.root, reference)
+        except (FileNotFoundError, ValueError):
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "Classified normative document does not resolve.",
+                )
+            )
+            continue
+        classified_heading_count += sum(
+            1 for item in markdown_sections(text) if item["level"] == 2
+        )
+        if enforcer == "human" and re.search(
+            r"\b(?:must|must not|should|should not)\b",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "Human guidance contains normative requirement language.",
+                )
+            )
+        if enforcer != "validator":
+            continue
+        heading_references = {
+            split_reference(rule["reference"])[1]: rule_id
+            for rule_id, rule in context.catalog.items()
+            if split_reference(rule["reference"])[0] == document_name
+        }
+        for section in (item for item in markdown_sections(text) if item["level"] == 2):
+            if section["anchor"] not in heading_references:
+                violations.append(
+                    _finding(
+                        "DOC001",
+                        "FAIL",
+                        f"{reference}#{section['anchor']}",
+                        "Validator-enforced normative heading is not referenced by a catalog rule.",
+                        heading=section["title"],
+                    )
+                )
+        for anchor, rule_id in heading_references.items():
+            matches = [
+                item for item in markdown_sections(text)
+                if item["level"] == 2 and item["anchor"] == anchor
+            ]
+            if len(matches) != 1:
+                violations.append(
+                    _finding(
+                        "DOC001",
+                        "FAIL",
+                        f"{reference}#{anchor}",
+                        "Catalog rule must resolve to exactly one validator-rule heading.",
+                        catalogRule=rule_id,
+                        matches=len(matches),
+                    )
+                )
+    catalog_documents = {
+        split_reference(rule["reference"])[0]
+        for rule in context.catalog.values()
+    }
+    for reference in sorted(catalog_documents):
+        if classifications.get(reference) != "validator":
+            violations.append(
+                _finding(
+                    "DOC001",
+                    "FAIL",
+                    reference,
+                    "Every catalog rule document must be explicitly classified as validator-enforced.",
+                    observedEnforcer=classifications.get(reference),
+                )
+            )
+    if "agent" not in classifications.values():
+        violations.append(
+            _finding(
+                "DOC001",
+                "FAIL",
+                "package:data/norms/index.json",
+                "Normative index does not declare a preventive agent core.",
+            )
+        )
     return violations or [
-        _finding("DOC001", "PASS", ".", "Invariant and architecture-decision references resolve.")
+        _finding(
+            "DOC001",
+            "PASS",
+            ".",
+            "Normative, invariant, and architecture-decision references resolve.",
+            catalogReferences=len(catalog_references),
+            normativeDocuments=len(normative_documents),
+            classifiedHeadings=classified_heading_count,
+            moduleReferences=module_reference_count,
+        )
     ]
 
 
@@ -873,6 +1135,19 @@ def _rule_waivers_valid(context: ValidationContext) -> list[Finding]:
         seen.add(waiver_id)
         if waiver["rule"] not in known_rules or waiver["rule"] in ("WVR001", "REV001"):
             results.append(_finding("WVR001", "FAIL", waiver["scope"], "Waiver references an unknown or non-waivable rule.", waiver=waiver_id, rule=waiver["rule"]))
+        elif waiver.get("ruleDigest") != context.catalog[waiver["rule"]]["ruleDigest"]:
+            results.append(
+                _finding(
+                    "WVR001",
+                    "REVIEW_REQUIRED",
+                    waiver["scope"],
+                    "Waiver was granted under different or unspecified rule semantics and cannot be applied.",
+                    waiver=waiver_id,
+                    staleRuleDigest=True,
+                    recordedRuleDigest=waiver.get("ruleDigest"),
+                    currentRuleDigest=context.catalog[waiver["rule"]]["ruleDigest"],
+                )
+            )
         try:
             scope_exists = _repo_path(context, waiver["scope"]).exists()
         except ValueError:
@@ -930,6 +1205,7 @@ def _scope_matches(waiver_scope: str, finding_scope: str) -> bool:
 def _review_fingerprint(finding: Finding) -> str:
     subject = {
         "rule": finding.rule,
+        "ruleDigest": finding.rule_digest,
         "scope": finding.scope,
         "message": finding.message,
         "evidence": finding.evidence,
@@ -949,17 +1225,32 @@ def evaluate(context: ValidationContext) -> list[Finding]:
             raise ValueError(f"Evaluator '{evaluator_name}' emitted a result for the wrong rule.")
         findings.extend(produced)
 
+    def attach_rule_metadata(finding: Finding) -> None:
+        definition = context.catalog[finding.rule]
+        finding.reference = definition["reference"]
+        finding.rule_digest = definition["ruleDigest"]
+
+    for finding in findings:
+        attach_rule_metadata(finding)
+
     invalid_waiver_ids = {
         str(finding.evidence.get("waiver"))
         for finding in findings
         if finding.rule == "WVR001" and finding.status == "FAIL" and finding.evidence.get("waiver")
+    }
+    stale_waiver_ids = {
+        str(finding.evidence.get("waiver"))
+        for finding in findings
+        if finding.rule == "WVR001"
+        and finding.evidence.get("staleRuleDigest")
+        and finding.evidence.get("waiver")
     }
     matched: Counter[str] = Counter()
     for finding in findings:
         if finding.rule == "WVR001" or finding.status not in ("FAIL", "REVIEW_REQUIRED"):
             continue
         for waiver in context.waivers:
-            if waiver["id"] in invalid_waiver_ids:
+            if waiver["id"] in invalid_waiver_ids or waiver["id"] in stale_waiver_ids:
                 continue
             if waiver["rule"] == finding.rule and _scope_matches(waiver["scope"], finding.scope):
                 finding.status = "WAIVED"
@@ -969,7 +1260,11 @@ def evaluate(context: ValidationContext) -> list[Finding]:
                 break
 
     for waiver in context.waivers:
-        if waiver["id"] not in invalid_waiver_ids and matched[waiver["id"]] == 0:
+        if (
+            waiver["id"] not in invalid_waiver_ids
+            and waiver["id"] not in stale_waiver_ids
+            and matched[waiver["id"]] == 0
+        ):
             findings.append(
                 _finding(
                     "WVR001",
@@ -984,7 +1279,7 @@ def evaluate(context: ValidationContext) -> list[Finding]:
         for review in context.reviews
         if not any(
             finding.rule == "REV001"
-            and finding.status == "FAIL"
+            and finding.status in ("FAIL", "REVIEW_REQUIRED")
             and finding.evidence.get("review") == review["id"]
             for finding in findings
         )
@@ -999,6 +1294,7 @@ def evaluate(context: ValidationContext) -> list[Finding]:
                 continue
             if (
                 review["rule"] == finding.rule
+                and review.get("ruleDigest") == finding.rule_digest
                 and review["scope"].rstrip("/") == finding.scope.rstrip("/")
                 and review["subjectFingerprint"] == finding.review_fingerprint
             ):
@@ -1028,4 +1324,6 @@ def evaluate(context: ValidationContext) -> list[Finding]:
                     reviewedRule=review["rule"],
                 )
             )
+    for finding in findings:
+        attach_rule_metadata(finding)
     return findings

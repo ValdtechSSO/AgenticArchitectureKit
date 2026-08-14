@@ -6,6 +6,8 @@
 
 ## Start here
 
+- Run `aak core` and read the installed decision core before structural
+  decisions; use `aak explain RULE_ID` for validator-owned details.
 - Read `architecture/system-overview.md` and `domain/global-invariants.md`.
 - Locate the owning module and cohesive feature area before changing behavior.
 - Read the module's `module.contract.yml` and `AGENTS.md`.
@@ -23,6 +25,8 @@
 - Do not add speculative modules, projects, abstractions, or empty directories.
 - Do not weaken portable architecture rules through project policy.
 - Boundary changes update declaration, observation, enforcement, and evidence.
+- Run the architecture gate before the first implementation change and before
+  declaring the task complete.
 
 ## Map
 

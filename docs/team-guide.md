@@ -8,8 +8,10 @@ Agentic Architecture Kit. It explains what the kit places in a repository, why
 each artifact exists, who may change it, and how a team governs autonomous agent
 work without becoming an approval bottleneck.
 
-It is not a second manifesto. The [manifesto](../MANIFESTO.md) is normative. This
-guide translates that standard into everyday team practice.
+It is not a second normative source. The packaged decision core and portable
+rule references are canonical; the [manifesto](../MANIFESTO.md) maps their
+purpose for humans. This guide translates that standard into everyday team
+practice.
 
 ## 1. The operating model
 
@@ -245,14 +247,14 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --format json
-uvx --from agentic-architecture-kit==0.3.0 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This
@@ -268,6 +270,7 @@ A good waiver answers:
 
 ```text
 Which portable rule is affected?
+Under which exact rule digest was the exception authorized?
 Where exactly does the exception apply?
 Why is it necessary now?
 Which risk is accepted?
@@ -287,6 +290,9 @@ Reviewers should reject waivers that:
 
 When a valid waiver no longer matches a violation, the validator reports it for
 review so it can be removed.
+
+A missing or changed `ruleDigest` makes the waiver inapplicable. The original
+violation remains visible and the grant requires review under current semantics.
 
 ## 10. Reviewing an agent change
 

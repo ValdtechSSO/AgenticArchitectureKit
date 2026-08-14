@@ -3,8 +3,8 @@
 The reference implementation is published as the versioned Python distribution
 `agentic-architecture-kit`. The package keeps six concerns separate:
 
-1. portable rule semantics and their evaluation engine;
-2. bundled JSON contracts and neutral bootstrap templates;
+1. portable rule semantics, normative references, and their evaluation engine;
+2. bundled decision core, JSON contracts, and neutral bootstrap templates;
 3. project architecture in `.agentic/policies/architecture/project-policy.json`;
 4. explicit waivers and fingerprint-bound semantic reviews;
 5. review authority and external enforcement declarations;
@@ -23,8 +23,8 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.3.0",
-  "catalogVersion": 1,
+  "toolVersion": "0.4.0",
+  "catalogVersion": 2,
   "extensions": []
 }
 ```
@@ -32,8 +32,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.3.0 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.3.0 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.0 aak context locate "order lifecycle"
 ```
 
 `aak` refuses to run validation or context retrieval when its installed version,
@@ -54,6 +54,9 @@ aak validate --base-ref origin/main
 aak validate --write-review-template /tmp/reviews.json
 aak validate --task-id TASK-123 --fail-on-review
 aak validate --list-rules
+aak core
+aak explain DEP001
+aak explain CHG001 --base-ref origin/main --format json
 ```
 
 `FAIL` returns exit code 1. An unresolved `REVIEW_REQUIRED` also returns 1 with
@@ -66,6 +69,11 @@ permission, or scalable dependency rule requires an existing `decisionRefs`
 document. Every result records canonical SHA-256 digests of the toolchain,
 policy, waivers, reviews, authority declaration, bundled catalog, and observed
 architecture.
+
+Every finding carries a resolvable normative `reference` and a `ruleDigest`.
+`aak explain` combines that definition with the rule's current repository
+status, scopes, observed evidence, and applied waiver or review. A missing
+reference is a validation failure.
 
 `--task-id` retains `architecture.json` and `manifest.json` under
 `.agentic/runtime/evidence/{task-id}/{revision}/`.
@@ -117,7 +125,9 @@ edited into an untracked fork.
 
 - A waiver produces `WAIVED`, never `PASS`.
 - Invalid, expired, unused, or overly broad waivers remain visible or fail.
-- Semantic reviews bind to rule, exact scope, subject fingerprint, reachable
+- Waivers and semantic reviews bind to the current rule digest; changed rule
+  semantics make the previous grant inapplicable and require review.
+- Semantic reviews also bind to rule, exact scope, subject fingerprint, reachable
   Git revision, declared authority, CODEOWNER, and platform evidence.
 - `AUT001` checks repository declarations, not live hosting-platform settings.
 - `HOST001` proves source placement, not behavioral purity.

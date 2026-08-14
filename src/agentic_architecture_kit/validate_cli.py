@@ -17,6 +17,7 @@ from .adapters import observe
 from .contracts import ContractError, load_json, load_yaml_subset, validate_schema
 from .engine import EVALUATORS, evaluate
 from .model import STATUSES, ValidationContext
+from .norms import compute_rule_digest
 from .resources import read_json as read_bundled_json, schema as bundled_schema
 from .toolchain import load_toolchain
 
@@ -50,11 +51,11 @@ def _validate_with_schema(instance: Any, schema: dict[str, Any], label: str, sou
         raise ContractError(f"{label} does not conform to {source}:\n  - {details}")
 
 
-def _load_catalog(document: Any, source: str) -> dict[str, dict[str, Any]]:
-    if not isinstance(document, dict) or document.get("version") != 1 or not isinstance(document.get("rules"), list):
+def _load_catalog(document: Any, source: str, root: Path) -> dict[str, dict[str, Any]]:
+    if not isinstance(document, dict) or not isinstance(document.get("version"), int) or not isinstance(document.get("rules"), list):
         raise ContractError(f"Invalid rule catalog: {source}")
     catalog: dict[str, dict[str, Any]] = {}
-    required = {"id", "title", "description", "evaluator", "automatic", "inputs"}
+    required = {"id", "title", "description", "evaluator", "automatic", "inputs", "enforcer", "reference"}
     for index, rule in enumerate(document["rules"]):
         if not isinstance(rule, dict) or not required.issubset(rule):
             raise ContractError(f"Invalid rule at {source}:rules[{index}]")
@@ -65,7 +66,9 @@ def _load_catalog(document: Any, source: str) -> dict[str, dict[str, Any]]:
             raise ContractError(f"Duplicate rule id '{rule_id}' in {source}")
         if rule["evaluator"] not in EVALUATORS:
             raise ContractError(f"Rule {rule_id} has unknown evaluator '{rule['evaluator']}'")
-        catalog[rule_id] = rule
+        if rule["enforcer"] != "validator":
+            raise ContractError(f"Catalog rule {rule_id} must use the validator enforcer")
+        catalog[rule_id] = {**rule, "ruleDigest": compute_rule_digest(root, rule)}
     evaluator_counts = Counter(rule["evaluator"] for rule in catalog.values())
     duplicates = sorted(name for name, count in evaluator_counts.items() if count > 1)
     if duplicates:
@@ -181,6 +184,32 @@ def _load_base_policy(root: Path, policy_path: Path, base_ref: str | None) -> tu
     return value, revision
 
 
+def _load_base_norms(root: Path, norms: dict[str, Any], revision: str | None) -> dict[str, Any] | None:
+    if revision is None:
+        return None
+    source_path = norms.get("sourcePath")
+    if not isinstance(source_path, str) or not source_path:
+        return None
+    try:
+        current_source = _repository_path(root, source_path)
+        current_value = json.loads(current_source.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, ValueError):
+        return None
+    if current_value != norms:
+        return None
+    try:
+        content = _git(root, "show", f"{revision}:{source_path}")
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    try:
+        value = json.loads(content)
+    except json.JSONDecodeError as error:
+        raise ContractError(f"Base normative index at {revision} is not valid JSON: {error}") from error
+    if not isinstance(value, dict):
+        raise ContractError(f"Base normative index at {revision} must be a JSON object")
+    return value
+
+
 def _revision(root: Path) -> str:
     try:
         sha = subprocess.run(
@@ -268,13 +297,14 @@ def run(arguments: list[str] | None = None) -> int:
         authority_path = _path(root, args.authorities)
         toolchain_path = _path(root, args.toolchain)
         catalog_document = read_bundled_json("data/rules.json")
-        catalog = _load_catalog(catalog_document, "package:data/rules.json")
+        catalog = _load_catalog(catalog_document, "package:data/rules.json", root)
+        norms_document = read_bundled_json("data/norms/index.json")
         toolchain_document = load_toolchain(toolchain_path, catalog_document["version"])
 
         if args.list_rules:
             for rule in catalog.values():
                 mode = "automatic" if rule["automatic"] else "review-aware"
-                print(f"{rule['id']}\t{mode}\t{rule['title']}")
+                print(f"{rule['id']}\t{mode}\t{rule['ruleDigest']}\t{rule['reference']}\t{rule['title']}")
             return 0
 
         policy = load_json(policy_path)
@@ -288,6 +318,7 @@ def run(arguments: list[str] | None = None) -> int:
         _validate_with_schema(authority_document, bundled_schema("architecture-authorities.schema.json"), "Architecture authorities", "package:architecture-authorities.schema.json")
         _validate_policy_semantics(root, policy)
         base_policy, base_revision = _load_base_policy(root, policy_path, args.base_ref)
+        base_norms = _load_base_norms(root, norms_document, base_revision)
         if base_policy is not None:
             _validate_with_schema(base_policy, policy_schema, "Base architecture policy", "package:architecture-policy.schema.json")
             _validate_policy_semantics(root, base_policy)
@@ -331,11 +362,13 @@ def run(arguments: list[str] | None = None) -> int:
             reviews=review_document["reviews"],
             authorities=authority_document,
             catalog=catalog,
+            norms=norms_document,
             observed=observed,
             contracts=contracts,
             contract_errors=contract_errors,
             base_policy=base_policy,
             base_revision=base_revision,
+            base_norms=base_norms,
         )
         findings = evaluate(context)
         counts = Counter(finding.status for finding in findings)
@@ -387,6 +420,7 @@ def run(arguments: list[str] | None = None) -> int:
                     "rule": finding.rule,
                     "scope": finding.scope,
                     "subjectFingerprint": finding.review_fingerprint,
+                    "ruleDigest": finding.rule_digest,
                     "decision": "Replace with the accepted semantic judgment.",
                     "authorityId": "replace-with-authority-id",
                     "reviewedBy": ["@replace-with-approved-principal"],
@@ -424,7 +458,10 @@ def run(arguments: list[str] | None = None) -> int:
             for finding in findings:
                 waiver = f" waiver={finding.waiver}" if finding.waiver else ""
                 review = f" review={finding.review}" if finding.review else ""
-                print(f"[{finding.status}] {finding.rule} {finding.scope}{waiver}{review} - {finding.message}")
+                print(
+                    f"[{finding.status}] {finding.rule} {finding.scope}{waiver}{review}"
+                    f" - {finding.message} reference={finding.reference}"
+                )
             summary = " ".join(f"{status}={counts[status]}" for status in STATUSES)
             print(f"Architecture validation: {summary}")
 

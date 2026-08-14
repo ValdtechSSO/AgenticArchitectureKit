@@ -45,11 +45,11 @@ def initialize(
     if not codeowner.startswith("@"):
         raise ContractError("codeowner must be a GitHub user or team beginning with @")
     toolchain = {
-            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.3.0/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.0/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
             "version": 1,
             "distribution": "agentic-architecture-kit",
             "toolVersion": __version__,
-            "catalogVersion": 1,
+            "catalogVersion": 2,
             "extensions": [],
     }
     authorities = read_json("data/templates/project/authorities.json")
@@ -78,6 +78,7 @@ def initialize(
         "toolVersion": __version__,
         "created": created,
         "next": [
+            "Run aak core and read the complete preventive decision context.",
             "Discover the smallest justified modules, hosts, and projects.",
             "Create .agentic/policies/architecture/project-policy.json from observed project facts.",
             "Create module contracts and local AGENTS.md files only for actual modules.",
