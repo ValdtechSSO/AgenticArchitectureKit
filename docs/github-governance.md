@@ -16,9 +16,12 @@ branch named in `.agentic/policies/architecture/authorities.json` with:
 - prevent bypass and direct pushes, including for administrators unless the team
   has explicitly accepted that exception.
 
-The principals in `authorities.json` must be valid users or teams in
-`.github/CODEOWNERS`. Replace the bundled principal if the repository owner or
-maintaining team differs.
+Every `protectedScope` in `authorities.json` must have a real covering pattern in
+`.github/CODEOWNERS` owned by all principals of that authority. A narrower
+pattern inside the protected scope cannot remove those principals. For the root
+scope (`.`), use a repository-wide entry such as `* @team/architecture`; this
+also protects `.github/workflows/` and `CODEOWNERS` itself. Replace the bundled
+principal if the repository owner or maintaining team differs.
 
 ## Review record workflow
 
@@ -35,8 +38,10 @@ Reachability and fingerprints prevent accidental reuse. CODEOWNERS plus protecte
 branches prevent an agent from accepting its own review. JSON alone is not proof
 of human approval.
 
-A changed or missing `ruleDigest` prevents the acknowledgement from applying,
-even when its older finding fingerprint still appears to match.
+A missing `ruleDigest` is rejected by the review contract. A valid but changed
+digest prevents the acknowledgement from applying and produces
+`REVIEW_REQUIRED`, even when its older finding fingerprint still appears to
+match.
 
 A review is checked for staleness only when its target rule is applicable. For
 example, a `CHG001` review is retained without a stale-review finding during a

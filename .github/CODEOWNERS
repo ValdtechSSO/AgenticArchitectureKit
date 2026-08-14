@@ -1,4 +1,5 @@
 # Architecture authority. Replace this principal if repository ownership changes.
+* @valdtechsecurity
 /.agentic/policies/architecture/ @valdtechsecurity
 /.agentic/toolchain.json @valdtechsecurity
 /architecture/decisions/ @valdtechsecurity

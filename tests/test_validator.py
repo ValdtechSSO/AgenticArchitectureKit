@@ -489,6 +489,23 @@ architecture_decisions:
         self.assertEqual(1, code)
         self.assertIn("[FAIL] AUT001", output)
 
+    def test_codeowners_principal_must_cover_each_declared_scope(self) -> None:
+        (self.root / ".github/CODEOWNERS").write_text("/README.md @test-owner\n", encoding="utf-8")
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] AUT001", output)
+        self.assertIn("not covered by CODEOWNERS patterns", output)
+
+    def test_codeowners_override_cannot_remove_root_authority_from_github(self) -> None:
+        (self.root / ".github/CODEOWNERS").write_text(
+            "* @test-owner\n/.github/ @workflow-owner\n",
+            encoding="utf-8",
+        )
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] AUT001", output)
+        self.assertIn("narrower patterns", output)
+
     def test_source_import_detects_module_to_host_without_project_reference(self) -> None:
         source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
         source.write_text(
@@ -588,6 +605,41 @@ architecture_decisions:
         self.assertIn("[WAIVED] DEP003", output)
         self.assertIn("[REVIEW_REQUIRED] WVR001 .", output)
 
+    def test_waiver_contract_requires_rule_digest(self) -> None:
+        self.policy["allowedProjectDependencies"] = []
+        self._write_policy()
+        self._write_waivers([{
+            "id": "LEGACY-001",
+            "rule": "DEP003",
+            "scope": "src/Hosts/Cli/Cli.csproj",
+            "decision": "Legacy waiver.",
+            "reason": "Exercise required digest binding.",
+            "risk": "The semantic grant is ambiguous.",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewWhen": ["The waiver is migrated"],
+        }])
+        code, _, error = self._run()
+        self.assertEqual(2, code)
+        self.assertIn("missing required property 'ruleDigest'", error)
+
+    def test_review_contract_requires_rule_digest(self) -> None:
+        self._write_reviews([{
+            "id": "LEGACY-REVIEW-001",
+            "rule": "CHG001",
+            "scope": ".agentic/policies/architecture/project-policy.json",
+            "subjectFingerprint": "sha256:" + "0" * 64,
+            "decision": "Legacy review.",
+            "authorityId": "test-owner",
+            "reviewedBy": ["@test-owner"],
+            "approvalEvidence": "github-pr-review:https://example.invalid/review/1",
+            "authorizedBy": ["architecture/decisions/ADR-001-orders.md"],
+            "reviewedAtRevision": self.initial_revision,
+            "reviewWhen": ["The review is migrated"],
+        }])
+        code, _, error = self._run()
+        self.assertEqual(2, code)
+        self.assertIn("missing required property 'ruleDigest'", error)
+
     def test_context_index_and_retrieval_report_provenance(self) -> None:
         documents = write_index(self.root, self.policy)
         self.assertEqual({"repository", "modules", "projects", "dependencies", "documents", "tests"}, set(documents))
@@ -610,14 +662,79 @@ architecture_decisions:
         with self.assertRaises(ContractError):
             load_yaml_subset(path)
 
-    def test_init_creates_only_project_owned_configuration(self) -> None:
+    def test_init_proposes_policy_from_observed_dotnet_architecture(self) -> None:
         target = self.root / "initialized"
-        target.mkdir()
+        module = target / "src/Modules/Orders"
+        host = target / "src/Hosts/Cli"
+        module.mkdir(parents=True)
+        host.mkdir(parents=True)
+        (module / "Orders.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Orders</AssemblyName></PropertyGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (host / "Cli.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Cli</AssemblyName></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="../../Modules/Orders/Orders.csproj" /></ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (module / "Order.cs").write_text("namespace Example.Orders;\n", encoding="utf-8")
+        (host / "Program.cs").write_text("namespace Example.Cli;\n", encoding="utf-8")
         initialize(target, "@architecture-team")
         self.assertTrue((target / ".agentic/toolchain.json").is_file())
         self.assertTrue((target / ".agentic/policies/architecture/authorities.json").is_file())
-        self.assertFalse((target / ".agentic/policies/architecture/project-policy.json").exists())
+        policy_path = target / ".agentic/policies/architecture/project-policy.json"
+        self.assertTrue(policy_path.is_file())
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        self.assertEqual("dotnet", policy["adapter"])
+        self.assertEqual(["src/Modules/Orders"], [item["root"] for item in policy["modules"]])
+        self.assertEqual(["src/Hosts/Cli"], [item["root"] for item in policy["hosts"]])
+        self.assertEqual(2, len(policy["projects"]))
+        self.assertEqual([{
+            "from": "src/Hosts/Cli/Cli.csproj",
+            "to": "src/Modules/Orders/Orders.csproj",
+        }], policy["allowedProjectDependencies"])
+        self.assertIn("* @architecture-team", (target / ".github/CODEOWNERS").read_text(encoding="utf-8"))
         self.assertFalse((target / "tools/architecture").exists())
+
+    def test_init_can_bootstrap_an_empty_repository_with_explicit_adapter(self) -> None:
+        target = self.root / "empty-initialized"
+        target.mkdir()
+        initialize(target, "@architecture-team", adapter="dotnet")
+        policy = json.loads(
+            (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual([], policy["modules"])
+        self.assertEqual([], policy["projects"])
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = run(["--root", str(target), "--fail-on-review"])
+        self.assertEqual(0, code, stderr.getvalue() + stdout.getvalue())
+        repeated = initialize(target, "@architecture-team")
+        self.assertEqual("existing", repeated["policyProposal"]["basis"])
+        self.assertEqual([], repeated["created"])
+
+    def test_init_proposes_policy_from_observed_python_architecture(self) -> None:
+        target = self.root / "python-initialized"
+        package = target / "src/acme_orders"
+        tools = target / "tools"
+        package.mkdir(parents=True)
+        tools.mkdir(parents=True)
+        (package / "__init__.py").write_text("", encoding="utf-8")
+        (package / "orders.py").write_text("from dataclasses import dataclass\n", encoding="utf-8")
+        (tools / "cli.py").write_text("import acme_orders\n", encoding="utf-8")
+        (target / "pyproject.toml").write_text(
+            '[project]\nname = "acme-orders"\nversion = "1.0.0"\n',
+            encoding="utf-8",
+        )
+        result = initialize(target, "@architecture-team")
+        policy = json.loads(
+            (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("python", result["adapter"])
+        self.assertEqual(["src/acme_orders"], [item["root"] for item in policy["modules"]])
+        self.assertEqual(["tools/cli.py"], [item["root"] for item in policy["hosts"]])
+        self.assertEqual(["pyproject.toml"], [item["path"] for item in policy["projects"]])
         self.assertFalse((target / ".agentic/contracts").exists())
 
     def test_offline_export_is_explicit_and_contains_portable_assets(self) -> None:

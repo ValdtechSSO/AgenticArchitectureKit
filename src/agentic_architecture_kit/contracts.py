@@ -175,6 +175,9 @@ def validate_schema(
 
     if isinstance(instance, str) and len(instance) < schema.get("minLength", 0):
         errors.append(f"{location}: string is shorter than {schema['minLength']}")
+    pattern = schema.get("pattern")
+    if isinstance(instance, str) and isinstance(pattern, str) and re.search(pattern, instance) is None:
+        errors.append(f"{location}: string does not match required pattern '{pattern}'")
 
     if isinstance(instance, list):
         if len(instance) < schema.get("minItems", 0):

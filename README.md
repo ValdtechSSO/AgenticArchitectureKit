@@ -144,12 +144,18 @@ aak context locate "architecture validation"
 aak validate --root examples/dotnet-valid
 ```
 
-Initialize governance files in an existing project, then let the agent discover
-and write its project policy:
+Initialize governance files in an existing project. The initializer selects the
+adapter from repository artifacts and writes a `project-policy.json` proposal
+from the observed modules, hosts, projects, and project-reference edges:
 
 ```bash
 uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @your-org/architecture
 ```
+
+For an empty repository, select the known technology explicitly with
+`--adapter dotnet` or `--adapter python`. The observed proposal is a starting
+point, not approval of every discovered boundary: review it and remove accidental
+or unjustified structure before implementation.
 
 The reference implementation supports SDK-style .NET and Python projects. See
 [`examples/dotnet-valid/`](examples/dotnet-valid/) for a conforming repository

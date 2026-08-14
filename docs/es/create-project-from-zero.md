@@ -75,8 +75,11 @@ uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org
 ```
 
 El inicializador crea `.agentic/toolchain.json`, registros de gobernanza vacíos
-y cobertura CODEOWNERS. No copia al proyecto el motor, catálogo, schemas ni
-plantillas portables. Después se materializan solo los elementos aplicables:
+y cobertura CODEOWNERS para todo el repositorio. También escribe una propuesta
+observada de `project-policy.json`. Si todavía no existen artefactos tecnológicos,
+se indica `--adapter dotnet` o `--adapter python`. No copia al proyecto el motor,
+catálogo, schemas ni plantillas portables. Después se materializan solo los
+elementos aplicables:
 
 ```text
 AGENTS.md
@@ -95,15 +98,16 @@ domain/global-invariants.md
 
 Las rutas opcionales se omiten si no tienen contenido actual.
 
-## 5. Construir la política específica
+## 5. Revisar la propuesta de política específica
 
-El agente crea la policy descubierta en:
+El inicializador escribe la propuesta observada en:
 
 ```text
 .agentic/policies/architecture/project-policy.json
 ```
 
-Luego reemplaza todos los valores de ejemplo con hechos del proyecto:
+El agente conserva los hechos que sean límites intencionales, elimina estructura
+accidental y añade la semántica decidida que el adaptador no puede inferir:
 
 - raíces de módulos y hosts;
 - áreas funcionales existentes;

@@ -86,8 +86,10 @@ granted. A stale digest cannot silence a current violation.
 
 ## AUT001 — Architecture authority is declared and protected
 
-Declared authorities must map to CODEOWNERS principals and require pull-request,
-code-owner, stale-review, no-direct-push, and status-check enforcement. Platform
+Every declared protected scope must be covered by a real CODEOWNERS pattern
+owned by its authority principals. A narrower pattern cannot remove that
+authority inside its scope. Pull-request, code-owner, stale-review,
+no-direct-push, and status-check enforcement must be declared; platform
 configuration remains external evidence.
 
 ## REV001 — Semantic reviews are explicit and current

@@ -149,12 +149,18 @@ aak context locate "architecture validation"
 aak validate --root examples/dotnet-valid
 ```
 
-Para inicializar la gobernanza en un proyecto existente y dejar que el agente
-descubra y escriba después su policy:
+Para inicializar la gobernanza en un proyecto existente, el inicializador
+selecciona el adaptador a partir de sus artefactos y escribe una propuesta de
+`project-policy.json` con módulos, hosts, proyectos y referencias observadas:
 
 ```bash
 uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @tu-org/architecture
 ```
+
+En un repositorio vacío, indica la tecnología conocida con `--adapter dotnet` o
+`--adapter python`. La propuesta observada es un punto de partida, no una
+aprobación de todos los límites encontrados: hay que revisarla y eliminar la
+estructura accidental o injustificada antes de implementar.
 
 La implementación de referencia soporta proyectos .NET SDK-style y Python.
 Consulta

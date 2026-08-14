@@ -18,8 +18,8 @@ sí sola no se presenta como implementada.
 | Integridad de referencias normativas | Implementado | Cada hallazgo contiene referencia incluida y digest semántico por regla; `DOC001` valida headings, clasificación, referencias de módulo y cobertura completa del documento del validador |
 | Diagnóstico contextual de reglas | Implementado | `aak core` expone el contexto preventivo y `aak explain RULE` combina definición, digest, hallazgos, scope, evidencia y concesiones aplicadas |
 | Revisiones semánticas persistentes | Implementado | La integridad local exige huella exacta, SHA ancestro alcanzable, autoridad declarada, principal CODEOWNER y evidencia; la aprobación real se aplica externamente |
-| Invalidación semántica de concesiones | Implementado | Waivers y reviews con digest ausente u obsoleto no se aplican y requieren revisión; cambios de otras reglas no los invalidan |
-| Aplicación de autoridad | Garantía dividida | Se validan declaraciones y CODEOWNERS; la protección de rama y aprobación registrada en GitHub son hechos externos que deben configurarse en la plataforma |
+| Invalidación semántica de concesiones | Implementado | El schema rechaza un digest ausente; un digest válido pero obsoleto no se aplica y exige revisión; cambios de otras reglas no lo invalidan |
+| Aplicación de autoridad | Garantía dividida | Cada scope protegido exige cobertura CODEOWNERS real y los overrides no pueden retirar sus principals; la protección de rama y la aprobación real siguen siendo hechos de plataforma |
 | Higiene de waivers | Implementado | Waivers sin uso, inválidos, caducados o demasiado amplios permanecen visibles |
 | Índice generado del repositorio | Inicial | Índices JSON de módulos, proyectos, dependencias, documentos y tests ligados a revisión |
 | Comandos de contexto progresivo | Inicial | Locate, búsqueda textual exacta de símbolos/referencias/tests e impacto directo con procedencia |

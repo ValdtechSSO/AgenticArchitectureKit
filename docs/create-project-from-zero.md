@@ -74,9 +74,11 @@ uvx --from agentic-architecture-kit==0.4.0 aak init --root . --codeowner @your-o
 ```
 
 The initializer creates `.agentic/toolchain.json`, empty governance records, and
-CODEOWNERS coverage. It does not copy the portable engine, catalog, schemas, or
-templates into the project. Then materialize only applicable project-specific
-assets:
+repository-wide CODEOWNERS coverage. It also writes an observed
+`project-policy.json` proposal. If no technology artifact exists yet, pass
+`--adapter dotnet` or `--adapter python`. It does not copy the portable engine,
+catalog, schemas, or templates into the project. Then materialize only
+applicable project-specific assets:
 
 ```text
 AGENTS.md
@@ -95,15 +97,16 @@ domain/global-invariants.md
 
 Optional paths are omitted when they have no current content or responsibility.
 
-## 5. Build the project-specific policy
+## 5. Review the project-specific policy proposal
 
-Create the discovered policy at:
+The initializer writes the observed proposal at:
 
 ```text
 .agentic/policies/architecture/project-policy.json
 ```
 
-Replace every sample value with observed or decided project facts:
+Keep observed facts that represent intentional boundaries, remove accidental
+structure, and add decided semantics the adapter cannot infer:
 
 - module and host roots;
 - existing functional areas;

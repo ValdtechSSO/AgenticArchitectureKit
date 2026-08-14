@@ -41,13 +41,18 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
     modules_root = root / policy["roots"]["modules"]
     hosts_root = root / policy["roots"]["hosts"]
 
-    modules = tuple(
-        sorted(
-            _relative(root, path)
-            for path in modules_root.iterdir()
-            if path.is_dir() and (path / "__init__.py").is_file()
-        )
-    ) if modules_root.is_dir() else ()
+    modules = ()
+    if modules_root.is_dir():
+        if (modules_root / "__init__.py").is_file():
+            modules = (_relative(root, modules_root),)
+        else:
+            modules = tuple(
+                sorted(
+                    _relative(root, path)
+                    for path in modules_root.iterdir()
+                    if path.is_dir() and (path / "__init__.py").is_file()
+                )
+            )
     hosts = tuple(
         sorted(
             _relative(root, path)

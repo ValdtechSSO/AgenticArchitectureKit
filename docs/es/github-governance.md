@@ -17,9 +17,12 @@ cada rama indicada en `.agentic/policies/architecture/authorities.json` con:
 - impedir bypass y pushes directos, también para administradores salvo excepción
   aceptada explícitamente por el equipo.
 
-Los principals de `authorities.json` deben ser usuarios o equipos válidos en
-`.github/CODEOWNERS`. Sustituye el principal incluido cuando cambie el owner o el
-equipo responsable del repositorio.
+Cada `protectedScope` de `authorities.json` debe tener un patrón real que lo cubra
+en `.github/CODEOWNERS` y pertenezca a todos los principals de esa autoridad. Un
+patrón más estrecho dentro del scope no puede retirar esos principals. Para el
+scope raíz (`.`), usa una entrada global como `* @equipo/arquitectura`; así se
+protegen también `.github/workflows/` y el propio `CODEOWNERS`. Sustituye el
+principal incluido cuando cambie el owner o el equipo responsable.
 
 ## Flujo para registrar una revisión
 
@@ -36,8 +39,9 @@ La alcanzabilidad y la huella impiden reutilizaciones accidentales. CODEOWNERS y
 la protección de rama impiden que un agente acepte su propia revisión. El JSON
 por sí solo no demuestra aprobación humana.
 
-Un `ruleDigest` ausente o modificado impide aplicar el acuse aunque su huella
-anterior todavía pareciera coincidir.
+El contrato rechaza un `ruleDigest` ausente. Un digest válido pero modificado
+impide aplicar el acuse y produce `REVIEW_REQUIRED`, aunque su huella anterior
+todavía pareciera coincidir.
 
 Una revisión solo se comprueba como obsoleta cuando su regla objetivo es
 aplicable. Por ejemplo, una revisión de `CHG001` se conserva sin emitir un aviso

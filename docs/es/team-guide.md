@@ -120,10 +120,10 @@ Los datos generados son evidencia útil, pero no autoridad semántica. Si un
 | `module.contract.yml` | Propósito, vocabulario, ownership, riesgo, invariantes y ADR no derivables | Equipo propietario o agente autorizado | Verdad semántica, no duplicación estructural |
 | `.agentic/toolchain.json` | Fija las versiones del kit, catálogo y extensiones | Owners del repositorio o agente autorizado | Intención de upgrade y reproducibilidad |
 | `project-policy.json` | Declara módulos, hosts, proyectos, features y dependencias permitidas | Agente autorizado o responsable de arquitectura | Que un límite nuevo esté justificado, no solo observado |
-| `waivers.json` | Registra desviaciones acotadas y autorizadas | Autoridad definida por la política del equipo | Scope, riesgo, autoridad, caducidad y eliminación |
+| `waivers.json` | Registra desviaciones acotadas y autorizadas | Autoridad definida por la política del equipo | Digest de regla, scope, riesgo, autoridad, caducidad y eliminación |
 | `authorities.json` | Declara principals, scopes protegidos, ramas y controles requeridos | Owners del repositorio | Coincidencia entre declaración y configuración real de plataforma |
-| `.github/CODEOWNERS` | Enruta cambios arquitectónicos protegidos hacia los principals declarados | Owners del repositorio | Usuarios o equipos válidos y cobertura de rutas sensibles |
-| `reviews.json` | Registra una aprobación semántica respaldada por plataforma para huella y commit exactos | Autoridad declarada | Identidad, evidencia, SHA, scope y obsolescencia |
+| `.github/CODEOWNERS` | Enruta cambios arquitectónicos protegidos hacia los principals declarados | Owners del repositorio | Un patrón real por scope protegido y ningún override que retire al owner |
+| `reviews.json` | Registra una aprobación semántica respaldada por plataforma para huella y commit exactos | Autoridad declarada | Identidad, digest de regla, evidencia, SHA, scope y obsolescencia |
 | `rules.json` | Catálogo estable de reglas portables | Mantenedores del kit | Semántica común y compatibilidad entre proyectos |
 | Adaptador tecnológico | Convierte estructura tecnológica al modelo observado común | Mantenedor del kit o colaborador del adaptador | Precisión de observación; ninguna decisión de política |
 | Tests arquitectónicos | Protegen decisiones específicas que el validador común no expresa | Equipo o agente autorizado | Que protejan comportamiento y no detalles accidentales |
@@ -291,9 +291,9 @@ Los revisores deberían rechazar licencias que:
 Cuando una licencia válida deja de coincidir con una violación, el validador la
 señala para revisión y eliminación.
 
-Un `ruleDigest` ausente o modificado impide aplicar la licencia. La violación
-original permanece visible y la concesión requiere revisión bajo la semántica
-actual.
+El contrato rechaza un `ruleDigest` ausente. Un digest válido pero modificado
+impide aplicar la licencia: la violación original permanece visible y la
+concesión requiere revisión bajo la semántica actual.
 
 ## 10. Revisar un cambio del agente
 

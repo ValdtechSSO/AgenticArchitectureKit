@@ -118,10 +118,10 @@ index disagrees with current source or revision, it is stale.
 | `module.contract.yml` | Non-derivable purpose, vocabulary, ownership, risk, invariants, and ADR links | Owning team or authorized agent | Semantic truth, not structural duplication |
 | `.agentic/toolchain.json` | Pins the kit, catalog, and extension versions used by the project | Repository owners or authorized agent | Upgrade intent and reproducibility |
 | `project-policy.json` | Declares the project's modules, hosts, projects, feature roots, and allowed dependencies | Authorized agent or architecture owner | Whether a changed boundary is justified rather than merely observed |
-| `waivers.json` | Records bounded, authorized deviations from portable rules | Authority named by team policy | Exact scope, risk, owner, expiry, and removal condition |
+| `waivers.json` | Records bounded, authorized deviations from portable rules | Authority named by team policy | Rule digest, exact scope, risk, owner, expiry, and removal condition |
 | `authorities.json` | Declares approval principals, protected scopes, branches, and required platform controls | Repository owners | Whether the declared authority matches actual platform configuration |
-| `.github/CODEOWNERS` | Routes protected architecture changes to declared principals | Repository owners | Valid users or teams and complete sensitive-path coverage |
-| `reviews.json` | Records a platform-backed semantic approval for an exact fingerprint and reachable commit | Declared authority | Identity, approval evidence, SHA, scope, and staleness |
+| `.github/CODEOWNERS` | Routes protected architecture changes to declared principals | Repository owners | A real covering pattern per protected scope and no owner-removing override |
+| `reviews.json` | Records a platform-backed semantic approval for an exact fingerprint and reachable commit | Declared authority | Identity, rule digest, approval evidence, SHA, scope, and staleness |
 | `rules.json` | Stable portable rule catalog | Kit maintainers | Cross-project semantics and compatibility |
 | Technology adapter | Converts technology-specific structure into the common observed model | Kit maintainer or adapter contributor | Observation accuracy; no policy decisions |
 | Architecture tests | Enforce project-specific decisions the common validator cannot express | Team or authorized agent | Whether they protect behavior rather than implementation trivia |
@@ -291,8 +291,9 @@ Reviewers should reject waivers that:
 When a valid waiver no longer matches a violation, the validator reports it for
 review so it can be removed.
 
-A missing or changed `ruleDigest` makes the waiver inapplicable. The original
-violation remains visible and the grant requires review under current semantics.
+A missing `ruleDigest` is rejected by the waiver contract. A valid but changed
+digest makes the waiver inapplicable: the original violation remains visible
+and the grant requires review under current semantics.
 
 ## 10. Reviewing an agent change
 

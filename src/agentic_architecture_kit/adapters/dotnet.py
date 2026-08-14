@@ -23,13 +23,18 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
     modules_root = root / roots["modules"]
     hosts_root = root / roots["hosts"]
 
-    modules = tuple(
-        sorted(
-            _relative(root, path)
-            for path in modules_root.iterdir()
-            if path.is_dir()
-        )
-    ) if modules_root.is_dir() else ()
+    modules = ()
+    if modules_root.is_dir():
+        if any(path.is_file() for path in modules_root.glob("*.csproj")):
+            modules = (_relative(root, modules_root),)
+        else:
+            modules = tuple(
+                sorted(
+                    _relative(root, path)
+                    for path in modules_root.iterdir()
+                    if path.is_dir() and not path.name.startswith(".")
+                )
+            )
     hosts = tuple(
         sorted(
             _relative(root, path)

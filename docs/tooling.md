@@ -42,8 +42,16 @@ Thus an upgrade is an explicit project change rather than an accidental change
 in CI or on a developer machine.
 
 `aak init --root . --codeowner @team/architecture` creates only project-owned
-governance files and CODEOWNERS entries. It deliberately does not invent the
-project policy, modules, or hosts; the agent writes those after discovery.
+governance files and a CODEOWNERS entry. It also asks the selected adapter to
+observe the repository and writes a `project-policy.json` proposal containing
+the modules, hosts, projects, and exact project-reference edges it found. The
+proposal is factual scaffolding: the agent or team must remove accidental or
+unjustified boundaries instead of treating observation as architectural approval.
+
+Adapter selection is automatic when `.csproj`, `pyproject.toml`, or Python
+sources exist. Before technology artifacts exist, pass `--adapter dotnet` or
+`--adapter python`; the generated policy contains empty architecture arrays and
+remains valid until product artifacts are introduced.
 
 ## Validation
 
@@ -74,6 +82,10 @@ Every finding carries a resolvable normative `reference` and a `ruleDigest`.
 `aak explain` combines that definition with the rule's current repository
 status, scopes, observed evidence, and applied waiver or review. A missing
 reference is a validation failure.
+
+Every waiver and semantic review must persist that exact `ruleDigest`. A valid
+but different digest degrades the grant to `REVIEW_REQUIRED` and prevents it
+from applying to the current rule semantics.
 
 `--task-id` retains `architecture.json` and `manifest.json` under
 `.agentic/runtime/evidence/{task-id}/{revision}/`.

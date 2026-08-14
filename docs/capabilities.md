@@ -18,8 +18,8 @@ represented as implemented.
 | Normative-reference integrity | Implemented | Every finding carries a packaged reference and per-rule semantic digest; `DOC001` verifies catalog headings, enforcement classification, module references, and complete validator-heading coverage |
 | Contextual rule diagnosis | Implemented | `aak core` exposes preventive context and `aak explain RULE` combines definition, digest, current findings, scope, evidence, and applied grants |
 | Persistent semantic reviews | Implemented | Local integrity requires exact fingerprint, reachable ancestor SHA, declared authority, CODEOWNER principal and approval evidence; actual approval is externally enforced |
-| Semantic grant invalidation | Implemented | Waivers and reviews with missing or stale rule digests cannot apply and require review; unrelated catalog changes do not invalidate other rules |
-| Authority enforcement | Split guarantee | Repository declarations and CODEOWNERS are validated; GitHub branch protection and recorded approval remain platform facts and must be configured externally |
+| Semantic grant invalidation | Implemented | The schema rejects a missing rule digest; a valid but stale digest cannot apply and becomes review-required; unrelated catalog changes do not invalidate other rules |
+| Authority enforcement | Split guarantee | Every protected scope requires real CODEOWNERS coverage and narrower overrides cannot remove its principals; GitHub branch protection and recorded approval remain platform facts |
 | Waiver hygiene | Implemented | Unmatched, invalid, expired and overly broad waivers remain visible |
 | Generated repository index | Initial | Revision-tagged module, project, dependency, document and test JSON indices |
 | Progressive context commands | Initial | Locate, exact-text symbol/reference/test search and direct impact queries with provenance |

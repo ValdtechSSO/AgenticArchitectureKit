@@ -215,7 +215,9 @@ def _rule_module_contract(context: ValidationContext) -> list[Finding]:
                 )
             )
     if not context.observed.modules:
-        results.append(_finding("MOD001", "FAIL", context.policy["roots"]["modules"], "No module was observed."))
+        status = "FAIL" if context.observed.projects or context.observed.source_files else "NOT_APPLICABLE"
+        message = "No module was observed for existing product artifacts." if status == "FAIL" else "The repository has no product artifacts requiring a module yet."
+        results.append(_finding("MOD001", status, context.policy["roots"]["modules"], message))
     return results
 
 
@@ -247,7 +249,14 @@ def _rule_module_identity(context: ValidationContext) -> list[Finding]:
             results.append(
                 _finding("MOD002", "PASS", contract_key, "Module contract id matches its directory.", id=actual)
             )
-    return results
+    return results or [
+        _finding(
+            "MOD002",
+            "NOT_APPLICABLE",
+            context.policy["roots"]["modules"],
+            "The repository has no module identity to validate yet.",
+        )
+    ]
 
 
 def _rule_functional_modules(context: ValidationContext) -> list[Finding]:
@@ -872,8 +881,67 @@ def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
     return results or [_finding("REV001", "PASS", _display_path(context, context.review_path), "Architecture review acknowledgements are structurally valid.", count=len(context.reviews))]
 
 
+def _codeowners_entries(content: str) -> tuple[list[dict[str, object]], list[int]]:
+    entries: list[dict[str, object]] = []
+    invalid_lines: list[int] = []
+    for line_number, raw in enumerate(content.splitlines(), start=1):
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        parts = stripped.split()
+        if len(parts) < 2 or any(character in parts[0] for character in ("!", "[", "]")):
+            invalid_lines.append(line_number)
+            continue
+        entries.append({"pattern": parts[0], "owners": set(parts[1:]), "line": line_number})
+    return entries, invalid_lines
+
+
+def _normalized_governed_path(value: str) -> str:
+    normalized = value.strip().replace("\\", "/")
+    if normalized in ("", ".", "./", "/"):
+        return "."
+    return normalized.removeprefix("./").lstrip("/").rstrip("/")
+
+
+def _normalized_codeowners_pattern(value: str) -> str:
+    return value.strip().replace("\\", "/").lstrip("/")
+
+
+def _codeowners_pattern_covers_scope(pattern: str, scope: str) -> bool:
+    value = _normalized_codeowners_pattern(pattern)
+    governed = _normalized_governed_path(scope)
+    if value in ("*", "**", "**/*"):
+        return True
+    if governed == ".":
+        return False
+    value = value.rstrip("/")
+    if not any(character in value for character in "*?"):
+        return value == governed
+    for suffix in ("/**", "/**/*"):
+        if value.endswith(suffix):
+            prefix = value.removesuffix(suffix).rstrip("/")
+            return prefix == governed
+    return False
+
+
+def _codeowners_pattern_targets_scope(pattern: str, scope: str) -> bool:
+    governed = _normalized_governed_path(scope)
+    if governed == ".":
+        return True
+    value = _normalized_codeowners_pattern(pattern).rstrip("/")
+    static_prefix = re.split(r"[*?]", value, maxsplit=1)[0].rstrip("/")
+    if not static_prefix:
+        return True
+    return (
+        static_prefix == governed
+        or static_prefix.startswith(governed + "/")
+        or governed.startswith(static_prefix + "/")
+    )
+
+
 def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
     findings: list[Finding] = []
+    verified_coverage: list[dict[str, object]] = []
     authorities = context.authorities["authorities"]
     ids = [item["id"] for item in authorities]
     duplicates = sorted(item for item, count in Counter(ids).items() if count > 1)
@@ -888,16 +956,80 @@ def _rule_authorities_valid(context: ValidationContext) -> list[Finding]:
     if not codeowners_path.is_file():
         findings.append(_finding("AUT001", "FAIL", enforcement["codeOwnersFile"], "Declared CODEOWNERS file does not exist."))
     else:
-        tokens = {
-            token
-            for raw in codeowners_path.read_text(encoding="utf-8").splitlines()
-            if raw.strip() and not raw.lstrip().startswith("#")
-            for token in raw.split()[1:]
-        }
+        entries, invalid_lines = _codeowners_entries(codeowners_path.read_text(encoding="utf-8"))
+        if invalid_lines:
+            findings.append(
+                _finding(
+                    "AUT001",
+                    "FAIL",
+                    enforcement["codeOwnersFile"],
+                    "CODEOWNERS contains unsupported or ownerless patterns.",
+                    invalidLines=invalid_lines,
+                )
+            )
+        tokens = {token for entry in entries for token in entry["owners"]}
         missing_principals = sorted({principal for item in authorities for principal in item["principals"] if principal not in tokens})
         if missing_principals:
             findings.append(_finding("AUT001", "FAIL", enforcement["codeOwnersFile"], "Declared authority principals are absent from CODEOWNERS.", missingPrincipals=missing_principals))
-    return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Repository-side authority declarations and CODEOWNERS are consistent; platform branch protection remains externally enforced.", authorities=ids, protectedBranches=enforcement["protectedBranches"])]
+        missing_coverage: list[dict[str, object]] = []
+        unsafe_overrides: list[dict[str, object]] = []
+        for authority in authorities:
+            principals = set(authority["principals"])
+            for scope in authority["protectedScopes"]:
+                covering = [
+                    entry
+                    for entry in entries
+                    if _codeowners_pattern_covers_scope(str(entry["pattern"]), scope)
+                    and principals.issubset(entry["owners"])
+                ]
+                if not covering:
+                    missing_coverage.append({
+                        "authorityId": authority["id"],
+                        "scope": scope,
+                        "requiredPrincipals": sorted(principals),
+                    })
+                    continue
+                overrides = [
+                    entry
+                    for entry in entries
+                    if _codeowners_pattern_targets_scope(str(entry["pattern"]), scope)
+                    and not principals.issubset(entry["owners"])
+                ]
+                if overrides:
+                    unsafe_overrides.extend({
+                        "authorityId": authority["id"],
+                        "scope": scope,
+                        "pattern": entry["pattern"],
+                        "line": entry["line"],
+                        "owners": sorted(entry["owners"]),
+                    } for entry in overrides)
+                else:
+                    verified_coverage.append({
+                        "authorityId": authority["id"],
+                        "scope": scope,
+                        "patterns": [entry["pattern"] for entry in covering],
+                    })
+        if missing_coverage:
+            findings.append(
+                _finding(
+                    "AUT001",
+                    "FAIL",
+                    enforcement["codeOwnersFile"],
+                    "Declared protected scopes are not covered by CODEOWNERS patterns owned by their authority principals.",
+                    missingCoverage=missing_coverage,
+                )
+            )
+        if unsafe_overrides:
+            findings.append(
+                _finding(
+                    "AUT001",
+                    "FAIL",
+                    enforcement["codeOwnersFile"],
+                    "CODEOWNERS contains narrower patterns that remove an authority from its protected scope.",
+                    unsafeOverrides=unsafe_overrides,
+                )
+            )
+    return findings or [_finding("AUT001", "PASS", _display_path(context, context.authority_path), "Every declared protected scope is covered by CODEOWNERS principals; platform branch protection remains externally enforced.", authorities=ids, protectedBranches=enforcement["protectedBranches"], coverage=verified_coverage)]
 
 
 def _rule_document_references(context: ValidationContext) -> list[Finding]:

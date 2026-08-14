@@ -65,7 +65,6 @@
     },
     "modules": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -104,7 +103,6 @@
     },
     "projects": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,

@@ -42,8 +42,16 @@ extensión instalada no coinciden con los pins. Un upgrade es así un cambio
 explícito y revisable.
 
 `aak init --root . --codeowner @equipo/arquitectura` crea solo gobernanza propia
-y CODEOWNERS. No inventa policy, módulos ni hosts: el agente los declara después
-de descubrir la arquitectura real.
+y una entrada CODEOWNERS. También pide al adaptador seleccionado que observe el
+repositorio y escribe una propuesta de `project-policy.json` con los módulos,
+hosts, proyectos y referencias exactas que ha encontrado. Es andamiaje factual:
+el agente o el equipo elimina los límites accidentales o injustificados, sin
+tratar la observación como aprobación arquitectónica.
+
+El adaptador se selecciona automáticamente si ya hay `.csproj`,
+`pyproject.toml` o código Python. Antes de que existan artefactos tecnológicos,
+se indica `--adapter dotnet` o `--adapter python`; la policy generada mantiene
+arrays arquitectónicos vacíos y válidos hasta incorporar código de producto.
 
 ## Validación y contexto
 
@@ -68,6 +76,10 @@ autoridades, catálogo y observación.
 Cada hallazgo contiene `reference` normativa resoluble y `ruleDigest`.
 `aak explain` combina la definición con estado actual, scopes, evidencia y
 waiver o review aplicado. Una referencia ausente hace fallar la validación.
+
+Cada waiver y review semántico debe persistir ese `ruleDigest` exacto. Un digest
+válido pero distinto degrada la licencia a `REVIEW_REQUIRED` e impide aplicarla
+a la semántica actual de la regla.
 
 ## Extensiones tecnológicas
 
