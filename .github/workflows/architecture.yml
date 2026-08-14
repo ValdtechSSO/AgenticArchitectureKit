@@ -1,0 +1,40 @@
+name: Architecture conformance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validator conformance tests
+        run: python3 -m unittest discover -s tools/architecture/tests -v
+      - name: Validate the kit
+        run: python3 tools/architecture/validate.py --fail-on-review --task-id architecture-ci
+      - name: Guard policy growth against the pull request base
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REVISION: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git cat-file -e "$BASE_REVISION:.agentic/policies/architecture/project-policy.json"; then
+            python3 tools/architecture/validate.py --base-ref "$BASE_REVISION" --fail-on-review --task-id architecture-pr
+          else
+            echo "Base revision predates architecture policy; bootstrap is covered by the strict self-validation step."
+          fi
+      - name: Retain architecture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-evidence-${{ github.run_id }}
+          path: .agentic/runtime/evidence/
+          if-no-files-found: error

@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -131,6 +133,51 @@ def _validate_policy_semantics(root: Path, policy: dict[str, Any]) -> None:
         if pair[0] == pair[1]:
             raise ContractError(f"A project cannot depend on itself: {pair[0]}")
 
+    for rule in policy.get("dependencyRules", []):
+        for side in ("from", "to"):
+            selector = rule[side]
+            if not selector:
+                raise ContractError(f"Dependency rule {side} selector cannot be empty")
+            owner_id = selector.get("ownerId")
+            if owner_id and owner_id not in module_ids | host_ids:
+                raise ContractError(f"Dependency rule references unknown owner '{owner_id}'")
+            if selector.get("ownerKind") == "module" and selector.get("ownerId") not in (None, *module_ids):
+                raise ContractError(f"Dependency rule references unknown module '{selector['ownerId']}'")
+            if selector.get("ownerKind") == "host" and selector.get("ownerId") not in (None, *host_ids):
+                raise ContractError(f"Dependency rule references unknown host '{selector['ownerId']}'")
+
+
+def _canonical_digest(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _git(root: Path, *arguments: str) -> str:
+    return subprocess.run(
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+def _load_base_policy(root: Path, policy_path: Path, base_ref: str | None) -> tuple[dict[str, Any] | None, str | None]:
+    if not base_ref:
+        return None, None
+    try:
+        relative = policy_path.resolve().relative_to(root).as_posix()
+    except ValueError as error:
+        raise ContractError("--base-ref requires the project policy to live inside the repository") from error
+    try:
+        revision = _git(root, "rev-parse", "--verify", f"{base_ref}^{{commit}}")
+        content = _git(root, "show", f"{revision}:{relative}")
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ContractError(f"Cannot load base policy from {base_ref}: {error}") from error
+    try:
+        value = json.loads(content)
+    except json.JSONDecodeError as error:
+        raise ContractError(f"Base policy at {base_ref} is not valid JSON: {error}") from error
+    if not isinstance(value, dict):
+        raise ContractError(f"Base policy at {base_ref} must be a JSON object")
+    return value, revision
+
 
 def _revision(root: Path) -> str:
     try:
@@ -169,12 +216,29 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Explicit architecture waivers, relative to root.",
     )
     parser.add_argument(
+        "--reviews",
+        default=".agentic/policies/architecture/reviews.json",
+        help="Accepted semantic reviews, relative to root.",
+    )
+    parser.add_argument(
         "--catalog",
         default="tools/architecture/rules.json",
         help="Portable rule catalog, relative to root.",
     )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", help="Also write the structured JSON result to this path.")
+    parser.add_argument(
+        "--base-ref",
+        help="Git revision used to detect architecture-policy growth (for example origin/main).",
+    )
+    parser.add_argument(
+        "--write-review-template",
+        help="Write a review template for unresolved REVIEW_REQUIRED findings.",
+    )
+    parser.add_argument(
+        "--task-id",
+        help="Retain the JSON result under .agentic/runtime/evidence/<task-id>/<revision>/.",
+    )
     parser.add_argument(
         "--fail-on-review",
         action="store_true",
@@ -185,13 +249,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def run(arguments: list[str] | None = None) -> int:
-    args = _build_parser().parse_args(arguments)
+    cli_arguments = list(arguments) if arguments is not None else sys.argv[1:]
+    args = _build_parser().parse_args(cli_arguments)
     root = Path(args.root).resolve()
     try:
         if not root.is_dir():
             raise ContractError(f"Repository root does not exist: {root}")
         policy_path = _path(root, args.policy)
         waiver_path = _path(root, args.waivers)
+        review_path = _path(root, args.reviews)
         catalog_path = _path(root, args.catalog)
         catalog = _load_catalog(catalog_path)
 
@@ -203,12 +269,19 @@ def run(arguments: list[str] | None = None) -> int:
 
         policy = load_json(policy_path)
         waiver_document = load_json(waiver_path)
+        review_document = load_json(review_path)
         policy_schema = root / ".agentic/contracts/schemas/architecture-policy.schema.json"
         waiver_schema = root / ".agentic/contracts/schemas/architecture-waivers.schema.json"
+        review_schema = root / ".agentic/contracts/schemas/architecture-reviews.schema.json"
         result_schema = root / ".agentic/contracts/schemas/architecture-result.schema.json"
         _validate_with_schema(policy, policy_schema, "Architecture policy")
         _validate_with_schema(waiver_document, waiver_schema, "Architecture waivers")
+        _validate_with_schema(review_document, review_schema, "Architecture reviews")
         _validate_policy_semantics(root, policy)
+        base_policy, base_revision = _load_base_policy(root, policy_path, args.base_ref)
+        if base_policy is not None:
+            _validate_with_schema(base_policy, policy_schema, "Base architecture policy")
+            _validate_policy_semantics(root, base_policy)
 
         observed = observe(policy["adapter"], root, policy)
 
@@ -239,28 +312,42 @@ def run(arguments: list[str] | None = None) -> int:
             root=root,
             policy_path=policy_path,
             waiver_path=waiver_path,
+            review_path=review_path,
             policy=policy,
             waivers=waiver_document["waivers"],
+            reviews=review_document["reviews"],
             catalog=catalog,
             observed=observed,
             contracts=contracts,
             contract_errors=contract_errors,
+            base_policy=base_policy,
+            base_revision=base_revision,
         )
         findings = evaluate(context)
         counts = Counter(finding.status for finding in findings)
+        planned_exit = 1 if counts["FAIL"] or (args.fail_on_review and counts["REVIEW_REQUIRED"]) else 0
+        revision = _revision(root)
         report = {
             "tool": "agentic-architecture-validator",
             "toolVersion": __version__,
             "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "repositoryRoot": str(root),
-            "repositoryRevision": _revision(root),
+            "repositoryRevision": revision,
             "project": policy["project"],
             "adapter": policy["adapter"],
             "policy": _display_path(root, policy_path),
             "waivers": _display_path(root, waiver_path),
+            "reviews": _display_path(root, review_path),
+            "policyDigest": _canonical_digest(policy),
+            "waiverDigest": _canonical_digest(waiver_document),
+            "reviewDigest": _canonical_digest(review_document),
+            "catalogDigest": _canonical_digest({"version": 1, "rules": list(catalog.values())}),
+            "observedDigest": _canonical_digest(observed.as_dict()),
             "summary": {status: counts[status] for status in STATUSES},
             "results": [finding.as_dict() for finding in findings],
         }
+        if base_revision:
+            report["baseRevision"] = base_revision
         result_errors = validate_schema(report, load_json(result_schema))
         if result_errors:
             raise ContractError("Validator produced an invalid result:\n  - " + "\n  - ".join(result_errors))
@@ -270,20 +357,58 @@ def run(arguments: list[str] | None = None) -> int:
             output = _path(root, args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(serialized, encoding="utf-8")
+        if args.write_review_template:
+            pending = []
+            reviewable = [
+                item for item in findings
+                if item.status == "REVIEW_REQUIRED" and item.review_fingerprint
+            ]
+            for index, finding in enumerate(reviewable):
+                pending.append({
+                    "id": f"REVIEW-{index + 1:03d}",
+                    "rule": finding.rule,
+                    "scope": finding.scope,
+                    "subjectFingerprint": finding.review_fingerprint,
+                    "decision": "Replace with the accepted semantic judgment.",
+                    "authority": "Replace with the accountable role or team.",
+                    "authorizedBy": ["architecture/decisions/ADR-XXX.md"],
+                    "reviewedAtRevision": revision,
+                    "reviewWhen": ["The reviewed subject or its evidence changes."],
+                })
+            review_output = _path(root, args.write_review_template)
+            review_output.parent.mkdir(parents=True, exist_ok=True)
+            review_output.write_text(json.dumps({"version": 1, "reviews": pending}, indent=2) + "\n", encoding="utf-8")
+        if args.task_id:
+            if not re.fullmatch(r"[A-Za-z0-9._-]+", args.task_id):
+                raise ContractError("--task-id may contain only letters, digits, dot, underscore, and hyphen")
+            safe_revision = revision.replace("+", "-")
+            evidence_dir = root / ".agentic/runtime/evidence" / args.task_id / safe_revision
+            evidence_dir.mkdir(parents=True, exist_ok=True)
+            (evidence_dir / "architecture.json").write_text(serialized, encoding="utf-8")
+            manifest = {
+                "taskId": args.task_id,
+                "repositoryRevision": revision,
+                "artifact": "architecture.json",
+                "artifactDigest": _canonical_digest(report),
+                "createdAt": report["generatedAt"],
+                "tool": report["tool"],
+                "toolVersion": report["toolVersion"],
+                "arguments": cli_arguments,
+                "exitCode": planned_exit,
+                "result": "FAIL" if counts["FAIL"] else "REVIEW_REQUIRED" if counts["REVIEW_REQUIRED"] else "PASS",
+            }
+            (evidence_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         if args.format == "json":
             print(serialized, end="")
         else:
             for finding in findings:
                 waiver = f" waiver={finding.waiver}" if finding.waiver else ""
-                print(f"[{finding.status}] {finding.rule} {finding.scope}{waiver} - {finding.message}")
+                review = f" review={finding.review}" if finding.review else ""
+                print(f"[{finding.status}] {finding.rule} {finding.scope}{waiver}{review} - {finding.message}")
             summary = " ".join(f"{status}={counts[status]}" for status in STATUSES)
             print(f"Architecture validation: {summary}")
 
-        if counts["FAIL"]:
-            return 1
-        if args.fail_on_review and counts["REVIEW_REQUIRED"]:
-            return 1
-        return 0
+        return planned_exit
     except (ContractError, OSError, ValueError) as error:
         print(f"architecture validator configuration error: {error}", file=sys.stderr)
         return 2

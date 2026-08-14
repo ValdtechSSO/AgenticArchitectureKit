@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
+import json
 import re
 from collections import Counter, deque
 from datetime import date
@@ -40,8 +42,51 @@ def _declared_projects(context: ValidationContext) -> dict[str, dict]:
     return {item["path"]: item for item in context.policy["projects"]}
 
 
+def _namespace_owner(context: ValidationContext, namespace: str) -> tuple[str, str, bool] | None:
+    for module in context.policy["modules"]:
+        if any(fnmatch.fnmatchcase(namespace, pattern) for pattern in module.get("namespacePatterns", [])):
+            is_contract = any(
+                fnmatch.fnmatchcase(namespace, pattern)
+                for pattern in module.get("contractNamespacePatterns", [])
+            )
+            return "module", module["id"], is_contract
+    for host in context.policy["hosts"]:
+        if any(fnmatch.fnmatchcase(namespace, pattern) for pattern in host.get("namespacePatterns", [])):
+            return "host", host["id"], False
+    return None
+
+
+def _project_matches(declaration: dict, selector: dict) -> bool:
+    owner = declaration["owner"]
+    return (
+        ("ownerKind" not in selector or selector["ownerKind"] == owner["kind"])
+        and ("ownerId" not in selector or selector["ownerId"] == owner["id"])
+        and ("role" not in selector or selector["role"] == declaration["role"])
+        and ("pathPattern" not in selector or fnmatch.fnmatchcase(declaration["path"], selector["pathPattern"]))
+    )
+
+
+def _references_resolve(context: ValidationContext, references: list[str]) -> list[str]:
+    return [reference for reference in references if not _repo_path(context, reference).is_file()]
+
+
 def _rule_policy_valid(context: ValidationContext) -> list[Finding]:
-    return [_finding("POL001", "PASS", _display_path(context, context.policy_path), "Project policy is valid.")]
+    missing: list[dict[str, str]] = []
+    groups = (
+        context.policy.get("modules", []),
+        context.policy.get("hosts", []),
+        context.policy.get("projects", []),
+        context.policy.get("allowedProjectDependencies", []),
+        context.policy.get("dependencyRules", []),
+    )
+    for items in groups:
+        for item in items:
+            for reference in item.get("decisionRefs", []):
+                if not _repo_path(context, reference).is_file():
+                    missing.append({"reference": reference, "subject": item.get("id", item.get("path", item.get("from", "dependency-rule")))})
+    if missing:
+        return [_finding("POL001", "FAIL", _display_path(context, context.policy_path), "Project policy references missing architecture decisions.", missing=missing)]
+    return [_finding("POL001", "PASS", _display_path(context, context.policy_path), "Project policy is valid and its declared decisions resolve.")]
 
 
 def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
@@ -269,12 +314,15 @@ def _rule_hosts_are_adapters(context: ValidationContext) -> list[Finding]:
     for host in context.policy["hosts"]:
         host_root = _repo_path(context, host["root"])
         patterns = host.get("allowedSourcePatterns", [])
-        host_prefix = host["root"].rstrip("/") + "/"
-        sources = [
-            source[len(host_prefix):]
-            for source in context.observed.source_files
-            if source.startswith(host_prefix)
-        ]
+        if host_root.is_file():
+            sources = [host_root.name] if host["root"] in context.observed.source_files else []
+        else:
+            host_prefix = host["root"].rstrip("/") + "/"
+            sources = [
+                source[len(host_prefix):]
+                for source in context.observed.source_files
+                if source.startswith(host_prefix)
+            ]
         if not patterns and sources:
             results.append(
                 _finding(
@@ -347,6 +395,22 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     dependencyPath=path,
                 )
             )
+    for dependency in context.observed.source_dependencies:
+        source = _namespace_owner(context, dependency.source_namespace)
+        target = _namespace_owner(context, dependency.target_namespace)
+        if source and target and source[0] == "module" and target[0] == "host":
+            violations.append(
+                _finding(
+                    "DEP001",
+                    "FAIL",
+                    dependency.source_path,
+                    "Module source imports a host-owned namespace.",
+                    sourceNamespace=dependency.source_namespace,
+                    targetNamespace=dependency.target_namespace,
+                    observation=dependency.kind,
+                    confidence=dependency.confidence,
+                )
+            )
     return violations or [
         _finding("DEP001", "PASS", ".", "No module project depends on a host project.")
     ]
@@ -377,6 +441,25 @@ def _rule_cross_module_contracts(context: ValidationContext) -> list[Finding]:
                         target=reference,
                     )
                 )
+    for dependency in context.observed.source_dependencies:
+        source = _namespace_owner(context, dependency.source_namespace)
+        target = _namespace_owner(context, dependency.target_namespace)
+        if not source or not target or source[0] != "module" or target[0] != "module" or source[1] == target[1]:
+            continue
+        cross_edges += 1
+        if not target[2]:
+            violations.append(
+                _finding(
+                    "DEP002",
+                    "FAIL",
+                    dependency.source_path,
+                    "Cross-module source import does not target a declared contract namespace.",
+                    sourceNamespace=dependency.source_namespace,
+                    targetNamespace=dependency.target_namespace,
+                    observation=dependency.kind,
+                    confidence=dependency.confidence,
+                )
+            )
     if violations:
         return violations
     if cross_edges == 0:
@@ -395,7 +478,22 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
         for target in project.references
         if target in context.observed.projects_by_path
     }
-    unexpected = sorted(actual - allowed)
+    declarations = _declared_projects(context)
+    dependency_rules = context.policy.get("dependencyRules", [])
+    unexpected = []
+    for source, target in sorted(actual - allowed):
+        if source not in declarations or target not in declarations:
+            unexpected.append((source, target))
+            continue
+        source_declaration = declarations[source]
+        target_declaration = declarations[target]
+        if any(
+            _project_matches(source_declaration, rule["from"])
+            and _project_matches(target_declaration, rule["to"])
+            for rule in dependency_rules
+        ):
+            continue
+        unexpected.append((source, target))
     if unexpected:
         return [
             _finding(
@@ -495,8 +593,104 @@ def _rule_no_speculative_structure(context: ValidationContext) -> list[Finding]:
             "REVIEW_REQUIRED",
             ".",
             "Mechanical speculative-structure checks passed; necessity of existing boundaries requires review.",
+            directories=list(context.observed.directories),
+            modules=list(context.observed.modules),
+            hosts=list(context.observed.hosts),
         )
     ]
+
+
+def _architecture_items(policy: dict) -> dict[str, dict[str, dict]]:
+    def keyed(items: list[dict]) -> dict[str, dict]:
+        return {
+            hashlib.sha256(json.dumps(item, sort_keys=True, separators=(",", ":")).encode()).hexdigest(): item
+            for item in items
+        }
+
+    return {
+        "module": keyed(policy.get("modules", [])),
+        "host": keyed(policy.get("hosts", [])),
+        "project": keyed(policy.get("projects", [])),
+        "dependency": keyed(policy.get("allowedProjectDependencies", [])),
+        "dependencyRule": keyed(policy.get("dependencyRules", [])),
+    }
+
+
+def _rule_policy_growth(context: ValidationContext) -> list[Finding]:
+    if context.base_policy is None:
+        return [_finding("CHG001", "NOT_APPLICABLE", ".", "No base policy was supplied for architecture-growth comparison.")]
+    current = _architecture_items(context.policy)
+    base = _architecture_items(context.base_policy)
+    findings: list[Finding] = []
+    for kind, current_items in current.items():
+        for key in sorted(set(current_items) - set(base[kind])):
+            item = current_items[key]
+            references = item.get("decisionRefs", [])
+            scope = item.get("root") or item.get("path") or item.get("from") or ".agentic/policies/architecture/project-policy.json"
+            if not references:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "FAIL",
+                        scope,
+                        f"New or materially changed architecture {kind} has no decision reference.",
+                        addition=item,
+                        baseRevision=context.base_revision,
+                    )
+                )
+                continue
+            missing = _references_resolve(context, references)
+            if missing:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "FAIL",
+                        scope,
+                        f"New or materially changed architecture {kind} references a missing decision.",
+                        addition=item,
+                        missing=missing,
+                        baseRevision=context.base_revision,
+                    )
+                )
+            else:
+                findings.append(
+                    _finding(
+                        "CHG001",
+                        "REVIEW_REQUIRED",
+                        scope,
+                        f"New or materially changed architecture {kind} is documented and requires an authority review.",
+                        addition=item,
+                        decisionRefs=references,
+                        baseRevision=context.base_revision,
+                    )
+                )
+    return findings or [_finding("CHG001", "PASS", ".", "Project policy introduces no material architecture change relative to the base revision.", baseRevision=context.base_revision)]
+
+
+def _rule_reviews_valid(context: ValidationContext) -> list[Finding]:
+    results: list[Finding] = []
+    seen: set[str] = set()
+    known_rules = set(context.catalog)
+    today = date.today()
+    for review in context.reviews:
+        review_id = review["id"]
+        if review_id in seen:
+            results.append(_finding("REV001", "FAIL", _display_path(context, context.review_path), "Review id is duplicated.", review=review_id))
+            continue
+        seen.add(review_id)
+        if review["rule"] not in known_rules or review["rule"] == "REV001":
+            results.append(_finding("REV001", "FAIL", review["scope"], "Review references an unknown or non-reviewable rule.", review=review_id, reviewedRule=review["rule"]))
+        missing = _references_resolve(context, review["authorizedBy"])
+        if missing:
+            results.append(_finding("REV001", "FAIL", review["scope"], "Review authority reference does not exist.", review=review_id, missing=missing))
+        expiry = review.get("expiresOn")
+        if expiry:
+            try:
+                if date.fromisoformat(expiry) < today:
+                    results.append(_finding("REV001", "FAIL", review["scope"], "Review acknowledgement has expired.", review=review_id, expiresOn=expiry))
+            except ValueError:
+                results.append(_finding("REV001", "FAIL", review["scope"], "Review expiry is not an ISO date.", review=review_id, expiresOn=expiry))
+    return results or [_finding("REV001", "PASS", _display_path(context, context.review_path), "Architecture review acknowledgements are structurally valid.", count=len(context.reviews))]
 
 
 def _markdown_anchor_exists(path: Path, anchor: str) -> bool:
@@ -562,7 +756,7 @@ def _rule_waivers_valid(context: ValidationContext) -> list[Finding]:
             results.append(_finding("WVR001", "FAIL", _display_path(context, context.waiver_path), "Waiver id is duplicated.", waiver=waiver_id))
             continue
         seen.add(waiver_id)
-        if waiver["rule"] not in known_rules or waiver["rule"] == "WVR001":
+        if waiver["rule"] not in known_rules or waiver["rule"] in ("WVR001", "REV001"):
             results.append(_finding("WVR001", "FAIL", waiver["scope"], "Waiver references an unknown or non-waivable rule.", waiver=waiver_id, rule=waiver["rule"]))
         try:
             scope_exists = _repo_path(context, waiver["scope"]).exists()
@@ -570,6 +764,10 @@ def _rule_waivers_valid(context: ValidationContext) -> list[Finding]:
             scope_exists = False
         if not scope_exists:
             results.append(_finding("WVR001", "FAIL", waiver["scope"], "Waiver scope does not resolve inside the repository.", waiver=waiver_id))
+        owned_roots = [item["root"].rstrip("/") for item in context.policy["modules"] + context.policy["hosts"]]
+        covered = [root for root in owned_roots if root == waiver["scope"].rstrip("/") or root.startswith(waiver["scope"].rstrip("/") + "/")]
+        if waiver["scope"].rstrip("/") in ("", ".") or len(covered) > 1:
+            results.append(_finding("WVR001", "REVIEW_REQUIRED", waiver["scope"], "Waiver scope spans the repository or multiple ownership boundaries; justify why a narrower scope is impossible.", waiver=waiver_id, coveredRoots=covered))
         expiry = waiver.get("expiresOn")
         if expiry:
             try:
@@ -596,17 +794,31 @@ EVALUATORS: dict[str, Callable[[ValidationContext], list[Finding]]] = {
     "modules_do_not_depend_on_hosts": _rule_modules_do_not_depend_on_hosts,
     "cross_module_contracts": _rule_cross_module_contracts,
     "allowed_dependencies": _rule_allowed_dependencies,
+    "policy_growth": _rule_policy_growth,
     "data_ownership": _rule_data_ownership,
     "no_speculative_structure": _rule_no_speculative_structure,
     "document_references": _rule_document_references,
     "waivers_valid": _rule_waivers_valid,
+    "reviews_valid": _rule_reviews_valid,
 }
 
 
 def _scope_matches(waiver_scope: str, finding_scope: str) -> bool:
     normalized_waiver = waiver_scope.rstrip("/") or "."
     normalized_finding = finding_scope.rstrip("/") or "."
+    if normalized_waiver == ".":
+        return True
     return normalized_finding == normalized_waiver or normalized_finding.startswith(normalized_waiver + "/")
+
+
+def _review_fingerprint(finding: Finding) -> str:
+    subject = {
+        "rule": finding.rule,
+        "scope": finding.scope,
+        "message": finding.message,
+        "evidence": finding.evidence,
+    }
+    return hashlib.sha256(json.dumps(subject, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def evaluate(context: ValidationContext) -> list[Finding]:
@@ -649,6 +861,46 @@ def evaluate(context: ValidationContext) -> list[Finding]:
                     waiver["scope"],
                     "Valid waiver did not match any current violation; review whether it should be removed.",
                     waiver=waiver["id"],
+                )
+            )
+    valid_review_ids = {
+        review["id"]
+        for review in context.reviews
+        if not any(
+            finding.rule == "REV001"
+            and finding.status == "FAIL"
+            and finding.evidence.get("review") == review["id"]
+            for finding in findings
+        )
+    }
+    matched_reviews: Counter[str] = Counter()
+    for finding in findings:
+        if finding.status != "REVIEW_REQUIRED" or finding.rule == "REV001":
+            continue
+        finding.review_fingerprint = _review_fingerprint(finding)
+        for review in context.reviews:
+            if review["id"] not in valid_review_ids:
+                continue
+            if (
+                review["rule"] == finding.rule
+                and review["scope"].rstrip("/") == finding.scope.rstrip("/")
+                and review["subjectFingerprint"] == finding.review_fingerprint
+            ):
+                finding.status = "REVIEWED"
+                finding.review = review["id"]
+                finding.message = f"{finding.message} Accepted review: {review['decision']}"
+                matched_reviews[review["id"]] += 1
+                break
+    for review in context.reviews:
+        if review["id"] in valid_review_ids and matched_reviews[review["id"]] == 0:
+            findings.append(
+                _finding(
+                    "REV001",
+                    "REVIEW_REQUIRED",
+                    review["scope"],
+                    "Review acknowledgement is stale or no longer matches a current semantic finding; refresh or remove it.",
+                    review=review["id"],
+                    reviewedRule=review["rule"],
                 )
             )
     return findings

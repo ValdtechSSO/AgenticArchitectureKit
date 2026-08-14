@@ -79,6 +79,7 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 ```
 
 Las rutas opcionales se omiten si no tienen contenido actual.
@@ -127,6 +128,10 @@ motivo, riesgo, ADR autorizador y condiciones de revisión. Su resultado será
 
 ## 8. Bootstrap y expansión del contexto
 
+Se genera el índice inicial con `python3 tools/architecture/context.py index`.
+`locate` ofrece el punto de partida declarado y `references`, `tests` e `impact`
+permiten ampliar el contexto conservando procedencia y confianza.
+
 El proyecto debe proporcionar al agente un contexto inicial pequeño y
 determinista:
 
@@ -152,12 +157,15 @@ El proyecto inicial no está completo hasta ejecutar:
 ```bash
 python3 -m unittest discover -s tools/architecture/tests -v
 ./tools/scripts/validate-architecture.sh
+./tools/scripts/validate-architecture.sh --base-ref origin/main --fail-on-review
 ```
 
 Además se ejecutan el build y los tests propios del proyecto. Los resultados
 `REVIEW_REQUIRED` se enumeran y se revisan; no se presentan como verificaciones
 automáticas superadas. Una revisión semántica dentro de la autoridad ya delegada
 no requiere por sí sola interacción con el usuario.
+La aceptación se persiste en `reviews.json` con la huella exacta emitida; no se
+suprime el hallazgo ni se presenta como un pass mecánico.
 
 ## 10. Evolución posterior
 
@@ -168,6 +176,10 @@ contratos, ADR, validaciones, licencias y evidencia.
 
 El agente actualiza la política conforme crece el proyecto, pero nunca solo para
 hacer desaparecer un fallo:
+
+CI suministra `--base-ref` para comparar el crecimiento de policy con la rama
+objetivo. Un nuevo límite o permiso de dependencia sin referencia a una decisión
+existente falla aunque el código pudiera quedar verde.
 
 - un límite nuevo legítimo actualiza la política y la decisión que lo sustenta;
 - una violación accidental se corrige en el código;

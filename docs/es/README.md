@@ -2,6 +2,10 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
+> **Estado de implementación:** preview 0.2. El manifiesto es normativo; la
+> [matriz de capacidades](capabilities.md) distingue comportamiento implementado,
+> inicial y de hoja de ruta.
+
 Estándar de arquitectura ejecutable para proyectos creados y evolucionados por
 agentes de programación.
 
@@ -40,12 +44,14 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
   y conformidad.
 - [`team-guide.md`](team-guide.md): guía humana para comprender, revisar y
   gobernar los artefactos creados por el kit.
+- [`capabilities.md`](capabilities.md): matriz honesta de implementación y hoja
+  de ruta de las herramientas de referencia.
 - [`create-project-from-zero.md`](create-project-from-zero.md):
   procedimiento operativo que debe seguir el agente.
 - [`tools/architecture/`](../../tools/architecture/): validador portable, catálogo de
   reglas, adaptadores tecnológicos y tests de conformidad.
 - [`.agentic/contracts/schemas/`](../../.agentic/contracts/schemas/): contratos de la
-  política, las licencias, el resultado y los módulos.
+  policy, los waivers, las revisiones semánticas, el resultado y los módulos.
 - [`.agentic/templates/project/`](../../.agentic/templates/project/): plantillas para
   materializar únicamente las decisiones aplicables al proyecto.
 
@@ -96,6 +102,7 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 ```
 
 Solo se crean los elementos aplicables. No se añaden carpetas vacías,
@@ -109,6 +116,9 @@ Requiere Python 3.9 o posterior y no instala dependencias de terceros.
 ```bash
 python3 -m unittest discover -s tools/architecture/tests -v
 python3 tools/architecture/validate.py --help
+python3 tools/architecture/validate.py --fail-on-review
+python3 tools/architecture/context.py index
+python3 tools/architecture/context.py locate "architecture validation"
 ```
 
 Una vez instalado en un proyecto:
@@ -119,9 +129,14 @@ Una vez instalado en un proyecto:
 ./tools/scripts/validate-architecture.sh --fail-on-review
 ```
 
-El adaptador inicial soporta proyectos .NET SDK-style. Las tecnologías futuras
-se incorporan como adaptadores del mismo modelo observado; no redefinen el
-significado de las reglas generales.
+La implementación de referencia soporta proyectos .NET SDK-style y Python.
+Consulta
+[`examples/dotnet-valid/`](../../examples/dotnet-valid/) para un repositorio
+conforme y [`examples/dotnet-invalid/`](../../examples/dotnet-invalid/) para un
+fallo arquitectónico intencional a nivel de código fuente.
+
+El ejemplo inválido usa un único assembly para demostrar que la regla no depende
+de haber fragmentado antes el proyecto.
 
 ## Licencia
 

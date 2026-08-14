@@ -1,0 +1,23 @@
+id: validator
+name: Architecture Validator
+purpose: >
+  Observe a repository, evaluate portable architecture rules, and retrieve
+  minimum sufficient architecture context with explicit provenance.
+intent:
+  aliases:
+    - architecture validation
+    - conformance engine
+    - repository observation
+    - progressive context
+ownership:
+  domain: architecture governance
+  authoritative_data: []
+risk:
+  default: high
+  reasons:
+    - A false pass can let an autonomous agent cross an architectural boundary
+    - A false failure can block otherwise safe autonomous work
+invariants:
+  - domain/contexts/architecture-validation.md#invariants
+architecture_decisions:
+  - architecture/decisions/ADR-001-portable-validator-boundary.md

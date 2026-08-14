@@ -51,8 +51,8 @@
     },
     {
       "id": "HOST001",
-      "title": "Hosts contain only adapters and composition",
-      "description": "Host source is confined to explicitly declared adapter and composition paths.",
+      "title": "Host source stays in declared adapter locations",
+      "description": "Host source paths are confined to explicitly declared adapter and composition locations. This path rule does not prove behavioral purity.",
       "evaluator": "hosts_are_adapters",
       "automatic": true,
       "inputs": ["project-policy", "filesystem"]
@@ -60,18 +60,18 @@
     {
       "id": "DEP001",
       "title": "Modules do not depend on hosts",
-      "description": "No module-owned project has a direct or transitive dependency on a host-owned project.",
+      "description": "No module-owned project or source namespace has a dependency on a host-owned project or namespace.",
       "evaluator": "modules_do_not_depend_on_hosts",
       "automatic": true,
-      "inputs": ["project-policy", "observed-project-dependencies"]
+      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"]
     },
     {
       "id": "DEP002",
       "title": "Cross-module access uses public contracts",
-      "description": "A cross-module project dependency targets a declared contract boundary.",
+      "description": "A cross-module project or source dependency targets a declared contract boundary.",
       "evaluator": "cross_module_contracts",
       "automatic": true,
-      "inputs": ["project-policy", "observed-project-dependencies"]
+      "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"]
     },
     {
       "id": "DEP003",
@@ -88,6 +88,14 @@
       "evaluator": "data_ownership",
       "automatic": false,
       "inputs": ["module-contracts", "observed-data-access"]
+    },
+    {
+      "id": "CHG001",
+      "title": "Architecture-policy changes have a recorded decision",
+      "description": "New or materially changed modules, hosts, projects, and dependency permissions relative to a Git base require an existing decision reference and explicit review.",
+      "evaluator": "policy_growth",
+      "automatic": false,
+      "inputs": ["project-policy", "base-project-policy", "filesystem"]
     },
     {
       "id": "STR001",
@@ -112,6 +120,14 @@
       "evaluator": "waivers_valid",
       "automatic": true,
       "inputs": ["waivers", "rule-catalog", "filesystem"]
+    },
+    {
+      "id": "REV001",
+      "title": "Semantic reviews are explicit and current",
+      "description": "Review acknowledgements reference a known finding fingerprint, an existing authority record, and remain current.",
+      "evaluator": "reviews_valid",
+      "automatic": true,
+      "inputs": ["reviews", "rule-catalog", "filesystem"]
     }
   ]
 }

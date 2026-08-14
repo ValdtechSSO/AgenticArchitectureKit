@@ -6,6 +6,11 @@
 
 > **Estado:** normativo.
 >
+> **Implementación de referencia:** los requisitos normativos y la capacidad
+> entregada se distinguen deliberadamente. Consulta
+> [`capabilities.md`](capabilities.md) para la implementación probada, las
+> garantías iniciales limitadas y la hoja de ruta.
+>
 > **Ámbito:** este manifiesto define reglas portables para crear y hacer
 > evolucionar repositorios mediante agentes de programación. Cada proyecto debe
 > especializarlas mediante una política propia. Las excepciones requieren una
@@ -738,6 +743,11 @@ La conformidad del contrato incluye forma y significado:
 
 # 9. Arquitectura observada e índice generado
 
+La implementación de referencia 0.2 genera `repository`, `projects`, `modules`,
+`dependencies`, `tests` y `documents`. Los demás índices de la lista siguiente
+son puntos de extensión normativos y permanecen en la hoja de ruta hasta que un
+adaptador pueda observarlos.
+
 La estructura real se deriva del repositorio mediante adaptadores de lenguaje y
 plataforma. Un índice puede residir en:
 
@@ -803,7 +813,7 @@ Comparación con contratos y ADR
         ↓
 Aplicación visible de licencias
         ↓
-PASS / FAIL / WAIVED / NOT_APPLICABLE / REVIEW_REQUIRED
+PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
 ```
 
 ## 10.2 Qué se valida automáticamente
@@ -838,6 +848,11 @@ deterministas:
 El analizador puede producir evidencia y heurísticas, pero el resultado será
 `REVIEW_REQUIRED` cuando no pueda demostrar la regla.
 
+Una autoridad delegada puede persistir una revisión semántica aceptada en
+`reviews.json`. Solo se aplica a la regla, scope y huella exacta del hallazgo y
+se informa como `REVIEWED`, nunca `PASS`. Si cambia la evidencia, la revisión
+queda obsoleta y vuelve a aparecer `REVIEW_REQUIRED`.
+
 ## 10.4 Implementación de referencia suministrada
 
 El manifiesto `MUST` distribuirse con un validador general versionado. Un agente
@@ -851,7 +866,9 @@ tools/architecture/
 │   ├── engine.py                 # evaluación y aplicación de licencias
 │   ├── contracts.py              # contratos de entrada y salida
 │   └── adapters/
-│       └── dotnet.py             # observación tecnológica
+│       ├── dotnet.py             # observación .NET
+│       └── python.py             # observación Python
+├── context.py                    # CLI de contexto progresivo
 └── tests/                        # conformidad del propio validador
 ```
 
@@ -862,10 +879,12 @@ El proyecto suministra únicamente:
 ├── contracts/schemas/
 │   ├── architecture-policy.schema.json
 │   ├── architecture-waivers.schema.json
+│   ├── architecture-reviews.schema.json
 │   └── architecture-result.schema.json
 └── policies/architecture/
     ├── project-policy.json
-    └── waivers.json
+    ├── waivers.json
+    └── reviews.json
 ```
 
 El agente puede añadir un adaptador tecnológico ausente o una comprobación
@@ -877,6 +896,8 @@ Comandos de referencia:
 ```bash
 ./tools/scripts/validate-architecture.sh
 ./tools/scripts/validate-architecture.sh --format json
+./tools/scripts/validate-architecture.sh --base-ref origin/main
+./tools/scripts/validate-architecture.sh --task-id TASK-123
 ./tools/scripts/validate-architecture.sh --fail-on-review
 ./tools/scripts/validate-architecture.sh --list-rules
 ```
@@ -990,6 +1011,12 @@ agentic data owner ClassificationSnapshots
 agentic decisions find "classification ordering"
 ```
 
+La CLI de referencia incluida expone el subconjunto actual mediante
+`python3 tools/architecture/context.py index|locate|symbol|references|tests|impact`.
+La búsqueda de símbolos es una observación de texto exacto, no un grafo semántico
+de compilador, y la salida declara esa confianza. La búsqueda rica de datos y
+decisiones sigue siendo un punto de extensión de los adaptadores.
+
 La salida distingue siempre:
 
 - semántica declarada;
@@ -1011,7 +1038,8 @@ Las políticas pueden residir en:
 .agentic/policies/
 ├── architecture/
 │   ├── project-policy.json
-│   └── waivers.json
+│   ├── waivers.json
+│   └── reviews.json
 ├── risk-levels.yml
 ├── permissions.yml
 ├── quality-gates.yml
@@ -1236,7 +1264,7 @@ Ejecutar validaciones de riesgo
   ↓
 Conservar evidencia ligada a la revisión
   ↓
-PASS / FAIL / WAIVED / REVIEW_REQUIRED
+PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
   ↓
 Entrega humana o automatizada según política
 ```

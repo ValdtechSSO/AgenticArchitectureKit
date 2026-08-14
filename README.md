@@ -2,6 +2,10 @@
 
 [Español](docs/es/README.md) · [Language policy](docs/language-policy.md)
 
+> **Implementation status:** 0.2 preview. The manifesto is normative; the
+> [capability matrix](docs/capabilities.md) distinguishes implemented, initial,
+> and roadmap behavior.
+
 An executable architecture standard for projects created and evolved by coding
 agents.
 
@@ -38,12 +42,14 @@ should arrive when the task requires it.
   conformance rules.
 - [`docs/team-guide.md`](docs/team-guide.md): human guide for understanding,
   reviewing, and governing the artifacts created by the kit.
+- [`docs/capabilities.md`](docs/capabilities.md): honest implementation and
+  roadmap matrix for the reference tools.
 - [`docs/create-project-from-zero.md`](docs/create-project-from-zero.md): the
   operational procedure an agent follows to bootstrap a project.
 - [`tools/architecture/`](tools/architecture/): portable validator, rule
   catalog, technology adapters, and conformance tests.
 - [`.agentic/contracts/schemas/`](.agentic/contracts/schemas/): contracts for
-  project policy, waivers, results, and modules.
+  project policy, waivers, semantic reviews, results, and modules.
 - [`.agentic/templates/project/`](.agentic/templates/project/): neutral
   templates used to materialize only the decisions that apply to a project.
 
@@ -94,6 +100,7 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 ```
 
 Only applicable artifacts are created. Empty directories, speculative
@@ -107,6 +114,9 @@ Python 3.9 or later is required. The kit has no third-party runtime dependency.
 ```bash
 python3 -m unittest discover -s tools/architecture/tests -v
 python3 tools/architecture/validate.py --help
+python3 tools/architecture/validate.py --fail-on-review
+python3 tools/architecture/context.py index
+python3 tools/architecture/context.py locate "architecture validation"
 ```
 
 After installation in a project:
@@ -117,9 +127,10 @@ After installation in a project:
 ./tools/scripts/validate-architecture.sh --fail-on-review
 ```
 
-The initial adapter supports SDK-style .NET projects. Future technologies are
-added as adapters to the same observed model; adapters do not redefine portable
-rule semantics.
+The reference implementation supports SDK-style .NET and Python projects. See
+[`examples/dotnet-valid/`](examples/dotnet-valid/) for a conforming repository
+and [`examples/dotnet-invalid/`](examples/dotnet-invalid/) for an intentional
+source-level architecture failure inside a single assembly.
 
 ## License
 

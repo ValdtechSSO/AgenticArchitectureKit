@@ -78,6 +78,7 @@ src/Modules/*/AGENTS.md
 src/Modules/*/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 tests/Architecture/
 ```
 
@@ -223,6 +224,7 @@ son automáticamente motivos para preguntar al usuario.
 | `PASS` | El validador ha demostrado la regla para el scope y revisión actuales | Conservar la evidencia |
 | `FAIL` | La arquitectura observada viola una regla o declaración | Corregir código o declaración; no suprimir el check |
 | `WAIVED` | Una licencia explícita válida autoriza la desviación | Confirmar que scope y condiciones siguen siendo correctos |
+| `REVIEWED` | Una autoridad delegada aceptó la huella exacta del hallazgo semántico | Conservar el acuse; un cambio de evidencia lo dejará obsoleto |
 | `NOT_APPLICABLE` | La regla no tiene objeto relevante en el proyecto | Ninguna acción salvo cambio arquitectónico |
 | `REVIEW_REQUIRED` | La herramienta no puede demostrar una decisión semántica | El agente o una persona revisa según la autoridad delegada |
 
@@ -240,7 +242,12 @@ Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
 ./tools/scripts/validate-architecture.sh --format json
+./tools/scripts/validate-architecture.sh --base-ref origin/main --task-id CI
 ```
+
+CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un
+nuevo límite o permiso de dependencia necesita un ADR existente y un agente no
+puede obtener verde limitándose a ampliar la policy.
 
 ## 9. Gobierno de licencias arquitectónicas
 

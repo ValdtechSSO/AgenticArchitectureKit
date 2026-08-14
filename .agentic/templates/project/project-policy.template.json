@@ -3,6 +3,7 @@
   "version": 1,
   "project": "replace-with-project-id",
   "adapter": "dotnet",
+  "adapterConfig": {},
   "roots": {
     "modules": "src/Modules",
     "hosts": "src/Hosts"
@@ -49,7 +50,10 @@
       "featureRoot": "src/Modules/SampleCapability/Features",
       "featureAreas": [
         "SampleLifecycle"
-      ]
+      ],
+      "namespacePatterns": ["SampleCapability", "SampleCapability.*"],
+      "contractNamespacePatterns": ["SampleCapability.Contracts", "SampleCapability.Contracts.*"],
+      "decisionRefs": ["architecture/decisions/ADR-001-initial-architecture.md"]
     }
   ],
   "hosts": [
@@ -58,7 +62,9 @@
       "root": "src/Hosts/SampleHost",
       "allowedSourcePatterns": [
         "Program.cs"
-      ]
+      ],
+      "namespacePatterns": ["SampleHost", "SampleHost.*"],
+      "decisionRefs": ["architecture/decisions/ADR-001-initial-architecture.md"]
     }
   ],
   "projects": [
@@ -69,7 +75,8 @@
         "kind": "module",
         "id": "samplecapability"
       },
-      "role": "application"
+      "role": "application",
+      "decisionRefs": ["architecture/decisions/ADR-001-initial-architecture.md"]
     },
     {
       "path": "src/Hosts/SampleHost/SampleHost.csproj",
@@ -78,13 +85,16 @@
         "kind": "host",
         "id": "sample-host"
       },
-      "role": "host"
+      "role": "host",
+      "decisionRefs": ["architecture/decisions/ADR-001-initial-architecture.md"]
     }
   ],
   "allowedProjectDependencies": [
     {
       "from": "src/Hosts/SampleHost/SampleHost.csproj",
-      "to": "src/Modules/SampleCapability/SampleCapability.csproj"
+      "to": "src/Modules/SampleCapability/SampleCapability.csproj",
+      "decisionRefs": ["architecture/decisions/ADR-001-initial-architecture.md"]
     }
-  ]
+  ],
+  "dependencyRules": []
 }

@@ -75,6 +75,7 @@ src/Modules/*/AGENTS.md
 src/Modules/*/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 tests/Architecture/
 ```
 
@@ -221,6 +222,7 @@ automatically a reason to ask the user.
 | `PASS` | The validator demonstrated the rule for the current scope and revision | No action beyond retaining evidence |
 | `FAIL` | Observed architecture violates a rule or declaration | Correct code or declaration; do not suppress the check |
 | `WAIVED` | A valid explicit waiver authorizes the deviation | Confirm scope and review condition remain correct |
+| `REVIEWED` | Delegated authority accepted this exact semantic finding fingerprint | Keep the acknowledgement; changed evidence will make it stale |
 | `NOT_APPLICABLE` | The rule has no relevant subject in this project | No action unless architecture changed |
 | `REVIEW_REQUIRED` | The tool cannot prove a semantic decision | Agent or person reviews the evidence according to delegated authority |
 
@@ -239,7 +241,12 @@ For CI or retained evidence, prefer structured output:
 
 ```bash
 ./tools/scripts/validate-architecture.sh --format json
+./tools/scripts/validate-architecture.sh --base-ref origin/main --task-id CI
 ```
+
+CI should use `--base-ref` whenever it can compare with the target branch. This
+makes newly permitted boundaries and dependencies require an existing ADR
+instead of allowing an agent to obtain green by merely expanding the policy.
 
 ## 9. Waiver governance
 

@@ -1,0 +1,57 @@
+{
+  "$schema": "../../contracts/schemas/architecture-policy.schema.json",
+  "version": 1,
+  "project": "AgenticArchitectureKit",
+  "adapter": "python",
+  "adapterConfig": {
+    "packageRoots": ["tools/architecture"]
+  },
+  "roots": {
+    "modules": "tools/architecture",
+    "hosts": "tools/architecture"
+  },
+  "projectSearchRoots": ["pyproject.toml", "tools/architecture"],
+  "structureSearchRoots": ["tools/architecture", ".agentic"],
+  "moduleContract": {
+    "fileName": "module.contract.yml",
+    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "forbiddenStructuralFields": ["projects", "dependencies", "files", "namespaces"]
+  },
+  "technicalModuleNames": ["git", "providers", "validation", "infrastructure", "persistence", "shared", "common", "utils"],
+  "forbiddenDirectoryNames": ["Helpers", "Utils", "Common", "Misc", "General"],
+  "modules": [
+    {
+      "id": "validator",
+      "root": "tools/architecture/validator",
+      "namespacePatterns": ["validator", "validator.*"],
+      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
+    }
+  ],
+  "hosts": [
+    {
+      "id": "validation-cli",
+      "root": "tools/architecture/validate.py",
+      "allowedSourcePatterns": ["validate.py"],
+      "namespacePatterns": ["validate"],
+      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
+    },
+    {
+      "id": "context-cli",
+      "root": "tools/architecture/context.py",
+      "allowedSourcePatterns": ["context.py"],
+      "namespacePatterns": ["context"],
+      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
+    }
+  ],
+  "projects": [
+    {
+      "path": "pyproject.toml",
+      "name": "agentic-architecture-kit",
+      "owner": { "kind": "module", "id": "validator" },
+      "role": "application",
+      "decisionRefs": ["architecture/decisions/ADR-001-portable-validator-boundary.md"]
+    }
+  ],
+  "allowedProjectDependencies": [],
+  "dependencyRules": []
+}

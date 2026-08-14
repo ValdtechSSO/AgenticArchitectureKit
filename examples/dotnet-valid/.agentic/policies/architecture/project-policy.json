@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "project": "dotnet-valid-example",
+  "adapter": "dotnet",
+  "adapterConfig": {},
+  "roots": { "modules": "src/Modules", "hosts": "src/Hosts" },
+  "projectSearchRoots": ["src"],
+  "structureSearchRoots": ["src"],
+  "moduleContract": {
+    "fileName": "module.contract.yml",
+    "schema": ".agentic/contracts/schemas/module-contract.schema.json",
+    "forbiddenStructuralFields": ["projects", "dependencies", "files", "namespaces"]
+  },
+  "technicalModuleNames": ["Git", "Providers", "Validation", "Infrastructure", "Shared", "Common", "Utils"],
+  "forbiddenDirectoryNames": ["Helpers", "Utils", "Common", "Misc", "General"],
+  "modules": [{
+    "id": "orders",
+    "root": "src/Modules/Orders",
+    "featureRoot": "src/Modules/Orders/Features",
+    "featureAreas": ["OrderLifecycle"],
+    "namespacePatterns": ["Example.Orders", "Example.Orders.*"],
+    "decisionRefs": ["architecture/decisions/ADR-001-compact-boundary.md"]
+  }],
+  "hosts": [{
+    "id": "cli",
+    "root": "src/Hosts/Cli",
+    "allowedSourcePatterns": ["Program.cs"],
+    "namespacePatterns": ["Example.Cli", "Example.Cli.*"],
+    "decisionRefs": ["architecture/decisions/ADR-001-compact-boundary.md"]
+  }],
+  "projects": [
+    {
+      "path": "src/Modules/Orders/Orders.csproj",
+      "name": "Example.Orders",
+      "owner": { "kind": "module", "id": "orders" },
+      "role": "application",
+      "decisionRefs": ["architecture/decisions/ADR-001-compact-boundary.md"]
+    },
+    {
+      "path": "src/Hosts/Cli/Cli.csproj",
+      "name": "Example.Cli",
+      "owner": { "kind": "host", "id": "cli" },
+      "role": "host",
+      "decisionRefs": ["architecture/decisions/ADR-001-compact-boundary.md"]
+    }
+  ],
+  "allowedProjectDependencies": [{
+    "from": "src/Hosts/Cli/Cli.csproj",
+    "to": "src/Modules/Orders/Orders.csproj",
+    "decisionRefs": ["architecture/decisions/ADR-001-compact-boundary.md"]
+  }],
+  "dependencyRules": []
+}

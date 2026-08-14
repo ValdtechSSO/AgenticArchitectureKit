@@ -6,6 +6,10 @@
 
 > **Status:** normative.
 >
+> **Reference implementation:** normative requirements and shipped capability
+> are deliberately distinct. See [`docs/capabilities.md`](docs/capabilities.md)
+> for the tested implementation, bounded initial guarantees, and roadmap.
+>
 > **Scope:** this manifesto defines portable rules for repositories created and
 > evolved by coding agents. Each project specializes those rules through its own
 > policy. Exceptions require an explicit waiver and never silently change a
@@ -697,6 +701,10 @@ Contract conformance covers form and meaning:
 
 # 9. Observed architecture and generated index
 
+The shipped 0.2 reference implementation generates `repository`, `projects`,
+`modules`, `dependencies`, `tests`, and `documents`. The remaining indices below
+are normative extension points and remain roadmap until an adapter observes them.
+
 Real structure is derived from the repository through language and platform
 adapters. A generated index may live at:
 
@@ -760,7 +768,7 @@ Comparison with contracts and ADRs
         ↓
 Visible waiver application
         ↓
-PASS / FAIL / WAIVED / NOT_APPLICABLE / REVIEW_REQUIRED
+PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
 ```
 
 ## 10.2 Automatic validation
@@ -797,6 +805,11 @@ automatically a request for user input: the agent completes the review when the
 decision falls within delegated authority and escalates only when material
 authority is missing.
 
+A delegated authority may persist an accepted semantic judgment in
+`reviews.json`. It applies only to the exact rule, scope, and finding fingerprint
+and is reported as `REVIEWED`, never `PASS`. Changed evidence makes the record
+stale and restores `REVIEW_REQUIRED`.
+
 ## 10.4 Supplied reference implementation
 
 The manifesto `MUST` ship with a versioned general validator. An agent does not
@@ -810,7 +823,9 @@ tools/architecture/
 │   ├── engine.py                 # evaluation and waiver application
 │   ├── contracts.py              # input and output contracts
 │   └── adapters/
-│       └── dotnet.py             # technology observation
+│       ├── dotnet.py             # .NET observation
+│       └── python.py             # Python observation
+├── context.py                    # progressive context CLI
 └── tests/                        # validator conformance
 ```
 
@@ -821,10 +836,12 @@ The project supplies only project-specific configuration:
 ├── contracts/schemas/
 │   ├── architecture-policy.schema.json
 │   ├── architecture-waivers.schema.json
+│   ├── architecture-reviews.schema.json
 │   └── architecture-result.schema.json
 └── policies/architecture/
     ├── project-policy.json
-    └── waivers.json
+    ├── waivers.json
+    └── reviews.json
 ```
 
 An agent may add a missing technology adapter or project-specific check. It may
@@ -836,6 +853,8 @@ Reference commands:
 ```bash
 ./tools/scripts/validate-architecture.sh
 ./tools/scripts/validate-architecture.sh --format json
+./tools/scripts/validate-architecture.sh --base-ref origin/main
+./tools/scripts/validate-architecture.sh --task-id TASK-123
 ./tools/scripts/validate-architecture.sh --fail-on-review
 ./tools/scripts/validate-architecture.sh --list-rules
 ```
@@ -951,6 +970,12 @@ agentic decisions find "classification ordering"
 These commands illustrate capabilities, not a mandatory tool brand. Ordinary
 repository search and language tooling may provide them.
 
+The shipped reference CLI exposes the current subset as
+`python3 tools/architecture/context.py index|locate|symbol|references|tests|impact`.
+Its symbol search is an exact-text observation, not a compiler-grade symbol
+graph; the output declares that confidence. Rich data and decision search remain
+adapter extension points.
+
 Navigation output always distinguishes:
 
 - declared semantics;
@@ -976,7 +1001,8 @@ Policies may live at:
 .agentic/policies/
 ├── architecture/
 │   ├── project-policy.json
-│   └── waivers.json
+│   ├── waivers.json
+│   └── reviews.json
 ├── risk-levels.yml
 ├── permissions.yml
 ├── quality-gates.yml
@@ -1202,7 +1228,7 @@ Run risk-appropriate validation
   ↓
 Retain revision-bound evidence
   ↓
-PASS / FAIL / WAIVED / NOT_APPLICABLE / REVIEW_REQUIRED
+PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
   ↓
 Escalate only an undefined material decision
   ↓

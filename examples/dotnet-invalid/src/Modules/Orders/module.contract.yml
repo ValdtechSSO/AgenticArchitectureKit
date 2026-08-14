@@ -1,0 +1,17 @@
+id: orders
+name: Orders
+purpose: Manage the order lifecycle.
+intent:
+  aliases:
+    - orders
+    - order lifecycle
+ownership:
+  domain: orders
+  authoritative_data: []
+risk:
+  default: medium
+  reasons: []
+invariants:
+  - domain/orders.md#invariants
+architecture_decisions:
+  - architecture/decisions/ADR-001-compact-boundary.md

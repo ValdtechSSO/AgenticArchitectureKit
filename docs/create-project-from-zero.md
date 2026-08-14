@@ -79,6 +79,7 @@ src/Modules/{CurrentModule}/AGENTS.md
 src/Modules/{CurrentModule}/module.contract.yml
 .agentic/policies/architecture/project-policy.json
 .agentic/policies/architecture/waivers.json
+.agentic/policies/architecture/reviews.json
 ```
 
 Optional paths are omitted when they have no current content or responsibility.
@@ -125,6 +126,11 @@ authorizing ADR, and review conditions. Its result is `WAIVED`, never `PASS`.
 
 ## 8. Context bootstrap and expansion
 
+Generate the initial repository index with
+`python3 tools/architecture/context.py index`. Use `locate` for the declared
+starting point and expand with `references`, `tests`, and `impact`; keep the
+reported declared/observed provenance and confidence.
+
 The project must give an agent a small deterministic starting context:
 
 ```text
@@ -148,11 +154,14 @@ The initial project is incomplete until these checks run:
 ```bash
 python3 -m unittest discover -s tools/architecture/tests -v
 ./tools/scripts/validate-architecture.sh
+./tools/scripts/validate-architecture.sh --base-ref origin/main --fail-on-review
 ```
 
 The project's own build and tests also run. `REVIEW_REQUIRED` results are listed
 and reviewed; they are not presented as automatic passes. A semantic review
 within already delegated authority does not by itself require user interaction.
+Persist that acceptance in `reviews.json` using the exact emitted fingerprint;
+do not suppress the finding or convert it into a claimed mechanical pass.
 
 ## 10. Later evolution
 
@@ -168,6 +177,10 @@ a failure disappear:
 - an accidental violation changes the code;
 - a necessary authorized deviation creates a visible waiver;
 - unresolved semantics remain `REVIEW_REQUIRED`.
+
+CI supplies `--base-ref` so policy growth is compared with the target branch.
+New boundary or dependency permissions without an existing decision reference
+fail even when the code would otherwise be green.
 
 Conversation is not architectural memory. At completion, another agent must be
 able to continue by reading only the repository.

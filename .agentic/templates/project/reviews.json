@@ -1,0 +1,5 @@
+{
+  "$schema": "../../contracts/schemas/architecture-reviews.schema.json",
+  "version": 1,
+  "reviews": []
+}

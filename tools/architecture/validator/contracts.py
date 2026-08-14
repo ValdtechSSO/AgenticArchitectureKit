@@ -138,8 +138,24 @@ def load_yaml_subset(path: Path) -> Any:
     return parsed
 
 
-def validate_schema(instance: Any, schema: dict[str, Any], location: str = "$") -> list[str]:
+def validate_schema(
+    instance: Any,
+    schema: dict[str, Any],
+    location: str = "$",
+    _root: dict[str, Any] | None = None,
+) -> list[str]:
     """Validate the JSON Schema subset used by the bundled contracts."""
+
+    root = schema if _root is None else _root
+    reference = schema.get("$ref")
+    if isinstance(reference, str):
+        if not reference.startswith("#/$defs/"):
+            return [f"{location}: unsupported schema reference '{reference}'"]
+        name = reference.removeprefix("#/$defs/")
+        resolved = root.get("$defs", {}).get(name)
+        if not isinstance(resolved, dict):
+            return [f"{location}: unresolved schema reference '{reference}'"]
+        return validate_schema(instance, resolved, location, root)
 
     errors: list[str] = []
     expected = schema.get("type")
@@ -166,7 +182,7 @@ def validate_schema(instance: Any, schema: dict[str, Any], location: str = "$") 
         item_schema = schema.get("items")
         if isinstance(item_schema, dict):
             for index, value in enumerate(instance):
-                errors.extend(validate_schema(value, item_schema, f"{location}[{index}]"))
+                errors.extend(validate_schema(value, item_schema, f"{location}[{index}]", root))
 
     if isinstance(instance, dict):
         properties = schema.get("properties", {})
@@ -180,6 +196,6 @@ def validate_schema(instance: Any, schema: dict[str, Any], location: str = "$") 
         for key, value in instance.items():
             child_schema = properties.get(key)
             if isinstance(child_schema, dict):
-                errors.extend(validate_schema(value, child_schema, f"{location}.{key}"))
+                errors.extend(validate_schema(value, child_schema, f"{location}.{key}", root))
 
     return errors
