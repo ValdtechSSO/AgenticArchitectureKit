@@ -11,8 +11,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Verify release tag matches package version
@@ -34,7 +34,7 @@ jobs:
           /tmp/aak-release/bin/aak guide github-governance > /dev/null
           /tmp/aak-release/bin/aak template AGENTS.md > /dev/null
           /tmp/aak-release/bin/aak validate --root examples/dotnet-valid
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-distribution
           path: dist/
@@ -48,7 +48,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: python-distribution
           path: dist
