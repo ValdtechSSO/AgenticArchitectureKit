@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentic-architecture-kit"
-version = "0.4.1"
+version = "0.4.2"
 description = "Executable architecture governance for autonomous coding agents"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -37,6 +37,7 @@ agentic_architecture_kit = [
   "data/norms/*.json",
   "data/norms/*.md",
   "data/norms/decisions/*.md",
+  "data/guides/*.md",
   "data/schemas/*.json",
   "data/templates/project/*",
 ]

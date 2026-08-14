@@ -15,7 +15,7 @@ from .contracts import ContractError
 from .resources import files as package_files, read_json
 
 
-_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
+_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
 _TECHNICAL_MODULE_NAMES = [
     "Git", "Providers", "Repositories", "Validation", "Services", "Infrastructure",
 ]
@@ -308,7 +308,7 @@ def initialize(
         policy, observation = _observed_policy(root, selected_adapter)
         proposal_basis = "observed"
     toolchain = {
-            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+            "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
             "version": 1,
             "distribution": "agentic-architecture-kit",
             "toolVersion": __version__,
@@ -350,9 +350,10 @@ def initialize(
         "created": created,
         "next": [
             "Run aak core and read the complete preventive decision context.",
+            "Run aak guide bootstrap and follow the version-matched operational procedure.",
             "Review the observed project-policy.json proposal and remove accidental or unjustified boundaries.",
             "Create module contracts and local AGENTS.md files only for actual modules.",
-            "Configure protected branches according to docs/github-governance.md.",
+            "Configure protected branches according to aak guide github-governance.",
             "Run the pinned distribution with: aak validate --fail-on-review.",
         ],
     }

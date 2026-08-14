@@ -1,12 +1,12 @@
-# Crear un proyecto desde cero con Agentic Architecture Kit
+# Crear o evolucionar un proyecto con Agentic Architecture Kit
 
 [English — canonical](../create-project-from-zero.md) · [Política lingüística](language-policy.md)
 
-Esta guía acompaña al
-[`núcleo de decisiones`](../../src/agentic_architecture_kit/data/norms/agent-core.md)
-incluido. El agente lee ese núcleo completamente antes de decidir estructura.
-Los detalles del validador se cargan mediante referencias de hallazgos o
-`aak explain`, no leyendo un manifiesto completo.
+Esta es la versión web de la guía versionada que imprime
+`aak guide bootstrap`. El agente ejecuta `aak core` y lee completamente ese
+núcleo preventivo antes de decidir estructura. Los detalles del validador se
+cargan mediante referencias de hallazgos o `aak explain`, no leyendo un
+manifiesto completo.
 
 En un repositorio existente se ejecuta el gate antes de la primera modificación.
 En uno nuevo, la inicialización y la declaración mínima son escrituras de
@@ -68,18 +68,21 @@ o el ownership sí requiere dirección.
 ## 4. Instalar la base ejecutable
 
 Elige una versión publicada y ejecútala directamente, preferiblemente con
-`uvx`:
+`uvx`. El ejemplo siguiente presupone que `aak` resuelve a esa versión exacta:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @tu-org/architecture
+aak init --root . --codeowner @tu-org/architecture
 ```
 
 El inicializador crea `.agentic/toolchain.json`, registros de gobernanza vacíos
 y cobertura CODEOWNERS para todo el repositorio. También escribe una propuesta
 observada de `project-policy.json`. Si todavía no existen artefactos tecnológicos,
 se indica `--adapter dotnet` o `--adapter python`. No copia al proyecto el motor,
-catálogo, schemas ni plantillas portables. Después se materializan solo los
-elementos aplicables:
+catálogo, schemas, guías ni plantillas portables.
+
+`aak template` enumera las plantillas neutrales de la distribución seleccionada
+y `aak template NAME` muestra una. Después se materializan solo los elementos
+aplicables:
 
 ```text
 AGENTS.md
@@ -121,7 +124,7 @@ La política declara intención. El adaptador obtiene la estructura observada. E
 validador compara ambas; la política nunca debe escribirse para ocultar una
 violación general.
 
-## 6. Adaptador tecnológico
+## 6. Adaptadores tecnológicos
 
 Si existe adaptador incluido para la tecnología, se usa tal cual. Si falta, se
 crea una distribución Python versionada que exponga un entry point del grupo
@@ -144,14 +147,14 @@ scope, decisión, motivo, riesgo, ADR autorizador y condiciones de revisión. Su
 resultado será `WAIVED`, nunca `PASS`. Un digest ausente u obsoleto impide
 aplicarla.
 
-## 7.1 Autoridad y revisiones semánticas
+## 8. Autoridad y revisiones semánticas
 
 Sustituye los principals de la plantilla por usuarios o equipos reales y
-refléjalos en `.github/CODEOWNERS`. Configura cada rama protegida declarada según
-[`github-governance.md`](github-governance.md). Un review requiere huella exacta,
-SHA completo y ancestro alcanzable, principal declarado y evidencia de aprobación
-de la plataforma y `ruleDigest` actual. El agente no debe crear un review solo
-porque pueda editar JSON.
+refléjalos en `.github/CODEOWNERS`. Ejecuta `aak guide github-governance` y
+configura cada rama protegida declarada según esa guía versionada. Un review
+requiere huella exacta, SHA completo y ancestro alcanzable, principal declarado,
+evidencia de aprobación de la plataforma y `ruleDigest` actual. El agente no
+debe crear un review solo porque pueda editar JSON.
 
 Elige el modo de autoridad según el ownership real del repositorio:
 
@@ -165,7 +168,7 @@ Elige el modo de autoridad según el ownership real del repositorio:
 Inicializa un repositorio individual con `--authority-mode solo-maintainer`. No
 uses ese modo únicamente para evitar a un revisor de equipo disponible.
 
-## 8. Bootstrap y expansión del contexto
+## 9. Bootstrap y expansión del contexto
 
 Se genera el índice inicial con `aak context index`.
 `locate` ofrece el punto de partida declarado y `references`, `tests` e `impact`
@@ -189,13 +192,13 @@ huecos concretos de evidencia. Registra la procedencia y distingue hechos
 declarados, hechos observados, inferencias y preguntas abiertas. La memoria de
 la conversación nunca es necesaria para continuar el trabajo.
 
-## 9. Validación de cierre
+## 10. Validación de cierre
 
 El proyecto inicial no está completo hasta ejecutar:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak validate
-uvx --from agentic-architecture-kit==0.4.1 aak validate --base-ref origin/main --fail-on-review
+aak validate
+aak validate --base-ref origin/main --fail-on-review
 ```
 
 `aak explain RULE_ID` muestra hallazgos, scopes, evidencia, digest, referencia y
@@ -208,10 +211,11 @@ propios y los tests arquitectónicos específicos del proyecto. Los resultados
 `REVIEW_REQUIRED` se enumeran y se revisan; no se presentan como verificaciones
 automáticas superadas. Una revisión semántica dentro de la autoridad ya delegada
 no requiere por sí sola interacción con el usuario.
+
 La aceptación se persiste en `reviews.json` con la huella exacta emitida; no se
 suprime el hallazgo ni se presenta como un pass mecánico.
 
-## 10. Evolución posterior
+## 11. Evolución posterior
 
 Cada petición futura vuelve a localizar primero el módulo y área funcional
 propietarios. Solo crea un nuevo límite cuando la nueva evidencia lo justifica.
@@ -221,14 +225,15 @@ contratos, ADR, validaciones, licencias y evidencia.
 El agente actualiza la política conforme crece el proyecto, pero nunca solo para
 hacer desaparecer un fallo:
 
-CI suministra `--base-ref` para comparar el crecimiento de policy con la rama
-objetivo. Un nuevo límite o permiso de dependencia sin referencia a una decisión
-existente falla aunque el código pudiera quedar verde.
-
 - un límite nuevo legítimo actualiza la política y la decisión que lo sustenta;
 - una violación accidental se corrige en el código;
 - una desviación necesaria y autorizada crea una licencia visible;
 - la semántica no resuelta permanece como `REVIEW_REQUIRED`.
 
+CI suministra `--base-ref` para comparar el crecimiento de policy con la rama
+objetivo. Un nuevo límite o permiso de dependencia sin referencia a una decisión
+existente falla aunque el código pudiera quedar verde.
+
 La conversación del agente no es memoria arquitectónica. Al finalizar, otro
-agente debe poder continuar leyendo únicamente el repositorio.
+agente debe poder continuar leyendo únicamente el repositorio y la distribución
+fijada.

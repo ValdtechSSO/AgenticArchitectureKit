@@ -1,14 +1,16 @@
 # Architecture tooling and distribution
 
 The reference implementation is published as the versioned Python distribution
-`agentic-architecture-kit`. The package keeps six concerns separate:
+`agentic-architecture-kit`. The package keeps seven concerns separate:
 
 1. portable rule semantics, normative references, and their evaluation engine;
-2. bundled decision core, JSON contracts, and neutral bootstrap templates;
+2. bundled decision core and JSON contracts;
 3. project architecture in `.agentic/policies/architecture/project-policy.json`;
 4. explicit waivers and fingerprint-bound semantic reviews;
 5. review authority and external enforcement declarations;
-6. built-in or plugin-provided technology observation adapters.
+6. built-in or plugin-provided technology observation adapters;
+7. version-matched operational guides and neutral templates exposed through
+   public CLI commands.
 
 Python 3.9 or newer is required. The package has no third-party runtime
 dependencies. Built-in adapters support SDK-style .NET repositories and Python
@@ -23,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.1",
+  "toolVersion": "0.4.2",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -32,8 +34,20 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.1 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.2 aak context locate "order lifecycle"
+```
+
+The same distribution contains everything an agent needs to bootstrap a new
+project or bring an existing repository under governance; source-repository
+access is not required:
+
+```bash
+aak core
+aak guide bootstrap
+aak guide github-governance
+aak template
+aak template AGENTS.md
 ```
 
 `aak` refuses to run validation or context retrieval when its installed version,
@@ -63,6 +77,9 @@ aak validate --write-review-template /tmp/reviews.json
 aak validate --task-id TASK-123 --fail-on-review
 aak validate --list-rules
 aak core
+aak guide bootstrap
+aak guide github-governance
+aak template AGENTS.md
 aak explain DEP001
 aak explain CHG001 --base-ref origin/main --format json
 ```
@@ -129,9 +146,10 @@ aak export-offline --output ./offline
 ```
 
 The command writes `agentic-architecture-kit-{version}/` and an
-`OFFLINE-MANIFEST.json` containing each file's SHA-256 digest. Offline exports
-must keep their version identity and should be replaced as a whole, never
-edited into an untracked fork.
+`OFFLINE-MANIFEST.json` containing each file's SHA-256 digest. The payload
+includes the same operational guides and templates as the installed wheel.
+Offline exports must keep their version identity and should be replaced as a
+whole, never edited into an untracked fork.
 
 ## Guarantees and limits
 

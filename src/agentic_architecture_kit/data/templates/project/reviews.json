@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-reviews.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/architecture-reviews.schema.json",
   "version": 1,
   "reviews": []
 }

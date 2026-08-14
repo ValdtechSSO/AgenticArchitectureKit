@@ -55,33 +55,35 @@ should arrive when the task requires it.
 - [`docs/releasing.md`](docs/releasing.md): package release and PyPI trusted
   publishing procedure for kit maintainers.
 - [`docs/create-project-from-zero.md`](docs/create-project-from-zero.md): the
-  operational procedure an agent follows to bootstrap a project.
+  web rendition of the operational procedure bundled as `aak guide bootstrap`.
 - [`src/agentic_architecture_kit/`](src/agentic_architecture_kit/): versioned
-  Python distribution containing the CLI, portable rules, schemas, templates,
-  and built-in technology adapters.
+  Python distribution containing the CLI, operational guides, portable rules,
+  schemas, templates, and built-in technology adapters.
 - [`tests/`](tests/): conformance suite for the distributed package.
 - [`examples/`](examples/): consumer repositories that exercise the installed
   rules without vendoring the implementation.
 
 ## Creating a project
 
-1. Give the agent access to this repository and the new project directory.
+1. Give the agent write access to the target project directory and access to the
+   package registry, or provide an offline export of the pinned kit version.
 2. Provide the product objective, known requirements, and constraints.
-3. Require it to run `aak core` and read the packaged architecture decision core completely and
-   use `docs/create-project-from-zero.md` for initialization.
+3. Require it to run `aak core` and `aak guide bootstrap` from that version and
+   read both completely before initialization or the first modification.
 4. The agent discovers current capabilities, hosts, and boundaries before
    creating structure.
 5. It pins and executes a published validator version without copying its
    implementation into the project.
 6. It adapts the templates to declare the project's actual architecture.
-7. It runs validator tests and validates the resulting project architecture.
+7. It runs the project's build and tests and validates the resulting
+   architecture.
 
 Recommended bootstrap prompt:
 
 ```text
 Use Agentic Architecture Kit to create the smallest justified architecture for
-this project. Run aak core and read the packaged architecture decision core completely; use
-docs/create-project-from-zero.md for initialization.
+this project. Run aak core and aak guide bootstrap from the pinned distribution
+and read both completely before initialization or the first modification.
 Do not copy an example structure mechanically. Discover capabilities, hosts,
 boundaries, and risks from current requirements and observable evidence. Install
 the general validator without redefining its rules, create the project-specific
@@ -95,12 +97,12 @@ an undefined material product, risk, ownership, or authority decision.
 
 ## Distribution and project-owned payload
 
-Portable code, schemas, the rule catalog, and neutral templates are published
-together as `agentic-architecture-kit`. A consumer pins the exact version in
-`.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
+Portable code, operational agent guides, schemas, the rule catalog, and neutral
+templates are published together as `agentic-architecture-kit`. A consumer pins
+the exact version in `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
 ```
 
 Only project-owned decisions and context live in the consumer repository:
@@ -125,8 +127,9 @@ abstractions, technical modules, and assemblies without a current enforceable
 boundary are prohibited.
 
 For disconnected environments, `aak export-offline --output <directory>`
-creates an explicit versioned snapshot with a SHA-256 manifest. That export is
-an operational exception, not the default adoption model.
+creates an explicit versioned snapshot containing the same code, guides,
+schemas, rules, and templates with a SHA-256 manifest. That export is an
+operational exception, not the default adoption model.
 
 ## Verifying the kit
 
@@ -138,6 +141,11 @@ python3 -m unittest discover -s tests -v
 aak --help
 aak validate --fail-on-review
 aak core
+aak guide
+aak guide bootstrap
+aak guide github-governance
+aak template
+aak template AGENTS.md
 aak explain DEP001
 aak context index
 aak context locate "architecture validation"
@@ -149,14 +157,14 @@ adapter from repository artifacts and writes a `project-policy.json` proposal
 from the observed modules, hosts, projects, and project-reference edges:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.2 aak init --root . --codeowner @your-org/architecture
 ```
 
 For a repository maintained by one person, declare that constraint honestly
 instead of configuring an impossible self-review requirement:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.2 aak init --root . \
   --codeowner @your-user --authority-mode solo-maintainer
 ```
 

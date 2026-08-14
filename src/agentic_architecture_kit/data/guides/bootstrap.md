@@ -1,12 +1,9 @@
 # Creating or evolving a project with Agentic Architecture Kit
 
-[Español](es/create-project-from-zero.md)
-
-This is the web rendition of the version-matched guide printed by
-`aak guide bootstrap`. Run `aak core` and read that preventive decision core
-completely before making structural decisions. Validator-owned details are
-loaded through finding references or `aak explain`, not through a complete
-manifesto read.
+This guide is the version-matched operational procedure for an implementation
+agent. Run `aak core` and read that preventive decision core completely before
+making structural decisions. Load validator-owned details only through finding
+references or `aak explain`.
 
 For an existing repository, run the architecture gate before the first
 modification. For a new repository, initialization and the minimum declaration
@@ -15,7 +12,7 @@ product structure or implementation. Run it again before completion.
 
 ## 1. Required inputs
 
-Before creating code or directories, the agent gathers:
+Before creating code or directories, gather:
 
 - the product's current purpose and scope;
 - known actors and operations;
@@ -25,15 +22,15 @@ Before creating code or directories, the agent gathers:
 - known risks;
 - available build and test commands.
 
-Every input is classified as `KNOWN`, `ASSUMED`, or `UNKNOWN`. An assumption or
+Classify every input as `KNOWN`, `ASSUMED`, or `UNKNOWN`. An assumption or
 unknown must not become a module, assembly, abstraction, or directory.
 
 ## 2. Discover the smallest architecture
 
-The agent identifies capabilities through vocabulary, ownership, rules, and
-lifecycle. It begins with one module unless current evidence justifies more.
+Identify capabilities through vocabulary, ownership, rules, and lifecycle.
+Begin with one module unless current evidence justifies more.
 
-For every proposed boundary it asks:
+For every proposed boundary ask:
 
 ```text
 Does it have its own vocabulary?
@@ -60,29 +57,36 @@ The initial decision records:
 - assumptions and open questions;
 - automatic checks and required semantic reviews.
 
-When the user has already authorized project creation, the agent records this
-proposal in the repository and continues without unnecessary confirmation. A
+When the user has already authorized project creation, record this proposal in
+the repository and continue without unnecessary confirmation. Escalate a
 decision that materially changes product behavior, risk, ownership, or granted
-authority must be escalated.
+authority.
 
 ## 4. Install the executable foundation
 
-Choose a released kit version and execute it directly, preferably with `uvx`.
-The invocation below assumes `aak` resolves to that exact version:
+Choose a released kit version and execute that exact version, preferably with
+`uvx`. The invocation below assumes `aak` already resolves to the selected
+version:
 
 ```bash
 aak init --root . --codeowner @your-org/architecture
 ```
 
-The initializer creates `.agentic/toolchain.json`, empty governance records, and
-repository-wide CODEOWNERS coverage. It also writes an observed
-`project-policy.json` proposal. If no technology artifact exists yet, pass
-`--adapter dotnet` or `--adapter python`. It does not copy the portable engine,
-catalog, schemas, guides, or templates into the project.
+For a repository maintained by one person, declare that real constraint:
 
-Use `aak template` to list the neutral templates from the selected distribution
-and `aak template NAME` to read one. Then materialize only applicable
-project-specific assets:
+```bash
+aak init --root . --codeowner @your-user --authority-mode solo-maintainer
+```
+
+The initializer creates `.agentic/toolchain.json`, empty governance records,
+repository-wide CODEOWNERS coverage, and an observed `project-policy.json`
+proposal. If no technology artifact exists yet, pass `--adapter dotnet` or
+`--adapter python`. It does not copy the portable engine, catalog, schemas,
+guides, or templates into the project.
+
+Use `aak template` to list the neutral templates bundled with this exact package
+version and `aak template NAME` to read one. Adapt only the applicable
+project-owned assets:
 
 ```text
 AGENTS.md
@@ -99,7 +103,7 @@ domain/global-invariants.md
 {actual-module-root}/module.contract.yml
 ```
 
-Optional paths are omitted when they have no current content or responsibility.
+Omit optional paths when they have no current content or responsibility.
 
 ## 5. Review the project-specific policy proposal
 
@@ -150,10 +154,12 @@ never `PASS`. A missing or stale digest prevents the waiver from applying.
 Replace the authority template principals with real repository users or teams
 and mirror them in `.github/CODEOWNERS`. Run
 `aak guide github-governance` and configure every declared protected branch
-using that version-matched guide. A review record requires an exact fingerprint,
-current `ruleDigest`, a full reachable ancestor SHA, a declared principal, and
-approval evidence from the platform. The agent must not create a review record
-merely because it can edit JSON.
+according to that version-matched guide.
+
+A review record requires an exact fingerprint, current `ruleDigest`, a full
+reachable ancestor SHA, a declared principal, and approval evidence from the
+platform. The agent must not create a review record merely because it can edit
+JSON.
 
 Choose the authority mode from the repository's real ownership:
 
@@ -163,9 +169,7 @@ Choose the authority mode from the repository's real ownership:
   maintainer-attestation URL. It keeps pull requests, required checks, and no
   direct pushes, but does not pretend self-review is independent.
 
-Initialize a single-maintainer repository with
-`--authority-mode solo-maintainer`. Do not use that mode merely to bypass an
-available team reviewer.
+Do not use solo-maintainer mode merely to bypass an available team reviewer.
 
 ## 9. Context bootstrap and expansion
 
@@ -183,32 +187,32 @@ Risk and permission policy
 Authoritative build, test, and architecture commands
 ```
 
-The agent then locates the owning module and feature area, reads the module
-contract, invariants, ADRs, project policy, and waivers, and expands only through
-concrete dependencies, consumers, data access, tests, or evidence gaps. It
-records provenance and distinguishes declared facts, observed facts, inferences,
-and open questions. Conversational memory is never required to continue work.
+Then locate the owning module and feature area, read the module contract,
+invariants, ADRs, project policy, and waivers, and expand only through concrete
+dependencies, consumers, data access, tests, or evidence gaps. Record provenance
+and distinguish declared facts, observed facts, inferences, and open questions.
+Conversational memory is never required to continue work.
 
 ## 10. Completion validation
 
-The initial project is incomplete until these checks run:
+The project bootstrap or change is incomplete until these checks run:
 
 ```bash
 aak validate
 aak validate --base-ref origin/main --fail-on-review
 ```
 
-Use `aak explain RULE_ID` to inspect the current findings, scopes, evidence,
-digest, reference, and any applied waiver or review. If a normative reference
-does not resolve, validation fails; the agent does not infer its likely meaning.
+Use `aak explain RULE_ID` to inspect current findings, scopes, evidence, digest,
+reference, and any applied waiver or review. If a normative reference does not
+resolve, validation fails; do not infer its likely meaning.
 
 The distribution's conformance suite runs before publication; consumers do not
-copy or rerun those tests. The project's own build, tests, and project-specific
-architecture tests also run. `REVIEW_REQUIRED` results are listed
-and reviewed; they are not presented as automatic passes. A semantic review
-within already delegated authority does not by itself require user interaction.
-Persist that acceptance in `reviews.json` using the exact emitted fingerprint;
-do not suppress the finding or convert it into a claimed mechanical pass.
+copy or rerun it. Run the project's own build, tests, and project-specific
+architecture tests. List and review `REVIEW_REQUIRED` results; never present
+them as automatic passes. A semantic review within already delegated authority
+does not by itself require user interaction. Persist an acceptance in
+`reviews.json` using the exact emitted fingerprint; do not suppress the finding
+or convert it into a claimed mechanical pass.
 
 ## 11. Later evolution
 
@@ -217,8 +221,8 @@ new boundary is created only when new evidence justifies it. When a boundary
 changes, code, policy, contracts, ADRs, validators, waivers, and evidence are
 updated atomically.
 
-The agent updates project policy as the project grows, but never merely to make
-a failure disappear:
+Update project policy as the project grows, but never merely to make a failure
+disappear:
 
 - a legitimate new boundary updates policy and its supporting decision;
 - an accidental violation changes the code;
@@ -230,4 +234,4 @@ New boundary or dependency permissions without an existing decision reference
 fail even when the code would otherwise be green.
 
 Conversation is not architectural memory. At completion, another agent must be
-able to continue by reading only the repository and the pinned distribution.
+able to continue by reading only the repository and this pinned distribution.

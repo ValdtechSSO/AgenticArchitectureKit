@@ -57,33 +57,35 @@ debe suministrarse el contexto relevante en el momento en que la tarea lo exige.
 - [`releasing.md`](releasing.md): procedimiento de release y publicación segura
   en PyPI para mantenedores.
 - [`create-project-from-zero.md`](create-project-from-zero.md):
-  procedimiento operativo que debe seguir el agente.
+  versión web del procedimiento incluido como `aak guide bootstrap`.
 - [`src/agentic_architecture_kit/`](../../src/agentic_architecture_kit/):
-  distribución Python versionada con CLI, reglas portables, schemas, plantillas
-  y adaptadores tecnológicos incluidos.
+  distribución Python versionada con CLI, guías operativas, reglas portables,
+  schemas, plantillas y adaptadores tecnológicos incluidos.
 - [`tests/`](../../tests/): suite de conformidad de la distribución.
 - [`examples/`](../../examples/): repositorios consumidores que ejercitan las
   reglas instaladas sin vendorizar la implementación.
 
 ## Cómo usarlo para crear un proyecto
 
-1. Da al agente acceso a este repositorio y al directorio del nuevo proyecto.
+1. Da al agente acceso de escritura al directorio del proyecto destino y acceso
+   al registro del package, o proporciona un export offline de la versión fijada.
 2. Proporciónale el objetivo, requisitos y restricciones conocidos del producto.
-3. Pídele que ejecute `aak core`, lea completamente el núcleo de decisiones y use
-   `docs/create-project-from-zero.md` para la inicialización.
+3. Pídele que ejecute `aak core` y `aak guide bootstrap` desde esa versión y lea
+   ambos por completo antes de inicializar o realizar la primera modificación.
 4. El agente descubre capacidades, hosts y límites actuales antes de crear
    estructura.
 5. Fija y ejecuta una versión publicada del validador sin copiar su
    implementación al proyecto.
 6. Adapta las plantillas para declarar la arquitectura específica del proyecto.
-7. Ejecuta los tests del validador y la validación arquitectónica del proyecto.
+7. Ejecuta el build y los tests del proyecto y valida su arquitectura
+   resultante.
 
 Prompt inicial recomendado:
 
 ```text
 Usa Agentic Architecture Kit para crear la arquitectura mínima justificable de
-este proyecto. Ejecuta aak core, lee por completo el núcleo de decisiones y usa
-docs/create-project-from-zero.md para inicializarlo.
+este proyecto. Ejecuta aak core y aak guide bootstrap desde la distribución
+fijada y lee ambos por completo antes de inicializar o modificar por primera vez.
 No copies una estructura de ejemplo mecánicamente: descubre capacidades, hosts,
 límites y riesgos a partir de los requisitos y la evidencia actuales. Instala el
 validador general sin redefinir sus reglas, crea la política específica del
@@ -100,12 +102,13 @@ definida.
 
 ## Distribución y payload propio del proyecto
 
-El código portable, los schemas, el catálogo y las plantillas neutrales se
-publican juntos como `agentic-architecture-kit`. El consumidor fija la versión
-exacta en `.agentic/toolchain.json` y la ejecuta con `uvx` o `pipx`:
+El código portable, las guías operativas para el agente, los schemas, el catálogo
+y las plantillas neutrales se publican juntos como `agentic-architecture-kit`.
+El consumidor fija la versión exacta en `.agentic/toolchain.json` y la ejecuta
+con `uvx` o `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
 ```
 
 En el repositorio consumidor solo viven decisiones y contexto propios:
@@ -130,8 +133,9 @@ abstracciones especulativas, módulos técnicos ni assemblies sin un límite act
 verificable.
 
 Para entornos desconectados, `aak export-offline --output <directorio>` genera
-una copia explícita y versionada con manifiesto SHA-256. Es una excepción
-operativa, no el modelo de adopción predeterminado.
+una copia explícita y versionada con el mismo código, guías, schemas, reglas y
+plantillas, además de un manifiesto SHA-256. Es una excepción operativa, no el
+modelo de adopción predeterminado.
 
 ## Verificar el kit
 
@@ -143,6 +147,11 @@ python3 -m unittest discover -s tests -v
 aak --help
 aak validate --fail-on-review
 aak core
+aak guide
+aak guide bootstrap
+aak guide github-governance
+aak template
+aak template AGENTS.md
 aak explain DEP001
 aak context index
 aak context locate "architecture validation"
@@ -154,14 +163,14 @@ selecciona el adaptador a partir de sus artefactos y escribe una propuesta de
 `project-policy.json` con módulos, hosts, proyectos y referencias observadas:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.2 aak init --root . --codeowner @tu-org/architecture
 ```
 
 Para un repositorio mantenido por una sola persona, declara esa restricción de
 forma honesta en lugar de configurar una auto-review imposible:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.2 aak init --root . \
   --codeowner @tu-usuario --authority-mode solo-maintainer
 ```
 
