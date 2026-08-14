@@ -29,6 +29,10 @@ jobs:
           python3 -m venv /tmp/aak-release
           /tmp/aak-release/bin/pip install --no-deps dist/*.whl
           /tmp/aak-release/bin/aak --version
+          /tmp/aak-release/bin/aak core > /dev/null
+          /tmp/aak-release/bin/aak guide bootstrap > /dev/null
+          /tmp/aak-release/bin/aak guide github-governance > /dev/null
+          /tmp/aak-release/bin/aak template AGENTS.md > /dev/null
           /tmp/aak-release/bin/aak validate --root examples/dotnet-valid
       - uses: actions/upload-artifact@v4
         with:

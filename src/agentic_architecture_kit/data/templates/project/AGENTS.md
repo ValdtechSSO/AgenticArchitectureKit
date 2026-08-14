@@ -8,6 +8,8 @@
 
 - Run `aak core` and read the installed decision core before structural
   decisions; use `aak explain RULE_ID` for validator-owned details.
+- Run `aak guide bootstrap` for the version-matched creation and evolution
+  procedure; use `aak guide github-governance` when configuring GitHub controls.
 - Read `architecture/system-overview.md` and `domain/global-invariants.md`.
 - Locate the owning module and cohesive feature area before changing behavior.
 - Read the module's `module.contract.yml` and `AGENTS.md`.

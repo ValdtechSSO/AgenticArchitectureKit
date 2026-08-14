@@ -1,8 +1,5 @@
 # GitHub authority enforcement
 
-This is the web rendition of the version-matched guide printed by
-`aak guide github-governance`.
-
 The local validator can prove that authority is declared consistently, that a
 review names an allowed CODEOWNERS principal, and that `reviewedAtRevision` is a
 reachable ancestor commit. It cannot prove that GitHub actually recorded an

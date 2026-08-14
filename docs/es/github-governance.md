@@ -1,5 +1,8 @@
 # Aplicación de autoridad en GitHub
 
+Esta es la versión web de la guía versionada que imprime
+`aak guide github-governance`.
+
 El validador local puede demostrar que la autoridad está declarada de forma
 coherente, que una revisión identifica un principal permitido por `CODEOWNERS` y
 que `reviewedAtRevision` es un commit ancestro alcanzable. No puede demostrar

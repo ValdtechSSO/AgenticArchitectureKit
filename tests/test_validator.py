@@ -23,6 +23,7 @@ from agentic_architecture_kit.engine import _rule_policy_growth  # noqa: E402
 from agentic_architecture_kit.init_cli import export_payload, initialize  # noqa: E402
 from agentic_architecture_kit.norms import compute_rule_digest  # noqa: E402
 from agentic_architecture_kit.resources import read_json as read_bundled_json  # noqa: E402
+from agentic_architecture_kit.resources import read_text as read_bundled_text  # noqa: E402
 from agentic_architecture_kit.validate_cli import run  # noqa: E402
 
 
@@ -73,7 +74,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.1/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.2/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -259,6 +260,61 @@ architecture_decisions:
         self.assertEqual(0, code)
         self.assertIn("# Architecture decision core", output.getvalue())
         self.assertIn("## Reversal-cost rule", output.getvalue())
+
+    def test_agent_operational_guides_are_available_without_the_source_repository(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide"])
+        self.assertEqual(0, code)
+        self.assertIn("bootstrap:", output.getvalue())
+        self.assertIn("github-governance:", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "bootstrap"])
+        self.assertEqual(0, code)
+        self.assertIn("# Creating or evolving a project", output.getvalue())
+        self.assertIn("## 11. Later evolution", output.getvalue())
+        self.assertIn("aak guide github-governance", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "github-governance"])
+        self.assertEqual(0, code)
+        self.assertIn("# GitHub authority enforcement", output.getvalue())
+        self.assertIn("## Solo-maintainer mode", output.getvalue())
+
+        for relative in ("data/guides/bootstrap.md", "data/guides/github-governance.md"):
+            packaged = read_bundled_text(relative)
+            self.assertNotIn("docs/", packaged)
+            self.assertNotIn("../", packaged)
+
+    def test_web_guides_cover_the_packaged_operational_sections(self) -> None:
+        pairs = (
+            ("data/guides/bootstrap.md", "docs/create-project-from-zero.md"),
+            ("data/guides/github-governance.md", "docs/github-governance.md"),
+        )
+        for packaged_path, web_path in pairs:
+            packaged = read_bundled_text(packaged_path)
+            web = (REPOSITORY_ROOT / web_path).read_text(encoding="utf-8")
+            packaged_sections = [line for line in packaged.splitlines() if line.startswith("## ")]
+            web_sections = [line for line in web.splitlines() if line.startswith("## ")]
+            self.assertEqual(packaged_sections, web_sections, web_path)
+
+    def test_neutral_templates_are_discoverable_and_readable_through_the_cli(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["template"])
+        self.assertEqual(0, code)
+        self.assertIn("AGENTS.md", output.getvalue().splitlines())
+        self.assertIn("module.contract.yml", output.getvalue().splitlines())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["template", "AGENTS.md"])
+        self.assertEqual(0, code)
+        self.assertIn("# {ProjectName}", output.getvalue())
+        self.assertIn("aak guide bootstrap", output.getvalue())
 
     def test_tool_version_must_match_the_project_pin(self) -> None:
         toolchain = json.loads(self.toolchain_path.read_text(encoding="utf-8"))
@@ -844,6 +900,9 @@ architecture_decisions:
         exported = target / f"agentic-architecture-kit-{__version__}"
         self.assertTrue((exported / "agentic_architecture_kit/data/rules.json").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/norms/agent-core.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/bootstrap.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/AGENTS.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/schemas/architecture-policy.schema.json").is_file())
         self.assertEqual(__version__, manifest["toolVersion"])
 

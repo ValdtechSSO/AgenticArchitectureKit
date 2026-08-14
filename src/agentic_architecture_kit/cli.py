@@ -4,14 +4,14 @@ import argparse
 import sys
 
 from . import __version__
-from . import context_cli, explain_cli, init_cli, validate_cli
+from . import context_cli, explain_cli, guide_cli, init_cli, validate_cli
 from .resources import read_text as read_bundled_text
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="aak",
-        description="Agentic Architecture Kit: versioned architecture validation and context retrieval.",
+        description="Agentic Architecture Kit: versioned architecture guidance, validation, and context retrieval.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command")
@@ -19,6 +19,8 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("context", add_help=False, help="Retrieve minimum sufficient repository context.")
     commands.add_parser("explain", add_help=False, help="Explain a rule and its current repository state.")
     commands.add_parser("core", add_help=False, help="Print the complete preventive decision core.")
+    commands.add_parser("guide", add_help=False, help="Read packaged operational guidance.")
+    commands.add_parser("template", add_help=False, help="Read or list packaged project templates.")
     commands.add_parser("init", add_help=False, help="Initialize project-owned governance files.")
     commands.add_parser("export-offline", add_help=False, help="Export an explicit versioned offline payload.")
     return parser
@@ -42,6 +44,10 @@ def main(arguments: list[str] | None = None) -> int:
             parser.error("aak core does not accept arguments")
         print(read_bundled_text("data/norms/agent-core.md"), end="")
         return 0
+    if namespace.command == "guide":
+        return guide_cli.run_guide(remaining)
+    if namespace.command == "template":
+        return guide_cli.run_template(remaining)
     if namespace.command == "init":
         return init_cli.run(remaining)
     if namespace.command == "export-offline":

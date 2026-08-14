@@ -24,6 +24,12 @@ jobs:
           python3 -m pip install --no-deps --force-reinstall dist/*.whl
       - name: Validator conformance tests
         run: python3 -m unittest discover -s tests -v
+      - name: Verify packaged agent bootstrap resources
+        run: |
+          aak core > /dev/null
+          aak guide bootstrap > /dev/null
+          aak guide github-governance > /dev/null
+          aak template AGENTS.md > /dev/null
       - name: Validate the kit
         run: aak validate --fail-on-review --task-id architecture-ci
       - name: Guard policy changes against the previous accepted revision

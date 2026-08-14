@@ -3,14 +3,17 @@
 [English — canonical](../tooling.md)
 
 La implementación de referencia se publica como la distribución Python
-versionada `agentic-architecture-kit`. El package mantiene separados:
+versionada `agentic-architecture-kit`. El package mantiene separados siete
+aspectos:
 
 1. la semántica portable, referencias normativas y el motor;
-2. el núcleo de decisiones, contratos JSON y plantillas neutrales incluidos;
+2. el núcleo de decisiones y contratos JSON incluidos;
 3. la arquitectura propia en `project-policy.json`;
 4. licencias y revisiones semánticas ligadas a huella;
 5. autoridad y controles externos declarados;
-6. adaptadores de observación incluidos o suministrados por plugins.
+6. adaptadores de observación incluidos o suministrados por plugins;
+7. guías operativas versionadas y plantillas neutrales expuestas mediante
+   comandos públicos de la CLI.
 
 Requiere Python 3.9 o posterior y no tiene dependencias runtime de terceros. Los
 adaptadores incluidos soportan repositorios .NET SDK-style y packages Python.
@@ -24,7 +27,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.1",
+  "toolVersion": "0.4.2",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -33,8 +36,20 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.1 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.1 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.2 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.2 aak context locate "order lifecycle"
+```
+
+La misma distribución contiene todo lo necesario para que un agente inicialice
+un proyecto nuevo o incorpore un repositorio existente a la gobernanza; no
+necesita acceso al repositorio fuente:
+
+```bash
+aak core
+aak guide bootstrap
+aak guide github-governance
+aak template
+aak template AGENTS.md
 ```
 
 `aak` rechaza validación y contexto si la herramienta, el catálogo o una
@@ -60,6 +75,9 @@ aak validate --format json
 aak validate --base-ref origin/main --fail-on-review
 aak validate --task-id TASK-123
 aak core
+aak guide bootstrap
+aak guide github-governance
+aak template AGENTS.md
 aak explain DEP001
 aak context index
 aak context locate "order lifecycle"
@@ -103,7 +121,8 @@ aak export-offline --output ./offline
 ```
 
 Se genera `agentic-architecture-kit-{versión}/` con
-`OFFLINE-MANIFEST.json` y SHA-256 de cada archivo. La exportación conserva su
+`OFFLINE-MANIFEST.json` y SHA-256 de cada archivo. El payload contiene las mismas
+guías operativas y plantillas que el wheel instalado. La exportación conserva su
 identidad de versión y debe sustituirse completa, no editarse como fork oculto.
 
 Los límites semánticos y el subconjunto soportado de JSON Schema/YAML se detallan
