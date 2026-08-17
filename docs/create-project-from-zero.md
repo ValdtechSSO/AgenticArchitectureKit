@@ -158,6 +158,12 @@ none of those signals, declare `<IsTestProject>true</IsTestProject>` in its
 project file; a policy-only `test` label is rejected because it could otherwise
 weaken dependency rules.
 
+The .NET proposal derives namespace patterns from namespaces declared by source
+files and explicit `RootNamespace` metadata, not from `AssemblyName`. Source
+paths under a declared module or host root take that owner even in a
+single-assembly project. A repository-local namespace that does not resolve to
+exactly one owner blocks a mechanical dependency pass and requires attention.
+
 Policy declares intent. The adapter obtains observed structure. The validator
 compares both. Policy must never be written to hide a portable-rule violation.
 

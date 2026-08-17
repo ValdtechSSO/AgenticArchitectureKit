@@ -15,7 +15,7 @@ from .contracts import ContractError
 from .resources import files as package_files, read_json
 
 
-_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.4/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
+_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
 _TECHNICAL_MODULE_NAMES = [
     "Git", "Providers", "Repositories", "Validation", "Services", "Infrastructure",
 ]
@@ -164,7 +164,11 @@ def _seed_policy(root: Path, adapter: str) -> dict[str, Any]:
     }
 
 
-def _owner_for(path: str, modules: list[dict[str, Any]], hosts: list[dict[str, Any]]) -> tuple[str, str]:
+def _root_owner_for(
+    path: str,
+    modules: list[dict[str, Any]],
+    hosts: list[dict[str, Any]],
+) -> tuple[str, str] | None:
     candidates: list[tuple[int, str, str]] = []
     for kind, declarations in (("module", modules), ("host", hosts)):
         for item in declarations:
@@ -174,11 +178,50 @@ def _owner_for(path: str, modules: list[dict[str, Any]], hosts: list[dict[str, A
     if candidates:
         _, kind, owner_id = max(candidates)
         return kind, owner_id
+    return None
+
+
+def _owner_for(path: str, modules: list[dict[str, Any]], hosts: list[dict[str, Any]]) -> tuple[str, str]:
+    root_owner = _root_owner_for(path, modules, hosts)
+    if root_owner:
+        return root_owner
     if modules:
         return "module", modules[0]["id"]
     if hosts:
         return "host", hosts[0]["id"]
     raise ContractError(f"Observed project has no module or host owner candidate: {path}")
+
+
+def _common_namespace(namespaces: set[str]) -> str | None:
+    if not namespaces:
+        return None
+    parts = [namespace.split(".") for namespace in sorted(namespaces)]
+    common: list[str] = []
+    for values in zip(*parts):
+        if len(set(values)) != 1:
+            break
+        common.append(values[0])
+    return ".".join(common) or None
+
+
+def _observed_namespace_patterns(observed: set[str], explicit_roots: set[str]) -> list[str]:
+    uncovered = {
+        namespace
+        for namespace in observed
+        if not any(namespace == root or namespace.startswith(root + ".") for root in explicit_roots)
+    }
+    roots = set(explicit_roots)
+    common = _common_namespace(uncovered)
+    if common and (len(common.split(".")) > 1 or len(uncovered) == 1):
+        roots.add(common)
+    elif uncovered:
+        roots.update(uncovered)
+    minimal_roots = {
+        root
+        for root in roots
+        if not any(root != other and root.startswith(other + ".") for other in roots)
+    }
+    return sorted({pattern for root in minimal_roots for pattern in (root, root + ".*")})
 
 
 def _observed_policy(root: Path, adapter: str) -> tuple[dict[str, Any], dict[str, int]]:
@@ -231,15 +274,38 @@ def _observed_policy(root: Path, adapter: str) -> tuple[dict[str, Any], dict[str
         })
 
     if adapter == "dotnet":
+        test_project_paths = {
+            project.path
+            for project in observed.projects
+            if project.role_hint == "test"
+        }
         for kind, declarations in (("module", modules), ("host", hosts)):
             for declaration in declarations:
-                names = [
-                    item.name
+                owned_projects = [
+                    item
                     for item in observed.projects
                     if project_owners.get(item.path) == (kind, declaration["id"])
+                    and item.path not in test_project_paths
                 ]
-                if names:
-                    declaration["namespacePatterns"] = sorted({pattern for name in names for pattern in (name, name + ".*")})
+                explicit_roots = {
+                    project.root_namespace
+                    for project in owned_projects
+                    if project.root_namespace
+                }
+                observed_namespaces = {
+                    item.namespace
+                    for item in observed.source_namespaces
+                    if item.project_path not in test_project_paths
+                    and (
+                        _root_owner_for(item.source_path, modules, hosts)
+                        or project_owners.get(item.project_path or "")
+                    ) == (kind, declaration["id"])
+                }
+                patterns = _observed_namespace_patterns(observed_namespaces, explicit_roots)
+                if patterns:
+                    declaration["namespacePatterns"] = patterns
+                else:
+                    declaration.pop("namespacePatterns", None)
 
     dependencies = [
         {"from": project.path, "to": target}
@@ -310,7 +376,7 @@ def _initialization_plan(
         policy, observation = _observed_policy(root, selected_adapter)
         proposal_basis = "observed"
     toolchain = {
-        "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.4/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+        "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
         "version": 1,
         "distribution": "agentic-architecture-kit",
         "toolVersion": __version__,

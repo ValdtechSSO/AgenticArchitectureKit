@@ -65,7 +65,8 @@ architecture_decisions:
         )
         (host / "Program.cs").write_text("namespace Example.Cli;\n", encoding="utf-8")
         (host / "Cli.csproj").write_text(
-            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>example</AssemblyName></PropertyGroup>'
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>example</AssemblyName>'
+            '<RootNamespace>Example.Cli</RootNamespace></PropertyGroup>'
             '<ItemGroup><ProjectReference Include="../../Modules/Orders/Orders.csproj" /></ItemGroup></Project>\n',
             encoding="utf-8",
         )
@@ -75,7 +76,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.4/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -243,6 +244,45 @@ architecture_decisions:
         ):
             self.assertTrue(report[field].startswith("sha256:"), field)
 
+    def test_invalid_policy_role_is_rejected_by_pol001_gate(self) -> None:
+        self.policy["projects"][0]["role"] = "not-a-role"
+        self._write_policy()
+        code, _, error = self._run()
+        self.assertEqual(2, code)
+        self.assertIn("does not conform", error)
+
+    def test_missing_module_router_fails_mod001(self) -> None:
+        (self.root / "src/Modules/Orders/AGENTS.md").unlink()
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] MOD001", output)
+
+    def test_wrong_module_contract_identity_fails_mod002(self) -> None:
+        contract = self.root / "src/Modules/Orders/module.contract.yml"
+        contract.write_text(
+            contract.read_text(encoding="utf-8").replace("id: orders", "id: wrong"),
+            encoding="utf-8",
+        )
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] MOD002", output)
+
+    def test_technical_module_name_fails_mod003(self) -> None:
+        self.policy["technicalModuleNames"].append("Orders")
+        self._write_policy()
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] MOD003", output)
+
+    def test_undeclared_host_source_fails_host001(self) -> None:
+        (self.root / "src/Hosts/Cli/Unexpected.cs").write_text(
+            "namespace Example.Cli;\n",
+            encoding="utf-8",
+        )
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] HOST001", output)
+
     def test_explain_combines_rule_definition_with_repository_state(self) -> None:
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -332,6 +372,75 @@ architecture_decisions:
         code, output, _ = self._run()
         self.assertEqual(1, code)
         self.assertIn("[FAIL] DEP003 src/Hosts/Cli/Cli.csproj", output)
+
+    def test_cross_module_implementation_dependency_fails_dep002(self) -> None:
+        payments = self.root / "src/Modules/Payments"
+        payments.mkdir()
+        (payments / "AGENTS.md").write_text("# Payments\n", encoding="utf-8")
+        (payments / "module.contract.yml").write_text(
+            """id: payments
+name: Payments
+purpose: Manages current payments.
+intent:
+  aliases:
+    - payments
+ownership:
+  domain: payments
+  authoritative_data: []
+risk:
+  default: medium
+  reasons: []
+invariants:
+  - domain/payments.md#identity
+architecture_decisions:
+  - architecture/decisions/ADR-002-payments.md
+""",
+            encoding="utf-8",
+        )
+        (payments / "Payments.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Payments</AssemblyName>'
+            '</PropertyGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (payments / "Payment.cs").write_text("namespace Example.Payments;\n", encoding="utf-8")
+        (self.root / "domain/payments.md").write_text("# Payments\n\n## Identity\n", encoding="utf-8")
+        (self.root / "architecture/decisions/ADR-002-payments.md").write_text(
+            "# Payments decision\n",
+            encoding="utf-8",
+        )
+        orders_project = self.root / "src/Modules/Orders/Orders.csproj"
+        orders_project.write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Orders</AssemblyName></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="../Payments/Payments.csproj" /></ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        self.policy["modules"].append({
+            "id": "payments",
+            "root": "src/Modules/Payments",
+            "namespacePatterns": ["Example.Payments", "Example.Payments.*"],
+        })
+        self.policy["projects"].append({
+            "path": "src/Modules/Payments/Payments.csproj",
+            "name": "Example.Payments",
+            "owner": {"kind": "module", "id": "payments"},
+            "role": "application",
+        })
+        self.policy["allowedProjectDependencies"].append({
+            "from": "src/Modules/Orders/Orders.csproj",
+            "to": "src/Modules/Payments/Payments.csproj",
+        })
+        self._write_policy()
+
+        code, output, _ = self._run()
+
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] DEP002 src/Modules/Orders/Orders.csproj", output)
+
+    def test_forbidden_catch_all_directory_fails_str001(self) -> None:
+        (self.root / "src/Modules/Orders/Helpers").mkdir()
+        code, output, _ = self._run()
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] STR001", output)
 
     def test_project_policy_cannot_weaken_module_to_host_rule(self) -> None:
         module_project = self.root / "src/Modules/Orders/Orders.csproj"
@@ -698,6 +807,22 @@ architecture_decisions:
         self.assertEqual(1, code)
         self.assertIn("[FAIL] DEP001 src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs", output)
 
+    def test_unresolved_local_namespace_requires_review_instead_of_passing_dep001(self) -> None:
+        self.policy["hosts"][0]["namespacePatterns"] = ["example", "example.*"]
+        self._write_policy()
+        source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
+        source.write_text(
+            "using Example.Cli;\nnamespace Example.Orders.Features.OrderLifecycle;\n",
+            encoding="utf-8",
+        )
+
+        code, output, _ = self._run()
+
+        self.assertEqual(1, code)
+        self.assertIn("[REVIEW_REQUIRED] DEP001", output)
+        self.assertIn("cannot be assigned to exactly one declared owner", output)
+        self.assertNotIn("[PASS] DEP001", output)
+
     def test_policy_growth_without_decision_reference_fails_against_git_base(self) -> None:
         self.policy["allowedProjectDependencies"].append({
             "from": "src/Modules/Orders/Orders.csproj",
@@ -857,7 +982,7 @@ architecture_decisions:
             encoding="utf-8",
         )
         (host / "Cli.csproj").write_text(
-            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Cli</AssemblyName></PropertyGroup>'
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>example</AssemblyName></PropertyGroup>'
             '<ItemGroup><ProjectReference Include="../../Modules/Orders/Orders.csproj" /></ItemGroup></Project>\n',
             encoding="utf-8",
         )
@@ -877,6 +1002,8 @@ architecture_decisions:
         self.assertEqual("dotnet", policy["adapter"])
         self.assertEqual(["src/Modules/Orders"], [item["root"] for item in policy["modules"]])
         self.assertEqual(["src/Hosts/Cli"], [item["root"] for item in policy["hosts"]])
+        self.assertEqual(["Example.Orders", "Example.Orders.*"], policy["modules"][0]["namespacePatterns"])
+        self.assertEqual(["Example.Cli", "Example.Cli.*"], policy["hosts"][0]["namespacePatterns"])
         self.assertEqual(3, len(policy["projects"]))
         test_declaration = next(item for item in policy["projects"] if item["path"].startswith("tests/"))
         self.assertEqual("test", test_declaration["role"])
@@ -889,6 +1016,90 @@ architecture_decisions:
         })
         self.assertIn("* @architecture-team", (target / ".github/CODEOWNERS").read_text(encoding="utf-8"))
         self.assertFalse((target / "tools/architecture").exists())
+
+    def test_adopted_dotnet_policy_detects_conclave_style_import_without_project_reference(self) -> None:
+        target = self.root / "conclave-style"
+        module = target / "src/Modules/Planning"
+        feature = module / "Features/Plan"
+        host = target / "src/Hosts/Cli"
+        test = target / "tests/EndToEnd/Cli"
+        feature.mkdir(parents=True)
+        host.mkdir(parents=True)
+        test.mkdir(parents=True)
+        (module / "Planning.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Conclave.Planning</AssemblyName>'
+            '</PropertyGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (host / "Cli.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType>'
+            '<AssemblyName>conclave</AssemblyName></PropertyGroup></Project>\n',
+            encoding="utf-8",
+        )
+        planning_source = feature / "CreatePlan.cs"
+        planning_source.write_text(
+            "namespace Conclave.Planning.Features.Plan;\n",
+            encoding="utf-8",
+        )
+        (host / "Program.cs").write_text("namespace Conclave.Cli;\n", encoding="utf-8")
+        (test / "Conclave.Cli.EndToEndTests.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Conclave.Cli.EndToEndTests</AssemblyName>'
+            '</PropertyGroup><ItemGroup><ProjectReference Include="../../../src/Hosts/Cli/Cli.csproj" />'
+            '</ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (test / "CliTests.cs").write_text(
+            "namespace Conclave.Cli.EndToEndTests;\n",
+            encoding="utf-8",
+        )
+        (module / "AGENTS.md").write_text("# Planning\n", encoding="utf-8")
+        (module / "module.contract.yml").write_text(
+            """id: planning
+name: Planning
+purpose: Plans current work.
+intent:
+  aliases:
+    - planning
+ownership:
+  domain: planning
+  authoritative_data: []
+risk:
+  default: medium
+  reasons: []
+invariants:
+  - domain/planning.md#identity
+architecture_decisions:
+  - architecture/decisions/ADR-001-planning.md
+""",
+            encoding="utf-8",
+        )
+        (target / "domain").mkdir()
+        (target / "domain/planning.md").write_text("# Planning\n\n## Identity\n", encoding="utf-8")
+        (target / "architecture/decisions").mkdir(parents=True)
+        (target / "architecture/decisions/ADR-001-planning.md").write_text(
+            "# Planning boundary\n",
+            encoding="utf-8",
+        )
+
+        initialize(target, "@architecture-team")
+        policy = json.loads(
+            (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(["Conclave.Cli", "Conclave.Cli.*"], policy["hosts"][0]["namespacePatterns"])
+        planning_source.write_text(
+            "using Conclave.Cli;\nnamespace Conclave.Planning.Features.Plan;\n",
+            encoding="utf-8",
+        )
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = run(["--root", str(target)])
+
+        output = stdout.getvalue() + stderr.getvalue()
+        self.assertEqual(1, code, output)
+        self.assertIn("[PASS] ARC001", output)
+        self.assertIn("[FAIL] DEP001 src/Modules/Planning/Features/Plan/CreatePlan.cs", output)
 
     def test_init_can_bootstrap_an_empty_repository_with_explicit_adapter(self) -> None:
         target = self.root / "empty-initialized"
@@ -1087,6 +1298,33 @@ architecture_decisions:
         self.assertEqual(["tools/cli.py"], [item["root"] for item in policy["hosts"]])
         self.assertEqual(["pyproject.toml"], [item["path"] for item in policy["projects"]])
         self.assertFalse((target / ".agentic/contracts").exists())
+
+    def test_every_automatic_rule_has_a_negative_mutation(self) -> None:
+        mutations = {
+            "POL001": "test_invalid_policy_role_is_rejected_by_pol001_gate",
+            "ARC001": "test_test_role_cannot_hide_a_production_module_dependency",
+            "MOD001": "test_missing_module_router_fails_mod001",
+            "MOD002": "test_wrong_module_contract_identity_fails_mod002",
+            "MOD003": "test_technical_module_name_fails_mod003",
+            "HOST001": "test_undeclared_host_source_fails_host001",
+            "DEP001": "test_adopted_dotnet_policy_detects_conclave_style_import_without_project_reference",
+            "DEP002": "test_cross_module_implementation_dependency_fails_dep002",
+            "DEP003": "test_unapproved_project_dependency_fails",
+            "STR001": "test_forbidden_catch_all_directory_fails_str001",
+            "DOC001": "test_missing_document_anchor_is_a_failure",
+            "WVR001": "test_stale_rule_digest_prevents_waiver_from_silencing_a_violation",
+            "AUT001": "test_codeowners_override_cannot_remove_root_authority_from_github",
+            "REV001": "test_stale_rule_digest_prevents_semantic_review_from_applying",
+        }
+        automatic = {
+            rule["id"]
+            for rule in read_bundled_json("data/rules.json")["rules"]
+            if rule["automatic"]
+        }
+        self.assertEqual(automatic, set(mutations))
+        for rule, test_name in mutations.items():
+            with self.subTest(rule=rule):
+                self.assertTrue(callable(getattr(type(self), test_name, None)), test_name)
 
     def test_offline_export_is_explicit_and_contains_portable_assets(self) -> None:
         target = self.root / "offline"

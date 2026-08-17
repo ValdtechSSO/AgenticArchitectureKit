@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 import re
+from dataclasses import replace
 from pathlib import Path
 
-from ..model import ObservedArchitecture, Project, SourceDependency
+from ..model import ObservedArchitecture, Project, SourceDependency, SourceNamespace
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -52,6 +53,19 @@ def _is_test_project(project_path: Path, document: ET.ElementTree) -> bool:
     return "tests" in relative_parts or "test" in relative_parts or bool(conventional_name or camel_case_name)
 
 
+def _source_project(source_path: str, projects: list[Project]) -> Project | None:
+    candidates: list[tuple[int, Project]] = []
+    for project in projects:
+        project_root = Path(project.path).parent.as_posix()
+        if project_root == "." or source_path.startswith(project_root.rstrip("/") + "/"):
+            candidates.append((len(project_root), project))
+    if not candidates:
+        return None
+    most_specific = max(length for length, _ in candidates)
+    matches = [project for length, project in candidates if length == most_specific]
+    return matches[0] if len(matches) == 1 else None
+
+
 def observe(root: Path, policy: dict) -> ObservedArchitecture:
     roots = policy["roots"]
     modules_root = root / roots["modules"]
@@ -94,21 +108,34 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
                 raise ValueError(f"Invalid MSBuild XML in {relative_path}: {error}") from error
 
             name = project_path.stem
+            root_namespace: str | None = None
             references: list[str] = []
             for element in document.getroot().iter():
                 tag = _local_name(element.tag)
                 if tag == "AssemblyName" and element.text and element.text.strip():
                     name = element.text.strip()
+                elif tag == "RootNamespace" and element.text and element.text.strip() and "$(" not in element.text:
+                    root_namespace = element.text.strip()
                 elif tag == "ProjectReference":
                     include = element.attrib.get("Include")
                     if include:
                         target = (project_path.parent / include.replace("\\", "/")).resolve()
                         references.append(_relative(root, target))
             role_hint = "test" if _is_test_project(Path(relative_path), document) else None
-            projects.append(Project(relative_path, name, tuple(sorted(set(references))), role_hint))
+            projects.append(
+                Project(
+                    relative_path,
+                    name,
+                    tuple(sorted(set(references))),
+                    role_hint,
+                    root_namespace,
+                )
+            )
 
     source_files: set[str] = set()
     source_dependencies: set[SourceDependency] = set()
+    source_namespaces: set[SourceNamespace] = set()
+    project_namespaces: dict[str, set[str]] = {project.path: set() for project in projects}
     for search_root in policy["projectSearchRoots"]:
         base = root / search_root
         if not base.is_dir():
@@ -119,22 +146,42 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
             relative_source = _relative(root, source_path)
             source_files.add(relative_source)
             text = source_path.read_text(encoding="utf-8", errors="replace")
-            namespace_match = re.search(r"(?m)^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]", text)
-            if namespace_match:
-                source_namespace = namespace_match.group(1)
-                for target_namespace in re.findall(
-                    r"(?m)^\s*(?:global\s+)?using\s+(?:[A-Za-z_]\w*\s*=\s*)?([A-Za-z_][\w.]*)\s*;",
-                    text,
-                ):
-                    if target_namespace != source_namespace:
-                        source_dependencies.add(
-                            SourceDependency(
-                                relative_source,
-                                source_namespace,
-                                target_namespace,
-                                "using",
-                            )
+            declared_namespaces = set(
+                re.findall(r"(?m)^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]", text)
+            )
+            if declared_namespaces:
+                project = _source_project(relative_source, projects)
+                target_namespaces = set(
+                    re.findall(
+                        r"(?m)^\s*(?:global\s+)?using\s+(?:[A-Za-z_]\w*\s*=\s*)?([A-Za-z_][\w.]*)\s*;",
+                        text,
+                    )
+                )
+                for source_namespace in declared_namespaces:
+                    if project is not None:
+                        project_namespaces[project.path].add(source_namespace)
+                    source_namespaces.add(
+                        SourceNamespace(
+                            relative_source,
+                            source_namespace,
+                            project.path if project is not None else None,
                         )
+                    )
+                    for target_namespace in target_namespaces:
+                        if target_namespace != source_namespace:
+                            source_dependencies.add(
+                                SourceDependency(
+                                    relative_source,
+                                    source_namespace,
+                                    target_namespace,
+                                    "using",
+                                )
+                            )
+
+    projects = [
+        replace(project, namespaces=tuple(sorted(project_namespaces[project.path])))
+        for project in projects
+    ]
 
     directories = tuple(
         sorted(
@@ -154,4 +201,5 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
         tuple(sorted(source_files)),
         tuple(sorted(source_dependencies, key=lambda item: (item.source_path, item.target_namespace))),
         directories,
+        tuple(sorted(source_namespaces, key=lambda item: (item.source_path, item.namespace))),
     )

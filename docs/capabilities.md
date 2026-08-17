@@ -11,10 +11,10 @@ represented as implemented.
 | Versioned distribution | Implemented | One Python package bundles CLI, agent core, operational guides, rules, schemas, templates, and adapters; consumer toolchain pins are enforced and an explicit digest-manifested offline export is available |
 | Self-contained agent bootstrap | Implemented | `aak core`, `aak guide`, and `aak template` expose the version-matched decision context, operating procedure, GitHub governance, and neutral assets without source-repository access |
 | Existing-repository adoption | Implemented | `aak adopt` provides a no-write preview and idempotently orchestrates observed policy, governance, optional GitHub CI, context indexing, strict validation, and explicit semantic follow-up without overwriting existing files |
-| Self-validation | Implemented | Structural smoke test plus authorization of real CLI-host → validator imports; prohibited and cross-module cases are exercised by tests/examples, not invented in the kit |
-| .NET observation | Implemented | SDK-style projects, test-project signals, `ProjectReference`, C# namespaces and `using` directives |
+| Self-validation | Implemented | Structural smoke test plus authorization of real CLI-host → validator imports; every automatic rule is mapped to a negative mutation test, and prohibited/cross-module cases are exercised rather than inferred from a green pass |
+| .NET observation | Implemented | SDK-style projects, test-project signals, `RootNamespace`, source-declared namespace ownership, `ProjectReference`, and C# `using` directives |
 | Python observation | Implemented | `pyproject.toml`, direct packages/CLI files and AST import directives |
-| Intra-assembly dependency checks | Initial | Exact namespace/import matching for C# and Python; not a full compiler semantic model |
+| Intra-assembly dependency checks | Initial | Exact namespace/import matching for C# and Python; unresolved or ambiguous repository-local namespace ownership requires review rather than becoming an empty pass; not a full compiler semantic model |
 | Policy-growth protection | Implemented | `--base-ref` detects new boundaries and dependency permissions; CI compares PRs with their base and pushes with their previous SHA |
 | Policy/result input integrity | Implemented | Results contain canonical digests for toolchain, policy, waivers, reviews, authorities, catalog and observations |
 | Normative-reference integrity | Implemented | Every finding carries a packaged reference and per-rule semantic digest; `DOC001` verifies catalog headings, enforcement classification, module references, and complete validator-heading coverage |

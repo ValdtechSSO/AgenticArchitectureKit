@@ -2,7 +2,7 @@
 
 [English — canonical](../../README.md) · [Política lingüística](language-policy.md)
 
-> **Estado de implementación:** preview 0.4.4. La distribución publicada es
+> **Estado de implementación:** preview 0.4.5. La distribución publicada es
 > autosuficiente para el bootstrap y la evolución por agentes. El núcleo de
 > decisiones y las referencias de reglas incluidas son normativos; el manifiesto
 > es su mapa para personas. La [matriz de capacidades](capabilities.md) distingue
@@ -94,14 +94,14 @@ Objetivo del producto: <PRODUCT_OBJECTIVE>
 Requisitos y restricciones conocidos: <KNOWN_CONSTRAINTS>
 CODEOWNER del repositorio: <CODEOWNER>
 
-Usa Agentic Architecture Kit 0.4.4 para crear y gobernar este proyecto.
+Usa Agentic Architecture Kit 0.4.5 para crear y gobernar este proyecto.
 
 Antes de crear o modificar archivos:
 
 1. Ejecuta estos comandos y lee completamente ambos resultados:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak core
-   uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.5 aak core
+   uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
 
 2. Trata la guía de esa versión como fuente autoritativa para las decisiones de
    arquitectura. No dependas de una estructura recordada o copiada de otro
@@ -143,16 +143,16 @@ Objetivo del cambio: <CHANGE_OBJECTIVE>
 Requisitos y restricciones conocidos: <KNOWN_CONSTRAINTS>
 CODEOWNER del repositorio: <CODEOWNER>
 
-Usa Agentic Architecture Kit 0.4.4 antes de realizar el primer cambio.
+Usa Agentic Architecture Kit 0.4.5 antes de realizar el primer cambio.
 
 1. Ejecuta y lee completamente:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak core
-   uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.5 aak core
+   uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
 
 2. Simula la adopción sin escribir archivos:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+   uvx --from agentic-architecture-kit==0.4.5 aak adopt \
      --root "<PROJECT_DIRECTORY>" \
      --codeowner <CODEOWNER> \
      --ci github \
@@ -184,9 +184,9 @@ El consumidor fija la versión exacta en `.agentic/toolchain.json` y la ejecuta
 con `uvx` o `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak core
-uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
-uvx --from agentic-architecture-kit==0.4.4 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.5 aak core
+uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
+uvx --from agentic-architecture-kit==0.4.5 aak validate --fail-on-review
 ```
 
 El agente no necesita acceso a este checkout fuente. La distribución fijada
@@ -229,7 +229,7 @@ integración de CI, el resultado de validación y el trabajo semántico que aún
 necesita una decisión real:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+uvx --from agentic-architecture-kit==0.4.5 aak adopt \
   --root . \
   --codeowner @tu-org/architecture \
   --ci github \
@@ -239,7 +239,7 @@ uvx --from agentic-architecture-kit==0.4.4 aak adopt \
 Revisa el plan JSON y aplica después el mismo comando sin `--dry-run`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+uvx --from agentic-architecture-kit==0.4.5 aak adopt \
   --root . \
   --codeowner @tu-org/architecture \
   --ci github
@@ -288,14 +288,14 @@ los archivos de gobernanza y escribe una propuesta observada de
 `project-policy.json` sin ejecutar el flujo completo de adopción:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak init --root . --codeowner @tu-org/architecture
+uvx --from agentic-architecture-kit==0.4.5 aak init --root . --codeowner @tu-org/architecture
 ```
 
 Para un repositorio mantenido por una sola persona, declara esa restricción de
 forma honesta en lugar de configurar una auto-review imposible:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.5 aak init --root . \
   --codeowner @tu-usuario --authority-mode solo-maintainer
 ```
 

@@ -2,7 +2,7 @@
 
 [Español](docs/es/README.md) · [Language policy](docs/language-policy.md)
 
-> **Implementation status:** 0.4.4 preview. The published distribution is
+> **Implementation status:** 0.4.5 preview. The published distribution is
 > self-contained for agent bootstrap and evolution. The packaged decision core
 > and rule references are normative; the manifesto is their human-facing map.
 > The [capability matrix](docs/capabilities.md) distinguishes implemented,
@@ -93,14 +93,14 @@ Product objective: <PRODUCT_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.4 to create and govern this project.
+Use Agentic Architecture Kit 0.4.5 to create and govern this project.
 
 Before creating or modifying files:
 
 1. Run these commands and read both outputs completely:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak core
-   uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.5 aak core
+   uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
 
 2. Treat that version-matched guidance as authoritative for architecture
    decisions. Do not rely on a remembered or copied repository structure.
@@ -139,16 +139,16 @@ Change objective: <CHANGE_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.4 before making the first project change.
+Use Agentic Architecture Kit 0.4.5 before making the first project change.
 
 1. Run and read completely:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak core
-   uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.5 aak core
+   uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
 
 2. Preview adoption without writing files:
 
-   uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+   uvx --from agentic-architecture-kit==0.4.5 aak adopt \
      --root "<PROJECT_DIRECTORY>" \
      --codeowner <CODEOWNER> \
      --ci github \
@@ -178,9 +178,9 @@ templates are published together as `agentic-architecture-kit`. A consumer pins
 the exact version in `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak core
-uvx --from agentic-architecture-kit==0.4.4 aak guide bootstrap
-uvx --from agentic-architecture-kit==0.4.4 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.5 aak core
+uvx --from agentic-architecture-kit==0.4.5 aak guide bootstrap
+uvx --from agentic-architecture-kit==0.4.5 aak validate --fail-on-review
 ```
 
 The agent does not need access to this source checkout. The pinned distribution
@@ -221,7 +221,7 @@ every file it would add, the proposed policy, CI integration, validation result,
 and semantic work that still requires a real decision:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+uvx --from agentic-architecture-kit==0.4.5 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github \
@@ -231,7 +231,7 @@ uvx --from agentic-architecture-kit==0.4.4 aak adopt \
 Review the JSON plan, then apply the same command without `--dry-run`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak adopt \
+uvx --from agentic-architecture-kit==0.4.5 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github
@@ -278,14 +278,14 @@ files and writes an observed `project-policy.json` proposal without running the
 complete adoption workflow:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.5 aak init --root . --codeowner @your-org/architecture
 ```
 
 For a repository maintained by one person, declare that constraint honestly
 instead of configuring an impossible self-review requirement:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.5 aak init --root . \
   --codeowner @your-user --authority-mode solo-maintainer
 ```
 

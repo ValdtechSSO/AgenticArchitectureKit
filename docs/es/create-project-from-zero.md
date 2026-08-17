@@ -159,6 +159,13 @@ un proyecto de test personalizado no expone ninguna de esas señales, declara
 `test` que solo exista en la policy se rechaza porque podría debilitar las reglas
 de dependencia.
 
+La propuesta .NET deriva los patrones de namespace de los namespaces declarados
+por los archivos fuente y de metadata `RootNamespace` explícita, no de
+`AssemblyName`. Una ruta fuente bajo la raíz declarada de un módulo o host toma
+ese owner incluso en un proyecto de assembly único. Un namespace local del
+repositorio que no resuelva a un único owner impide el pass mecánico de
+dependencias y exige atención.
+
 La política declara intención. El adaptador obtiene la estructura observada. El
 validador compara ambas; la política nunca debe escribirse para ocultar una
 violación general.

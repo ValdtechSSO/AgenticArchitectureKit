@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.4/src/agentic_architecture_kit/data/schemas/architecture-waivers.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-waivers.schema.json",
   "version": 1,
   "waivers": []
 }

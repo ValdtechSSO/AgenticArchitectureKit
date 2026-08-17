@@ -12,8 +12,10 @@ decisions where a material boundary is introduced.
 ## ARC001 — Declared and observed architecture agree
 
 Declared modules, hosts, projects, names, mechanically observable test roles,
-and dependencies must agree with what the selected technology adapter observes
-in source and build metadata.
+source-namespace ownership, and dependencies must agree with what the selected
+technology adapter observes in source and build metadata. An observed source
+namespace must resolve to exactly the owner of its most specific declared
+module or host root; project ownership is the fallback outside those roots.
 
 ## MOD001 — Modules have semantic contracts
 
@@ -47,7 +49,9 @@ No production module-owned project or source namespace may depend on a
 host-owned project or namespace. A project classified with role `test` and
 matched by observed test-project evidence is a verification consumer excluded
 from this direction rule; it may depend on the host or module behavior it
-verifies.
+verifies. A repository-local source edge whose namespace ownership is unresolved
+or ambiguous produces `REVIEW_REQUIRED`; it must never be omitted as evidence or
+reported as `PASS`.
 
 ## DEP002 — Cross-module access uses public contracts
 

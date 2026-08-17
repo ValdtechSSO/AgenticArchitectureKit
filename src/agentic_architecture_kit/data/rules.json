@@ -14,7 +14,7 @@
     {
       "id": "ARC001",
       "title": "Declared and observed architecture agree",
-      "description": "Declared modules, hosts, projects, project names, and mechanically observable test roles match repository observation.",
+      "description": "Declared modules, hosts, projects, project names, test roles, and source-namespace ownership match repository observation.",
       "evaluator": "architecture_matches",
       "automatic": true,
       "inputs": ["project-policy", "observed-architecture"],
@@ -74,7 +74,7 @@
     {
       "id": "DEP001",
       "title": "Modules do not depend on hosts",
-      "description": "No production module-owned project or source namespace has a dependency on a host-owned project or namespace; explicitly classified test projects are verification consumers.",
+      "description": "No production module-owned project or source namespace has a dependency on a host-owned project or namespace; unresolved repository-local namespace ownership requires review instead of passing silently, and test projects are verification consumers.",
       "evaluator": "modules_do_not_depend_on_hosts",
       "automatic": true,
       "inputs": ["project-policy", "observed-project-dependencies", "observed-source-dependencies"],

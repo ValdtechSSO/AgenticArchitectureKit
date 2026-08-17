@@ -25,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.4",
+  "toolVersion": "0.4.5",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -34,8 +34,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.4 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.4 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.5 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.5 aak context locate "order lifecycle"
 ```
 
 The same distribution contains everything an agent needs to bootstrap a new
@@ -58,9 +58,11 @@ in CI or on a developer machine.
 `aak init --root . --codeowner @team/architecture` creates only project-owned
 governance files and a CODEOWNERS entry. It also asks the selected adapter to
 observe the repository and writes a `project-policy.json` proposal containing
-the modules, hosts, projects, and exact project-reference edges it found. The
-proposal is factual scaffolding: the agent or team must remove accidental or
-unjustified boundaries instead of treating observation as architectural approval.
+the modules, hosts, projects, source-declared namespace patterns, and exact
+project-reference edges it found. For .NET, namespaces and `RootNamespace` are
+evidence; `AssemblyName` is not treated as a namespace. The proposal is factual
+scaffolding: the agent or team must remove accidental or unjustified boundaries
+instead of treating observation as architectural approval.
 
 `aak adopt --root . --codeowner @team/architecture --ci github` orchestrates
 existing-repository adoption. It performs the initializer work, optionally adds

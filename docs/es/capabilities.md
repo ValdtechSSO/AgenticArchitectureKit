@@ -11,10 +11,10 @@ sí sola no se presenta como implementada.
 | Distribución versionada | Implementado | Un package Python agrupa CLI, núcleo del agente, guías operativas, reglas, schemas, plantillas y adaptadores; se comprueban los pins del consumidor y existe export offline explícito con manifiesto de digests |
 | Bootstrap autosuficiente para el agente | Implementado | `aak core`, `aak guide` y `aak template` exponen el contexto de decisión, procedimiento operativo, gobernanza GitHub y recursos neutrales de la versión sin acceso al repositorio fuente |
 | Adopción de repositorios existentes | Implementado | `aak adopt` ofrece una simulación sin escrituras y orquesta de forma idempotente política observada, gobernanza, CI de GitHub opcional, índice de contexto, validación estricta y seguimiento semántico explícito sin sobrescribir archivos existentes |
-| Autovalidación | Implementado | Smoke test estructural y autorización de imports reales host CLI → validator; los casos prohibidos y entre módulos se ejercitan en tests/ejemplos, no inventándolos en el kit |
-| Observación .NET | Implementado | Proyectos SDK, señales de proyecto de test, `ProjectReference`, namespaces C# y directivas `using` |
+| Autovalidación | Implementado | Smoke test estructural y autorización de imports reales host CLI → validator; cada regla automática se vincula a un test de mutación negativa y los casos prohibidos/entre módulos se ejercitan en vez de inferirse de un pass verde |
+| Observación .NET | Implementado | Proyectos SDK, señales de proyecto de test, `RootNamespace`, ownership de namespaces declarados en fuentes, `ProjectReference` y directivas C# `using` |
 | Observación Python | Implementado | `pyproject.toml`, paquetes/CLI directos e imports obtenidos del AST |
-| Dependencias dentro de un assembly | Inicial | Correspondencia exacta de namespace/import en C# y Python; no es un modelo semántico completo del compilador |
+| Dependencias dentro de un assembly | Inicial | Correspondencia exacta de namespace/import en C# y Python; un ownership local sin resolver o ambiguo exige revisión en vez de convertirse en un pass vacío; no es un modelo semántico completo del compilador |
 | Protección del crecimiento de policy | Implementado | `--base-ref` detecta nuevos límites y permisos; CI compara PR con su base y push con su SHA anterior |
 | Integridad de entradas y resultados | Implementado | Los resultados contienen digests canónicos de toolchain, policy, waivers, reviews, autoridades, catálogo y observaciones |
 | Integridad de referencias normativas | Implementado | Cada hallazgo contiene referencia incluida y digest semántico por regla; `DOC001` valida headings, clasificación, referencias de módulo y cobertura completa del documento del validador |

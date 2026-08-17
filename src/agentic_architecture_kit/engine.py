@@ -44,18 +44,102 @@ def _declared_projects(context: ValidationContext) -> dict[str, dict]:
     return {item["path"]: item for item in context.policy["projects"]}
 
 
-def _namespace_owner(context: ValidationContext, namespace: str) -> tuple[str, str, bool] | None:
+def _namespace_owners(context: ValidationContext, namespace: str) -> list[tuple[str, str, bool]]:
+    owners: list[tuple[str, str, bool]] = []
     for module in context.policy["modules"]:
         if any(fnmatch.fnmatchcase(namespace, pattern) for pattern in module.get("namespacePatterns", [])):
             is_contract = any(
                 fnmatch.fnmatchcase(namespace, pattern)
                 for pattern in module.get("contractNamespacePatterns", [])
             )
-            return "module", module["id"], is_contract
+            owners.append(("module", module["id"], is_contract))
     for host in context.policy["hosts"]:
         if any(fnmatch.fnmatchcase(namespace, pattern) for pattern in host.get("namespacePatterns", [])):
-            return "host", host["id"], False
-    return None
+            owners.append(("host", host["id"], False))
+    return owners
+
+
+def _namespace_owner(context: ValidationContext, namespace: str) -> tuple[str, str, bool] | None:
+    owners = _namespace_owners(context, namespace)
+    return owners[0] if len(owners) == 1 else None
+
+
+def _source_project_paths(source_path: str, projects: dict[str, dict[str, Any]]) -> list[str]:
+    candidates: list[tuple[int, str]] = []
+    for project_path in projects:
+        project_root = Path(project_path).parent.as_posix()
+        if project_root == "." or source_path.startswith(project_root.rstrip("/") + "/"):
+            candidates.append((len(project_root), project_path))
+    if not candidates:
+        return []
+    most_specific = max(length for length, _ in candidates)
+    return sorted(path for length, path in candidates if length == most_specific)
+
+
+def _source_expected_owners(context: ValidationContext, source_path: str) -> tuple[list[tuple[str, str]], list[str]]:
+    candidates: list[tuple[int, str, str, str]] = []
+    for kind, declarations in (("module", context.policy["modules"]), ("host", context.policy["hosts"])):
+        for declaration in declarations:
+            root = declaration["root"].rstrip("/") or "."
+            if root == "." or source_path == root or source_path.startswith(root + "/"):
+                candidates.append((len(root), kind, declaration["id"], root))
+    if candidates:
+        most_specific = max(length for length, _, _, _ in candidates)
+        owners = sorted({(kind, owner_id) for length, kind, owner_id, _ in candidates if length == most_specific})
+        evidence = sorted({root for length, _, _, root in candidates if length == most_specific})
+        return owners, evidence
+
+    projects = _declared_projects(context)
+    project_paths = _source_project_paths(source_path, projects)
+    owners = sorted({
+        (projects[path]["owner"]["kind"], projects[path]["owner"]["id"])
+        for path in project_paths
+    })
+    return owners, project_paths
+
+
+def _observed_namespace_expected_owners(
+    context: ValidationContext,
+    namespace: str,
+) -> tuple[list[tuple[str, str]], list[str]]:
+    owners: set[tuple[str, str]] = set()
+    evidence: set[str] = set()
+    projects = _declared_projects(context)
+    for item in context.observed.source_namespaces:
+        if not (
+            namespace == item.namespace
+            or namespace.startswith(item.namespace + ".")
+            or item.namespace.startswith(namespace + ".")
+        ):
+            continue
+        if (
+            _source_belongs_only_to_test_projects(item.source_path, projects)
+            and item.namespace != namespace
+            and item.namespace.startswith(namespace + ".")
+        ):
+            continue
+        expected, sources = _source_expected_owners(context, item.source_path)
+        owners.update(expected)
+        evidence.update(sources or [item.source_path])
+    for project in context.observed.projects:
+        root_namespace = project.root_namespace
+        if not root_namespace or not (
+            namespace == root_namespace
+            or namespace.startswith(root_namespace + ".")
+            or root_namespace.startswith(namespace + ".")
+        ):
+            continue
+        declaration = projects.get(project.path)
+        if declaration:
+            if (
+                declaration["role"] == "test"
+                and root_namespace != namespace
+                and root_namespace.startswith(namespace + ".")
+            ):
+                continue
+            owners.add((declaration["owner"]["kind"], declaration["owner"]["id"]))
+            evidence.add(project.path)
+    return sorted(owners), sorted(evidence)
 
 
 def _project_matches(declaration: dict, selector: dict) -> bool:
@@ -164,6 +248,27 @@ def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
                 )
             )
 
+    for item in context.observed.source_namespaces:
+        if _source_belongs_only_to_test_projects(item.source_path, declared_projects):
+            continue
+        expected_owners, expected_from = _source_expected_owners(context, item.source_path)
+        issue = _namespace_resolution_issue(
+            context,
+            item.namespace,
+            expected_owners,
+            expected_from or [item.source_path],
+        )
+        if issue:
+            results.append(
+                _finding(
+                    "ARC001",
+                    "FAIL" if expected_owners else "REVIEW_REQUIRED",
+                    item.source_path,
+                    "Observed source namespace does not resolve to exactly its declared owner.",
+                    **issue,
+                )
+            )
+
     for project in context.observed.projects:
         for reference in project.references:
             if reference not in observed_projects:
@@ -183,7 +288,7 @@ def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
                 "ARC001",
                 "PASS",
                 ".",
-                "Declared modules, hosts, projects, names, and test roles match the observed repository.",
+                "Declared modules, hosts, projects, names, test roles, and source namespaces match the observed repository.",
                 modules=sorted(observed_modules),
                 hosts=sorted(observed_hosts),
                 projects=sorted(observed_projects),
@@ -407,16 +512,29 @@ def _dependency_path(graph: dict[str, tuple[str, ...]], start: str, targets: set
 
 
 def _source_belongs_only_to_test_projects(source_path: str, projects: dict[str, dict[str, Any]]) -> bool:
-    candidates: list[tuple[int, dict[str, Any]]] = []
-    for project_path, declaration in projects.items():
-        project_root = str(Path(project_path).parent).replace("\\", "/")
-        if project_root == "." or source_path.startswith(project_root.rstrip("/") + "/"):
-            candidates.append((len(project_root), declaration))
-    if not candidates:
+    project_paths = _source_project_paths(source_path, projects)
+    if not project_paths:
         return False
-    most_specific = max(length for length, _ in candidates)
-    declarations = [item for length, item in candidates if length == most_specific]
-    return all(item["role"] == "test" for item in declarations)
+    return all(projects[path]["role"] == "test" for path in project_paths)
+
+
+def _namespace_resolution_issue(
+    context: ValidationContext,
+    namespace: str,
+    expected_owners: list[tuple[str, str]],
+    expected_from: list[str],
+) -> dict[str, object] | None:
+    owners = _namespace_owners(context, namespace)
+    matched_owners = sorted({(kind, owner_id) for kind, owner_id, _ in owners})
+    if len(owners) == 1 and (not expected_owners or matched_owners == expected_owners):
+        return None
+    return {
+        "namespace": namespace,
+        "expectedFrom": expected_from,
+        "expectedOwners": [f"{kind}:{owner_id}" for kind, owner_id in expected_owners],
+        "matchedOwners": [f"{kind}:{owner_id}" for kind, owner_id in matched_owners],
+        "reason": "ambiguous" if len(owners) > 1 else "unresolved" if not owners else "owner-mismatch",
+    }
 
 
 def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Finding]:
@@ -430,11 +548,11 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
     host_projects = {
         path for path, item in projects.items() if item["owner"]["kind"] == "host"
     }
-    violations: list[Finding] = []
+    findings: list[Finding] = []
     for project in sorted(module_projects):
         path = _dependency_path(graph, project, host_projects)
         if path:
-            violations.append(
+            findings.append(
                 _finding(
                     "DEP001",
                     "FAIL",
@@ -446,10 +564,55 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
     for dependency in context.observed.source_dependencies:
         if _source_belongs_only_to_test_projects(dependency.source_path, projects):
             continue
+        source_owners, source_evidence = _source_expected_owners(context, dependency.source_path)
+        target_owners, target_evidence = _observed_namespace_expected_owners(
+            context,
+            dependency.target_namespace,
+        )
+        source_namespace_observed = any(
+            item.source_path == dependency.source_path
+            and item.namespace == dependency.source_namespace
+            for item in context.observed.source_namespaces
+        )
+        resolution_issues = [
+            issue
+            for issue in (
+                _namespace_resolution_issue(
+                    context,
+                    dependency.source_namespace,
+                    source_owners,
+                    source_evidence or [dependency.source_path],
+                )
+                if source_namespace_observed else None,
+                _namespace_resolution_issue(
+                    context,
+                    dependency.target_namespace,
+                    target_owners,
+                    target_evidence,
+                )
+                if target_owners else None,
+            )
+            if issue is not None
+        ]
+        if resolution_issues:
+            findings.append(
+                _finding(
+                    "DEP001",
+                    "REVIEW_REQUIRED",
+                    dependency.source_path,
+                    "A repository-local source dependency cannot be assigned to exactly one declared owner; DEP001 cannot prove the edge direction.",
+                    sourceNamespace=dependency.source_namespace,
+                    targetNamespace=dependency.target_namespace,
+                    resolutionIssues=resolution_issues,
+                    observation=dependency.kind,
+                    confidence=dependency.confidence,
+                )
+            )
+            continue
         source = _namespace_owner(context, dependency.source_namespace)
         target = _namespace_owner(context, dependency.target_namespace)
         if source and target and source[0] == "module" and target[0] == "host":
-            violations.append(
+            findings.append(
                 _finding(
                     "DEP001",
                     "FAIL",
@@ -461,7 +624,7 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     confidence=dependency.confidence,
                 )
             )
-    return violations or [
+    return findings or [
         _finding(
             "DEP001",
             "PASS",

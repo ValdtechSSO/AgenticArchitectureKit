@@ -14,6 +14,8 @@ class Project:
     name: str
     references: tuple[str, ...]
     role_hint: str | None = None
+    root_namespace: str | None = None
+    namespaces: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,14 @@ class SourceDependency:
 
 
 @dataclass(frozen=True)
+class SourceNamespace:
+    source_path: str
+    namespace: str
+    project_path: str | None = None
+    confidence: str = "exact"
+
+
+@dataclass(frozen=True)
 class ObservedArchitecture:
     modules: tuple[str, ...]
     hosts: tuple[str, ...]
@@ -33,6 +43,7 @@ class ObservedArchitecture:
     source_files: tuple[str, ...]
     source_dependencies: tuple[SourceDependency, ...] = ()
     directories: tuple[str, ...] = ()
+    source_namespaces: tuple[SourceNamespace, ...] = ()
 
     @property
     def projects_by_path(self) -> dict[str, Project]:
@@ -48,6 +59,8 @@ class ObservedArchitecture:
                     "name": item.name,
                     "references": list(item.references),
                     **({"roleHint": item.role_hint} if item.role_hint else {}),
+                    **({"rootNamespace": item.root_namespace} if item.root_namespace else {}),
+                    **({"namespaces": list(item.namespaces)} if item.namespaces else {}),
                 }
                 for item in self.projects
             ],
@@ -61,6 +74,15 @@ class ObservedArchitecture:
                     "confidence": item.confidence,
                 }
                 for item in self.source_dependencies
+            ],
+            "sourceNamespaces": [
+                {
+                    "sourcePath": item.source_path,
+                    "namespace": item.namespace,
+                    **({"projectPath": item.project_path} if item.project_path else {}),
+                    "confidence": item.confidence,
+                }
+                for item in self.source_namespaces
             ],
             "directories": list(self.directories),
         }
