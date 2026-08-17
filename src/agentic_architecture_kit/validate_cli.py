@@ -465,7 +465,22 @@ def run(arguments: list[str] | None = None) -> int:
         if args.format == "json":
             print(serialized, end="")
         else:
-            for finding in findings:
+            text_priority = {
+                "FAIL": 0,
+                "REVIEW_REQUIRED": 1,
+                "WAIVED": 2,
+                "REVIEWED": 3,
+                "PASS": 4,
+                "NOT_APPLICABLE": 5,
+            }
+            ordered_findings = [
+                finding
+                for _, finding in sorted(
+                    enumerate(findings),
+                    key=lambda item: (text_priority[item[1].status], item[0]),
+                )
+            ]
+            for finding in ordered_findings:
                 waiver = f" waiver={finding.waiver}" if finding.waiver else ""
                 review = f" review={finding.review}" if finding.review else ""
                 print(

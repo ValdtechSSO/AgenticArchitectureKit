@@ -27,7 +27,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.5",
+  "toolVersion": "0.4.6",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -36,8 +36,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.5 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.5 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.6 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.6 aak context locate "order lifecycle"
 ```
 
 La misma distribución contiene todo lo necesario para que un agente inicialice
@@ -102,6 +102,12 @@ devuelve 1. La configuración inválida o un pin incompatible devuelve 2. Cada
 resultado incluye digests canónicos de toolchain, policy, licencias, reviews,
 autoridades, catálogo y observación.
 
+La salida legible se ordena por severidad de diagnóstico, de modo que los
+`FAIL` causales aparecen antes que sus consecuencias `REVIEW_REQUIRED`. El JSON
+conserva el orden del catálogo para consumidores automáticos estables. Las
+consecuencias DEP001 repetidas de un mismo archivo fuente y causa de resolución
+se agrupan, conservando todas las aristas afectadas como evidencia.
+
 Cada hallazgo contiene `reference` normativa resoluble y `ruleDigest`.
 `aak explain` combina la definición con estado actual, scopes, evidencia y
 waiver o review aplicado. Una referencia ausente hace fallar la validación.
@@ -122,6 +128,9 @@ rust = "my_aak_rust_adapter:observe"
 
 Un adaptador observa hechos; no redefine reglas portables. Las comprobaciones
 semánticas específicas permanecen en los tests arquitectónicos del consumidor.
+Consulta [Cómo escribir un adaptador tecnológico](adapter-development.md),
+también incluido como `aak guide adapter-development`, para ver el contrato de
+observación y la lista de pruebas.
 
 ## Exportación offline
 

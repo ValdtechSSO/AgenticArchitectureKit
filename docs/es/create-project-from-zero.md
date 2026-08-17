@@ -183,7 +183,10 @@ technology = "my_aak_adapter:observe"
 
 El adaptador solo descubre módulos, hosts, proyectos, dependencias y archivos
 fuente. No decide qué arquitectura es válida ni redefine reglas. Su distribución
-y versión exacta se fijan en `.agentic/toolchain.json`.
+y versión exacta se fijan en `.agentic/toolchain.json`. Ejecuta
+`aak guide adapter-development` o consulta
+[Cómo escribir un adaptador tecnológico](adapter-development.md) para ver el
+contrato de observación, empaquetado, conexión con la policy y pruebas negativas.
 
 ## 7. Licencias
 

@@ -180,7 +180,10 @@ technology = "my_aak_adapter:observe"
 
 The adapter only discovers modules, hosts, projects, dependencies, and source
 files. It does not decide which architecture is valid or redefine rules. Pin
-the extension distribution and exact version in `.agentic/toolchain.json`.
+the extension distribution and exact version in `.agentic/toolchain.json`. Use
+`aak guide adapter-development` or read
+[Writing a technology adapter](adapter-development.md) for the observation
+contract, packaging, policy wiring, and negative-test checklist.
 
 ## 7. Waivers
 

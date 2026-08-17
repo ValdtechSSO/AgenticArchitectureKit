@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+  "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.6/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
   "version": 1,
   "project": "replace-with-project-id",
   "adapter": "dotnet",

@@ -15,7 +15,7 @@ from .contracts import ContractError
 from .resources import files as package_files, read_json
 
 
-_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
+_POLICY_SCHEMA = "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.6/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json"
 _TECHNICAL_MODULE_NAMES = [
     "Git", "Providers", "Repositories", "Validation", "Services", "Infrastructure",
 ]
@@ -376,7 +376,7 @@ def _initialization_plan(
         policy, observation = _observed_policy(root, selected_adapter)
         proposal_basis = "observed"
     toolchain = {
-        "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
+        "$schema": "https://raw.githubusercontent.com/ValdtechSSO/AgenticArchitectureKit/v0.4.6/src/agentic_architecture_kit/data/schemas/toolchain.schema.json",
         "version": 1,
         "distribution": "agentic-architecture-kit",
         "toolVersion": __version__,

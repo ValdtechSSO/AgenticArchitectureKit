@@ -25,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.5",
+  "toolVersion": "0.4.6",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -34,8 +34,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.5 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.5 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.6 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.6 aak context locate "order lifecycle"
 ```
 
 The same distribution contains everything an agent needs to bootstrap a new
@@ -99,6 +99,12 @@ aak explain CHG001 --base-ref origin/main --format json
 `REVIEWED`; it does not claim mechanical proof. Invalid configuration or a pin
 mismatch returns 2.
 
+Human-readable output is ordered by diagnostic severity, so causal `FAIL`
+findings appear before dependent `REVIEW_REQUIRED` consequences. JSON retains
+catalog order for stable machine consumption. Repeated DEP001 consequences from
+one source file and namespace-resolution cause are grouped while preserving all
+affected edges in evidence.
+
 CI supplies `--base-ref` so adding a module, host, project, exact dependency
 permission, or scalable dependency rule requires an existing `decisionRefs`
 document. Every result records canonical SHA-256 digests of the toolchain,
@@ -145,7 +151,10 @@ rust = "my_aak_rust_adapter:observe"
 
 Portable rules remain owned by this distribution. An adapter observes facts; it
 does not silently redefine rule meaning. Project-only semantic checks remain in
-the consumer repository's architecture test suite.
+the consumer repository's architecture test suite. See
+[Writing a technology adapter](adapter-development.md), also bundled as
+`aak guide adapter-development`, for the complete observation contract and test
+checklist.
 
 ## Offline export
 

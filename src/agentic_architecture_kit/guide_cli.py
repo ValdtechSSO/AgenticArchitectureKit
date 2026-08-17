@@ -6,6 +6,10 @@ from .resources import resource, read_text
 
 
 _GUIDES = {
+    "adapter-development": (
+        "Write and package an external technology observation adapter.",
+        "data/guides/adapter-development.md",
+    ),
     "bootstrap": (
         "Create a new project or bring an existing repository under the kit.",
         "data/guides/bootstrap.md",

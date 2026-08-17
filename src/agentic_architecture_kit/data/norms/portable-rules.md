@@ -51,7 +51,9 @@ matched by observed test-project evidence is a verification consumer excluded
 from this direction rule; it may depend on the host or module behavior it
 verifies. A repository-local source edge whose namespace ownership is unresolved
 or ambiguous produces `REVIEW_REQUIRED`; it must never be omitted as evidence or
-reported as `PASS`.
+reported as `PASS`. Consequential edges sharing the same source file and
+namespace-resolution cause are grouped into one finding with the affected edges
+retained as evidence.
 
 ## DEP002 — Cross-module access uses public contracts
 

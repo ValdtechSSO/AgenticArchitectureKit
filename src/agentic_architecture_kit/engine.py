@@ -549,6 +549,7 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
         path for path, item in projects.items() if item["owner"]["kind"] == "host"
     }
     findings: list[Finding] = []
+    resolution_groups: dict[tuple[str, str], dict[str, Any]] = {}
     for project in sorted(module_projects):
         path = _dependency_path(graph, project, host_projects)
         if path:
@@ -595,19 +596,22 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
             if issue is not None
         ]
         if resolution_issues:
-            findings.append(
-                _finding(
-                    "DEP001",
-                    "REVIEW_REQUIRED",
-                    dependency.source_path,
-                    "A repository-local source dependency cannot be assigned to exactly one declared owner; DEP001 cannot prove the edge direction.",
-                    sourceNamespace=dependency.source_namespace,
-                    targetNamespace=dependency.target_namespace,
-                    resolutionIssues=resolution_issues,
-                    observation=dependency.kind,
-                    confidence=dependency.confidence,
+            for issue in resolution_issues:
+                issue_key = json.dumps(issue, sort_keys=True, separators=(",", ":"))
+                group = resolution_groups.setdefault(
+                    (dependency.source_path, issue_key),
+                    {
+                        "scope": dependency.source_path,
+                        "issue": issue,
+                        "affectedEdges": [],
+                    },
                 )
-            )
+                group["affectedEdges"].append({
+                    "sourceNamespace": dependency.source_namespace,
+                    "targetNamespace": dependency.target_namespace,
+                    "observation": dependency.kind,
+                    "confidence": dependency.confidence,
+                })
             continue
         source = _namespace_owner(context, dependency.source_namespace)
         target = _namespace_owner(context, dependency.target_namespace)
@@ -624,6 +628,22 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     confidence=dependency.confidence,
                 )
             )
+    for key in sorted(resolution_groups):
+        group = resolution_groups[key]
+        unique_edges = {
+            json.dumps(edge, sort_keys=True, separators=(",", ":")): edge
+            for edge in group["affectedEdges"]
+        }
+        findings.append(
+            _finding(
+                "DEP001",
+                "REVIEW_REQUIRED",
+                group["scope"],
+                "A repository-local namespace cannot be assigned to exactly one declared owner; DEP001 cannot prove the affected edge directions.",
+                namespaceResolutionIssue=group["issue"],
+                affectedEdges=[unique_edges[value] for value in sorted(unique_edges)],
+            )
+        )
     return findings or [
         _finding(
             "DEP001",

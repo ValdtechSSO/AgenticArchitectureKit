@@ -76,7 +76,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.5/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.6/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -307,6 +307,7 @@ architecture_decisions:
         with contextlib.redirect_stdout(output):
             code = cli(["guide"])
         self.assertEqual(0, code)
+        self.assertIn("adapter-development:", output.getvalue())
         self.assertIn("bootstrap:", output.getvalue())
         self.assertIn("github-governance:", output.getvalue())
 
@@ -325,13 +326,25 @@ architecture_decisions:
         self.assertIn("# GitHub authority enforcement", output.getvalue())
         self.assertIn("## Solo-maintainer mode", output.getvalue())
 
-        for relative in ("data/guides/bootstrap.md", "data/guides/github-governance.md"):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "adapter-development"])
+        self.assertEqual(0, code)
+        self.assertIn("# Writing a technology adapter", output.getvalue())
+        self.assertIn("## 7. Release checklist", output.getvalue())
+
+        for relative in (
+            "data/guides/adapter-development.md",
+            "data/guides/bootstrap.md",
+            "data/guides/github-governance.md",
+        ):
             packaged = read_bundled_text(relative)
             self.assertNotIn("docs/", packaged)
             self.assertNotIn("../", packaged)
 
     def test_web_guides_cover_the_packaged_operational_sections(self) -> None:
         pairs = (
+            ("data/guides/adapter-development.md", "docs/adapter-development.md"),
             ("data/guides/bootstrap.md", "docs/create-project-from-zero.md"),
             ("data/guides/github-governance.md", "docs/github-governance.md"),
         )
@@ -823,6 +836,26 @@ architecture_decisions:
         self.assertIn("cannot be assigned to exactly one declared owner", output)
         self.assertNotIn("[PASS] DEP001", output)
 
+    def test_dep001_groups_repeated_resolution_consequences_by_root_cause(self) -> None:
+        self.policy["hosts"][0]["namespacePatterns"] = ["example", "example.*"]
+        self._write_policy()
+        (self.root / "src/Hosts/Cli/Program.cs").write_text(
+            "using System;\n"
+            "using Example.Orders;\n"
+            "using External.Package;\n"
+            "namespace Example.Cli;\n",
+            encoding="utf-8",
+        )
+
+        code, output, _ = self._run()
+
+        self.assertEqual(1, code)
+        self.assertEqual(1, output.count("[REVIEW_REQUIRED] DEP001 src/Hosts/Cli/Program.cs"))
+        self.assertLess(
+            output.index("[FAIL] ARC001 src/Hosts/Cli/Program.cs"),
+            output.index("[REVIEW_REQUIRED] DEP001 src/Hosts/Cli/Program.cs"),
+        )
+
     def test_policy_growth_without_decision_reference_fails_against_git_base(self) -> None:
         self.policy["allowedProjectDependencies"].append({
             "from": "src/Modules/Orders/Orders.csproj",
@@ -1100,6 +1133,10 @@ architecture_decisions:
         self.assertEqual(1, code, output)
         self.assertIn("[PASS] ARC001", output)
         self.assertIn("[FAIL] DEP001 src/Modules/Planning/Features/Plan/CreatePlan.cs", output)
+        self.assertLess(
+            output.index("[FAIL] DEP001"),
+            output.index("[REVIEW_REQUIRED] FEAT001"),
+        )
 
     def test_init_can_bootstrap_an_empty_repository_with_explicit_adapter(self) -> None:
         target = self.root / "empty-initialized"
@@ -1332,6 +1369,7 @@ architecture_decisions:
         exported = target / f"agentic-architecture-kit-{__version__}"
         self.assertTrue((exported / "agentic_architecture_kit/data/rules.json").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/norms/agent-core.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/adapter-development.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/bootstrap.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/AGENTS.md").is_file())
