@@ -146,10 +146,18 @@ accidental y añade la semántica decidida que el adaptador no puede inferir:
 - raíces de módulos y hosts;
 - áreas funcionales existentes;
 - proyectos observables y sus owners;
-- roles de aplicación, infraestructura, contratos y host;
+- roles de aplicación, infraestructura, contratos, host y test;
 - dependencias permitidas;
 - rutas fuente autorizadas dentro de cada host;
 - nombres técnicos o catch-all prohibidos.
+
+En .NET, el adaptador reconoce los proyectos de test mediante propiedades o
+capacidades MSBuild explícitas, referencias comunes a SDK/packages de test y
+marcadores convencionales `Test`/`Tests` en la ruta o el nombre del proyecto. Si
+un proyecto de test personalizado no expone ninguna de esas señales, declara
+`<IsTestProject>true</IsTestProject>` en su archivo de proyecto; una etiqueta
+`test` que solo exista en la policy se rechaza porque podría debilitar las reglas
+de dependencia.
 
 La política declara intención. El adaptador obtiene la estructura observada. El
 validador compara ambas; la política nunca debe escribirse para ocultar una

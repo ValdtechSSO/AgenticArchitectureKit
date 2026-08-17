@@ -121,7 +121,7 @@
           },
           "role": {
             "type": "string",
-            "enum": ["application", "infrastructure", "contracts", "host"]
+            "enum": ["application", "infrastructure", "contracts", "host", "test"]
           },
           "publicContract": { "type": "boolean" },
           "decisionRefs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
@@ -162,7 +162,7 @@
       "properties": {
         "ownerKind": { "type": "string", "enum": ["module", "host"] },
         "ownerId": { "type": "string", "minLength": 1 },
-        "role": { "type": "string", "enum": ["application", "infrastructure", "contracts", "host"] },
+        "role": { "type": "string", "enum": ["application", "infrastructure", "contracts", "host", "test"] },
         "pathPattern": { "type": "string", "minLength": 1 }
       }
     }

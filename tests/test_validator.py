@@ -75,7 +75,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.3/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.4/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -350,6 +350,58 @@ architecture_decisions:
         code, output, _ = self._run()
         self.assertEqual(1, code)
         self.assertIn("[FAIL] DEP001 src/Modules/Orders/Orders.csproj", output)
+
+    def test_test_project_may_depend_on_and_import_a_host(self) -> None:
+        test_root = self.root / "tests/EndToEnd/Cli"
+        test_root.mkdir(parents=True)
+        test_project = "tests/EndToEnd/Cli/Example.Cli.EndToEndTests.csproj"
+        (self.root / test_project).write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Cli.EndToEndTests</AssemblyName>'
+            '<IsTestProject>true</IsTestProject></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="../../../src/Hosts/Cli/Cli.csproj" /></ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (test_root / "CliTests.cs").write_text(
+            "using Example.Cli;\nnamespace Example.Orders.CliTests;\n",
+            encoding="utf-8",
+        )
+        self.policy["projectSearchRoots"].append("tests")
+        self.policy["projects"].append({
+            "path": test_project,
+            "name": "Example.Cli.EndToEndTests",
+            "owner": {"kind": "module", "id": "orders"},
+            "role": "test",
+        })
+        self.policy["allowedProjectDependencies"].append({
+            "from": test_project,
+            "to": "src/Hosts/Cli/Cli.csproj",
+        })
+        self._write_policy()
+
+        code, output, error = self._run()
+
+        self.assertEqual(0, code, error + output)
+        self.assertNotIn("[FAIL] DEP001", output)
+
+    def test_test_role_cannot_hide_a_production_module_dependency(self) -> None:
+        module_project = self.root / "src/Modules/Orders/Orders.csproj"
+        module_project.write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Orders</AssemblyName></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="../../Hosts/Cli/Cli.csproj" /></ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        self.policy["projects"][0]["role"] = "test"
+        self.policy["allowedProjectDependencies"].append({
+            "from": "src/Modules/Orders/Orders.csproj",
+            "to": "src/Hosts/Cli/Cli.csproj",
+        })
+        self._write_policy()
+
+        code, output, _ = self._run()
+
+        self.assertEqual(1, code)
+        self.assertIn("[FAIL] ARC001 src/Modules/Orders/Orders.csproj", output)
+        self.assertIn("Declared test role does not match observed test-project evidence.", output)
 
     def test_valid_waiver_is_visible_and_allows_the_run(self) -> None:
         self.policy["allowedProjectDependencies"] = []
@@ -796,8 +848,10 @@ architecture_decisions:
         target = self.root / "initialized"
         module = target / "src/Modules/Orders"
         host = target / "src/Hosts/Cli"
+        test = target / "tests/EndToEnd/Cli"
         module.mkdir(parents=True)
         host.mkdir(parents=True)
+        test.mkdir(parents=True)
         (module / "Orders.csproj").write_text(
             '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Orders</AssemblyName></PropertyGroup></Project>\n',
             encoding="utf-8",
@@ -805,6 +859,11 @@ architecture_decisions:
         (host / "Cli.csproj").write_text(
             '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Cli</AssemblyName></PropertyGroup>'
             '<ItemGroup><ProjectReference Include="../../Modules/Orders/Orders.csproj" /></ItemGroup></Project>\n',
+            encoding="utf-8",
+        )
+        (test / "Example.Cli.EndToEndTests.csproj").write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>Example.Cli.EndToEndTests</AssemblyName></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="../../../src/Hosts/Cli/Cli.csproj" /></ItemGroup></Project>\n',
             encoding="utf-8",
         )
         (module / "Order.cs").write_text("namespace Example.Orders;\n", encoding="utf-8")
@@ -818,11 +877,16 @@ architecture_decisions:
         self.assertEqual("dotnet", policy["adapter"])
         self.assertEqual(["src/Modules/Orders"], [item["root"] for item in policy["modules"]])
         self.assertEqual(["src/Hosts/Cli"], [item["root"] for item in policy["hosts"]])
-        self.assertEqual(2, len(policy["projects"]))
-        self.assertEqual([{
-            "from": "src/Hosts/Cli/Cli.csproj",
-            "to": "src/Modules/Orders/Orders.csproj",
-        }], policy["allowedProjectDependencies"])
+        self.assertEqual(3, len(policy["projects"]))
+        test_declaration = next(item for item in policy["projects"] if item["path"].startswith("tests/"))
+        self.assertEqual("test", test_declaration["role"])
+        self.assertEqual({
+            ("src/Hosts/Cli/Cli.csproj", "src/Modules/Orders/Orders.csproj"),
+            ("tests/EndToEnd/Cli/Example.Cli.EndToEndTests.csproj", "src/Hosts/Cli/Cli.csproj"),
+        }, {
+            (item["from"], item["to"])
+            for item in policy["allowedProjectDependencies"]
+        })
         self.assertIn("* @architecture-team", (target / ".github/CODEOWNERS").read_text(encoding="utf-8"))
         self.assertFalse((target / "tools/architecture").exists())
 

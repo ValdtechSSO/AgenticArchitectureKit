@@ -253,14 +253,14 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.3 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.4 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.3 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.3 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.4 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.4 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This

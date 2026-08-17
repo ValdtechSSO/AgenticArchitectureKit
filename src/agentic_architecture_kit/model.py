@@ -13,6 +13,7 @@ class Project:
     path: str
     name: str
     references: tuple[str, ...]
+    role_hint: str | None = None
 
 
 @dataclass(frozen=True)
@@ -42,7 +43,12 @@ class ObservedArchitecture:
             "modules": list(self.modules),
             "hosts": list(self.hosts),
             "projects": [
-                {"path": item.path, "name": item.name, "references": list(item.references)}
+                {
+                    "path": item.path,
+                    "name": item.name,
+                    "references": list(item.references),
+                    **({"roleHint": item.role_hint} if item.role_hint else {}),
+                }
                 for item in self.projects
             ],
             "sourceFiles": list(self.source_files),

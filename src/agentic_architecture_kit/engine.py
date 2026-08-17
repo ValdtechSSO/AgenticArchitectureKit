@@ -8,7 +8,7 @@ import subprocess
 from collections import Counter, deque
 from datetime import date
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from .model import Finding, ValidationContext
 from .norms import markdown_sections, read_reference_document, reference_section, split_reference
@@ -150,6 +150,19 @@ def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
                     observed=actual_name,
                 )
             )
+        declared_test = declared_projects[path]["role"] == "test"
+        observed_test = observed_projects[path].role_hint == "test"
+        if declared_test != observed_test:
+            results.append(
+                _finding(
+                    "ARC001",
+                    "FAIL",
+                    path,
+                    "Declared test role does not match observed test-project evidence.",
+                    declaredRole=declared_projects[path]["role"],
+                    observedRoleHint=observed_projects[path].role_hint,
+                )
+            )
 
     for project in context.observed.projects:
         for reference in project.references:
@@ -170,7 +183,7 @@ def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
                 "ARC001",
                 "PASS",
                 ".",
-                "Declared modules, hosts, and projects match the observed repository.",
+                "Declared modules, hosts, projects, names, and test roles match the observed repository.",
                 modules=sorted(observed_modules),
                 hosts=sorted(observed_hosts),
                 projects=sorted(observed_projects),
@@ -393,11 +406,26 @@ def _dependency_path(graph: dict[str, tuple[str, ...]], start: str, targets: set
     return None
 
 
+def _source_belongs_only_to_test_projects(source_path: str, projects: dict[str, dict[str, Any]]) -> bool:
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    for project_path, declaration in projects.items():
+        project_root = str(Path(project_path).parent).replace("\\", "/")
+        if project_root == "." or source_path.startswith(project_root.rstrip("/") + "/"):
+            candidates.append((len(project_root), declaration))
+    if not candidates:
+        return False
+    most_specific = max(length for length, _ in candidates)
+    declarations = [item for length, item in candidates if length == most_specific]
+    return all(item["role"] == "test" for item in declarations)
+
+
 def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Finding]:
     projects = _declared_projects(context)
     graph = {project.path: project.references for project in context.observed.projects}
     module_projects = {
-        path for path, item in projects.items() if item["owner"]["kind"] == "module"
+        path
+        for path, item in projects.items()
+        if item["owner"]["kind"] == "module" and item["role"] != "test"
     }
     host_projects = {
         path for path, item in projects.items() if item["owner"]["kind"] == "host"
@@ -411,11 +439,13 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     "DEP001",
                     "FAIL",
                     project,
-                    "Module project depends on a host project.",
+                    "Production module project depends on a host project.",
                     dependencyPath=path,
                 )
             )
     for dependency in context.observed.source_dependencies:
+        if _source_belongs_only_to_test_projects(dependency.source_path, projects):
+            continue
         source = _namespace_owner(context, dependency.source_namespace)
         target = _namespace_owner(context, dependency.target_namespace)
         if source and target and source[0] == "module" and target[0] == "host":
@@ -436,9 +466,25 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
             "DEP001",
             "PASS",
             ".",
-            "No module-owned project or source namespace depends on a host.",
-            evaluatedProjectEdges=sum(len(item.references) for item in context.observed.projects),
-            evaluatedSourceEdges=len(context.observed.source_dependencies),
+            "No production module-owned project or source namespace depends on a host.",
+            evaluatedProjectEdges=sum(
+                len(item.references)
+                for item in context.observed.projects
+                if projects.get(item.path, {}).get("role") != "test"
+            ),
+            excludedTestProjectEdges=sum(
+                len(item.references)
+                for item in context.observed.projects
+                if projects.get(item.path, {}).get("role") == "test"
+            ),
+            evaluatedSourceEdges=sum(
+                not _source_belongs_only_to_test_projects(item.source_path, projects)
+                for item in context.observed.source_dependencies
+            ),
+            excludedTestSourceEdges=sum(
+                _source_belongs_only_to_test_projects(item.source_path, projects)
+                for item in context.observed.source_dependencies
+            ),
         )
     ]
 

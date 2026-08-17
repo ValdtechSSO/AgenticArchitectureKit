@@ -12,7 +12,7 @@ represented as implemented.
 | Self-contained agent bootstrap | Implemented | `aak core`, `aak guide`, and `aak template` expose the version-matched decision context, operating procedure, GitHub governance, and neutral assets without source-repository access |
 | Existing-repository adoption | Implemented | `aak adopt` provides a no-write preview and idempotently orchestrates observed policy, governance, optional GitHub CI, context indexing, strict validation, and explicit semantic follow-up without overwriting existing files |
 | Self-validation | Implemented | Structural smoke test plus authorization of real CLI-host → validator imports; prohibited and cross-module cases are exercised by tests/examples, not invented in the kit |
-| .NET observation | Implemented | SDK-style projects, `ProjectReference`, C# namespaces and `using` directives |
+| .NET observation | Implemented | SDK-style projects, test-project signals, `ProjectReference`, C# namespaces and `using` directives |
 | Python observation | Implemented | `pyproject.toml`, direct packages/CLI files and AST import directives |
 | Intra-assembly dependency checks | Initial | Exact namespace/import matching for C# and Python; not a full compiler semantic model |
 | Policy-growth protection | Implemented | `--base-ref` detects new boundaries and dependency permissions; CI compares PRs with their base and pushes with their previous SHA |

@@ -55,7 +55,9 @@ consumes it as a public API. Put filesystem, network, persistence, process,
 messaging, SDK, and external-service implementations in `Infrastructure/`.
 
 Hosts adapt input/output and compose dependencies. They do not own application
-behavior. Modules never depend on hosts.
+behavior. Production module code never depends on hosts. Projects explicitly
+classified as tests are verification consumers and may depend on the hosts or
+modules they exercise.
 
 ## Justified boundaries
 

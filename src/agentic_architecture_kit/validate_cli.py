@@ -122,8 +122,8 @@ def _validate_policy_semantics(root: Path, policy: dict[str, Any]) -> None:
         known = module_ids if owner["kind"] == "module" else host_ids
         if owner["id"] not in known:
             raise ContractError(f"Project {project['path']} references unknown {owner['kind']} '{owner['id']}'")
-        if owner["kind"] == "host" and project["role"] != "host":
-            raise ContractError(f"Host-owned project must use role 'host': {project['path']}")
+        if owner["kind"] == "host" and project["role"] not in ("host", "test"):
+            raise ContractError(f"Host-owned project must use role 'host' or 'test': {project['path']}")
         if owner["kind"] == "module" and project["role"] == "host":
             raise ContractError(f"Module-owned project cannot use role 'host': {project['path']}")
 

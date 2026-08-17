@@ -18,6 +18,40 @@ def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
+def _is_test_project(project_path: Path, document: ET.ElementTree) -> bool:
+    root = document.getroot()
+    sdk_values = [root.attrib.get("Sdk", "")]
+    package_references: set[str] = set()
+    for element in root.iter():
+        tag = _local_name(element.tag)
+        if tag in ("IsTestProject", "IsTestingPlatformApplication"):
+            if (element.text or "").strip().casefold() == "true":
+                return True
+        elif tag == "ProjectCapability" and element.attrib.get("Include", "").casefold() == "testcontainer":
+            return True
+        elif tag == "Sdk":
+            sdk_values.append(element.attrib.get("Name", element.text or ""))
+        elif tag == "PackageReference":
+            package_references.add(element.attrib.get("Include", element.attrib.get("Update", "")).casefold())
+
+    if any(value.casefold().startswith(("mstest.sdk", "microsoft.testing.platform.msbuild")) for value in sdk_values):
+        return True
+    if package_references.intersection({
+        "microsoft.net.test.sdk",
+        "microsoft.testing.platform",
+        "mstest.testframework",
+        "nunit",
+        "xunit",
+        "tunit",
+    }):
+        return True
+
+    relative_parts = [part.casefold() for part in project_path.parts]
+    conventional_name = re.search(r"(?:^|[._-])tests?$", project_path.stem, re.IGNORECASE)
+    camel_case_name = re.search(r"Tests?$", project_path.stem)
+    return "tests" in relative_parts or "test" in relative_parts or bool(conventional_name or camel_case_name)
+
+
 def observe(root: Path, policy: dict) -> ObservedArchitecture:
     roots = policy["roots"]
     modules_root = root / roots["modules"]
@@ -70,7 +104,8 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
                     if include:
                         target = (project_path.parent / include.replace("\\", "/")).resolve()
                         references.append(_relative(root, target))
-            projects.append(Project(relative_path, name, tuple(sorted(set(references)))))
+            role_hint = "test" if _is_test_project(Path(relative_path), document) else None
+            projects.append(Project(relative_path, name, tuple(sorted(set(references))), role_hint))
 
     source_files: set[str] = set()
     source_dependencies: set[SourceDependency] = set()

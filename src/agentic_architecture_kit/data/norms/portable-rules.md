@@ -11,8 +11,9 @@ decisions where a material boundary is introduced.
 
 ## ARC001 — Declared and observed architecture agree
 
-Declared modules, hosts, projects, names, and dependencies must agree with what
-the selected technology adapter observes in source and build metadata.
+Declared modules, hosts, projects, names, mechanically observable test roles,
+and dependencies must agree with what the selected technology adapter observes
+in source and build metadata.
 
 ## MOD001 — Modules have semantic contracts
 
@@ -42,8 +43,11 @@ rule does not by itself prove that every behavior is pure composition.
 
 ## DEP001 — Modules do not depend on hosts
 
-No module-owned project or source namespace may depend on a host-owned project
-or namespace.
+No production module-owned project or source namespace may depend on a
+host-owned project or namespace. A project classified with role `test` and
+matched by observed test-project evidence is a verification consumer excluded
+from this direction rule; it may depend on the host or module behavior it
+verifies.
 
 ## DEP002 — Cross-module access uses public contracts
 

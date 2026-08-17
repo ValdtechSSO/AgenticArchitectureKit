@@ -253,14 +253,14 @@ es un atajo cuando existe un revisor de equipo disponible.
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.3 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.4 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.3 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.3 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.4 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.4 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un

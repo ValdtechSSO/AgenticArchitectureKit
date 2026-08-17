@@ -146,10 +146,17 @@ structure, and add decided semantics the adapter cannot infer:
 - module and host roots;
 - existing functional areas;
 - observable projects and their owners;
-- application, infrastructure, contract, and host roles;
+- application, infrastructure, contract, host, and test roles;
 - allowed dependencies;
 - permitted source locations inside each host;
 - prohibited technical-module and catch-all names.
+
+For .NET, the adapter recognizes test projects from explicit MSBuild test
+properties or capabilities, common test SDK/package references, and conventional
+`Test`/`Tests` path or project-name markers. If a custom test project exposes
+none of those signals, declare `<IsTestProject>true</IsTestProject>` in its
+project file; a policy-only `test` label is rejected because it could otherwise
+weaken dependency rules.
 
 Policy declares intent. The adapter obtains observed structure. The validator
 compares both. Policy must never be written to hide a portable-rule violation.
