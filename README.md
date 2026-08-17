@@ -79,21 +79,96 @@ should arrive when the task requires it.
 7. It runs the project's build and tests and validates the resulting
    architecture.
 
-Recommended bootstrap prompt:
+## Copy-paste prompts for coding agents
+
+The agent does not need this source repository. Give it write access to the
+target directory and package-registry access, replace the bracketed values, and
+send the appropriate prompt.
+
+### Create a new project
 
 ```text
-Use Agentic Architecture Kit to create the smallest justified architecture for
-this project. Run aak core and aak guide bootstrap from the pinned distribution
-and read both completely before initialization or the first modification.
-Do not copy an example structure mechanically. Discover capabilities, hosts,
-boundaries, and risks from current requirements and observable evidence. Install
-the general validator without redefining its rules, create the project-specific
-policy, and run the gate before creating product structure or implementation.
-For an existing repository, run it before the first modification. Run it again
-before declaring the task complete. Follow a finding's normative reference only
-when needed; an unresolved reference is a failure, never permission to infer the
-rule from memory. Work autonomously inside declared authority and escalate only
-an undefined material product, risk, ownership, or authority decision.
+Project directory: <PROJECT_DIRECTORY>
+Product objective: <PRODUCT_OBJECTIVE>
+Known requirements and constraints: <KNOWN_CONSTRAINTS>
+Repository CODEOWNER: <CODEOWNER>
+
+Use Agentic Architecture Kit 0.4.3 to create and govern this project.
+
+Before creating or modifying files:
+
+1. Run these commands and read both outputs completely:
+
+   uvx --from agentic-architecture-kit==0.4.3 aak core
+   uvx --from agentic-architecture-kit==0.4.3 aak guide bootstrap
+
+2. Treat that version-matched guidance as authoritative for architecture
+   decisions. Do not rely on a remembered or copied repository structure.
+
+3. Classify available information as KNOWN, ASSUMED, or UNKNOWN. Propose the
+   smallest architecture justified by current evidence. Do not create modules,
+   projects, abstractions, directories, or dependencies for hypothetical needs.
+
+4. Before materializing architecture, ask me only for unresolved decisions that
+   would materially affect product behavior, risk, ownership, runtime,
+   persistence, deployment, or granted authority.
+
+5. Once those decisions are resolved, use `aak init` from the pinned
+   distribution with the appropriate adapter, CODEOWNER, and authority mode.
+   Create only applicable project-owned contracts and context; do not copy the
+   AAK implementation or an example structure into this project.
+
+6. Run `aak validate --fail-on-review` immediately after declaring the minimum
+   architecture and before creating product implementation. Follow a finding's
+   packaged normative reference when needed. An unresolved reference is a
+   failure, not permission to infer the rule.
+
+7. Implement in small verified steps. Run the project's build and tests and the
+   architecture gate again before declaring completion. Persist enough project
+   context that another agent can continue without this conversation.
+
+While working, explain the current AAK step, discovered facts, decisions,
+planned files, validation results, and any unresolved material question.
+```
+
+### Adopt AAK in an existing project
+
+```text
+Repository directory: <PROJECT_DIRECTORY>
+Change objective: <CHANGE_OBJECTIVE>
+Known requirements and constraints: <KNOWN_CONSTRAINTS>
+Repository CODEOWNER: <CODEOWNER>
+
+Use Agentic Architecture Kit 0.4.3 before making the first project change.
+
+1. Run and read completely:
+
+   uvx --from agentic-architecture-kit==0.4.3 aak core
+   uvx --from agentic-architecture-kit==0.4.3 aak guide bootstrap
+
+2. Preview adoption without writing files:
+
+   uvx --from agentic-architecture-kit==0.4.3 aak adopt \
+     --root "<PROJECT_DIRECTORY>" \
+     --codeowner <CODEOWNER> \
+     --ci github \
+     --dry-run
+
+3. Explain the observed architecture, proposed policy, planned files, and every
+   `requiredActions` item. Do not treat observed structure as automatic
+   architectural approval.
+
+4. Ask me only for unresolved material product, risk, ownership, runtime,
+   persistence, deployment, or authority decisions. Then apply the same
+   `aak adopt` command without `--dry-run`.
+
+5. Preserve existing files and workflows. Never invent module contracts,
+   waivers, or semantic approvals. Complete semantic artifacts only from actual
+   project evidence and authorized decisions.
+
+6. Run the project's build and tests and `aak validate --fail-on-review` before
+   completion. Explain nonzero adoption or validation results as actionable
+   findings rather than hiding them or weakening policy.
 ```
 
 ## Distribution and project-owned payload
