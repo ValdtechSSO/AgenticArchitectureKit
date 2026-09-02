@@ -127,6 +127,12 @@ index disagrees with current source or revision, it is stale.
 | Architecture tests | Enforce project-specific decisions the common validator cannot express | Team or authorized agent | Whether they protect behavior rather than implementation trivia |
 | Validation result | Reports conformance for one repository revision | Generated | Failures, waivers, semantic reviews, revision identity |
 
+Create or change a project-specific guarantee through
+[`aak guide project-rule-authoring-prompt`](project-rule-authoring-prompt.md).
+It requires explicit subjects, exceptions, reliable evidence, negative
+mutations, and a real local/CI gate. An external project check is reported
+separately from portable AAK validation.
+
 ## 4. What happens when a project is created
 
 The agent does not begin by copying a complete tree. It first records what is
@@ -150,6 +156,9 @@ leaves a material product, risk, or ownership decision genuinely open.
 ## 5. Routine development
 
 For an ordinary request, the agent follows the existing architecture:
+
+Use [`aak guide implement-change`](implement-change-prompt.md) as the default
+end-to-end procedure when an agent must classify, plan, and implement the change.
 
 ```text
 Locate owning module
@@ -178,6 +187,16 @@ Project policy evolves as the product grows. Legitimate examples include:
 - a new public contract between current modules;
 - removal of a dependency, module, host, or obsolete waiver;
 - a feature area whose lifecycle has become observably independent.
+
+For any non-routine policy delta, the agent runs
+[`aak guide project-policy-authoring-prompt`](project-policy-authoring-prompt.md).
+The guide makes the agent reconcile adapter evidence, declared intent, the base
+policy, and decision authority; reviewers approve meaning rather than JSON.
+
+When the same change records an ADR, changes an invariant, refreshes the system
+overview, or modifies an agent router, it also runs
+[`aak guide architecture-context-authoring-prompt`](architecture-context-authoring-prompt.md).
+The user decides meaning; the agent owns Markdown, anchors, links, and routing.
 
 A boundary change should arrive as one coherent change:
 
@@ -253,14 +272,14 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.6 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.7 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.6 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.6 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.7 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.7 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This
@@ -271,6 +290,9 @@ instead of allowing an agent to obtain green by merely expanding the policy.
 
 A waiver is not a convenient ignore list. It is a visible team decision to
 accept one bounded deviation.
+Use [`aak guide waiver-authoring-prompt`](waiver-authoring-prompt.md) so the
+agent classifies eligibility, derives mechanical fields, edits the record, and
+proves its scope while the applicable authority owns risk acceptance.
 
 A good waiver answers:
 

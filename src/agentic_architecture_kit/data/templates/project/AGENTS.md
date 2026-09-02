@@ -8,6 +8,23 @@
 
 - Run `aak core` and read the installed decision core before structural
   decisions; use `aak explain RULE_ID` for validator-owned details.
+- Run `aak guide implement-change` before planning or implementing any product
+  change. It decides whether contracts, policy, ADRs, or adapters must change.
+- If module semantics are created or changed, run
+  `aak guide module-contract-authoring-prompt`; the user supplies meaning, not
+  YAML.
+- If project policy is created, reviewed, reconciled, or changed, run
+  `aak guide project-policy-authoring-prompt`; the user supplies architectural
+  intent, not JSON.
+- If ADRs, invariants, system overview, or agent routers are created or changed,
+  run `aak guide architecture-context-authoring-prompt`; the user supplies
+  meaning and decisions, not Markdown.
+- If a project-specific architecture guarantee is created or changed, run
+  `aak guide project-rule-authoring-prompt` and connect its analyzer or test to
+  the authoritative local and CI checks.
+- If a waiver is proposed, reviewed, changed, or removed, run
+  `aak guide waiver-authoring-prompt`. The agent writes the record but never
+  authorizes its own architectural deviation.
 - Run `aak guide bootstrap` for the version-matched creation and evolution
   procedure; use `aak guide github-governance` when configuring GitHub controls.
 - Read `architecture/system-overview.md` and `domain/global-invariants.md`.

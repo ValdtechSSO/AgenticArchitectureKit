@@ -40,7 +40,16 @@ validation report. A nonzero exit after writing means the report contains
 conformance or semantic work to complete; it is not a rollback signal. The
 command never invents module contracts, local agent context, waivers, or review
 approvals. Create those only from current project facts and authorized
-decisions. Do not pass `--base-ref` on first adoption unless that revision
+decisions. Run `aak guide project-policy-authoring-prompt` or use the
+[project-policy authoring prompt](project-policy-authoring-prompt.md) to
+reconcile the observed proposal without asking the user to author JSON. Run
+`aak guide module-contract-authoring-prompt` or use the
+[module-contract authoring prompt](module-contract-authoring-prompt.md) to have
+an agent discover, draft, validate, and maintain each contract without asking
+the user to author YAML. Run `aak guide architecture-context-authoring-prompt`
+or use the [architecture-context authoring prompt](architecture-context-authoring-prompt.md)
+to create the minimum current overview, decisions, invariants, and routers
+without asking the user to author Markdown. Do not pass `--base-ref` on first adoption unless that revision
 already contains a valid AAK policy; the generated CI workflow detects whether
 a comparative baseline is available.
 
@@ -132,6 +141,11 @@ domain/global-invariants.md
 
 Optional paths are omitted when they have no current content or responsibility.
 
+Run `aak guide architecture-context-authoring-prompt` in `BOOTSTRAP_CONTEXT`
+mode. It creates only context supported by current evidence, removes unused
+placeholders, and leaves unknowns as questions rather than speculative
+architecture.
+
 ## 5. Review the project-specific policy proposal
 
 The initializer writes the observed proposal at:
@@ -139,6 +153,11 @@ The initializer writes the observed proposal at:
 ```text
 .agentic/policies/architecture/project-policy.json
 ```
+
+Run `aak guide project-policy-authoring-prompt` in
+`REVIEW_OBSERVED_PROPOSAL` mode. The agent owns the evidence ledger, JSON,
+references, and validation; the user resolves only genuinely material boundary
+or authority decisions.
 
 Keep observed facts that represent intentional boundaries, remove accidental
 structure, and add decided semantics the adapter cannot infer:
@@ -191,6 +210,10 @@ contract, packaging, policy wiring, and negative-test checklist.
 deviation. It identifies the rule, current `ruleDigest`, exact scope, decision,
 reason, risk, authorizing ADR, and review conditions. Its result is `WAIVED`,
 never `PASS`. A missing or stale digest prevents the waiver from applying.
+Run `aak guide waiver-authoring-prompt` or use the
+[waiver-authoring prompt](waiver-authoring-prompt.md) whenever a waiver is
+proposed, reviewed, changed, or removed. The agent derives and writes the
+record; applicable project authority must accept the risk.
 
 ## 8. Authority and semantic reviews
 
@@ -264,12 +287,24 @@ new boundary is created only when new evidence justifies it. When a boundary
 changes, code, policy, contracts, ADRs, validators, waivers, and evidence are
 updated atomically.
 
+Use `aak guide implement-change` or the
+[product-change implementation prompt](implement-change-prompt.md) as the
+default end-to-end procedure. It classifies the request before deciding whether
+policy, contracts, or decisions must change; the user supplies the product
+outcome rather than artifact edits.
+When it classifies a project-specific guarantee, it runs
+`aak guide project-rule-authoring-prompt` or the
+[project-rule authoring prompt](project-rule-authoring-prompt.md) so the
+analyzer or architecture test is implemented, negatively tested, and connected
+to local and CI enforcement.
+
 The agent updates project policy as the project grows, but never merely to make
 a failure disappear:
 
 - a legitimate new boundary updates policy and its supporting decision;
 - an accidental violation changes the code;
-- a necessary authorized deviation creates a visible waiver;
+- a necessary authorized deviation runs `aak guide waiver-authoring-prompt` and
+  creates a visible waiver;
 - unresolved semantics remain `REVIEW_REQUIRED`.
 
 CI supplies `--base-ref` so policy growth is compared with the target branch.

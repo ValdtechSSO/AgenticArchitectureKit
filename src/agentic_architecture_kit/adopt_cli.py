@@ -169,13 +169,19 @@ def _required_actions(
         actions.append({
             "kind": "SEMANTIC_REVIEW",
             "scope": _POLICY,
-            "message": "Review the observed policy and remove accidental or unjustified boundaries.",
+            "message": "Run `aak guide project-policy-authoring-prompt` to review the observed policy and remove accidental or unjustified boundaries; the user supplies intent, not JSON.",
         })
     if not (root / "AGENTS.md").is_file():
         actions.append({
             "kind": "PROJECT_CONTEXT",
             "scope": "AGENTS.md",
-            "message": "Create the repository agent entry point from current project facts.",
+            "message": "Run `aak guide architecture-context-authoring-prompt` to create the repository agent entry point from current facts and route product work through `aak guide implement-change`.",
+        })
+    if not (root / "architecture/system-overview.md").is_file():
+        actions.append({
+            "kind": "PROJECT_CONTEXT",
+            "scope": "architecture/system-overview.md",
+            "message": "Run `aak guide architecture-context-authoring-prompt` in BOOTSTRAP_CONTEXT mode to create the current system overview; create invariants or ADRs only when evidence justifies them.",
         })
     policy_path = root / _POLICY
     if policy is None and policy_path.is_file():
@@ -187,10 +193,15 @@ def _required_actions(
             for name in ("AGENTS.md", contract_name):
                 path = module_root / name
                 if not path.is_file():
+                    message = (
+                        "Run `aak guide architecture-context-authoring-prompt` to create the local module router from current project facts."
+                        if name == "AGENTS.md"
+                        else "Run `aak guide module-contract-authoring-prompt` and create the contract from decided module semantics; do not use placeholders."
+                    )
                     actions.append({
                         "kind": "MODULE_CONTEXT",
                         "scope": path.relative_to(root).as_posix(),
-                        "message": "Create this artifact from decided module semantics; do not use placeholders.",
+                        "message": message,
                     })
     if ci.get("status") == "REVIEW_REQUIRED":
         actions.append({

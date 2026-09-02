@@ -10,6 +10,21 @@ created and evolved by coding agents.
 - Read `src/agentic_architecture_kit/data/norms/agent-core.md` completely before
   making structural decisions. Load validator-owned rules through finding
   references or `aak explain`.
+- Run `python3 tools/aak.py guide implement-change` before planning or
+  implementing a product change. If it classifies module semantics as new or
+  changed, also run `python3 tools/aak.py guide module-contract-authoring-prompt`.
+- If project policy is created, reviewed, reconciled, or changed, run
+  `python3 tools/aak.py guide project-policy-authoring-prompt`; the user supplies
+  architectural intent, not JSON.
+- If ADRs, invariants, system overview, or agent routers are created or changed,
+  run `python3 tools/aak.py guide architecture-context-authoring-prompt`; the
+  user supplies meaning and decisions, not Markdown.
+- If a project-specific architecture guarantee is created or changed, run
+  `python3 tools/aak.py guide project-rule-authoring-prompt` and connect its
+  analyzer or test to the authoritative local and CI checks.
+- If a waiver is proposed, reviewed, changed, or removed, run
+  `python3 tools/aak.py guide waiver-authoring-prompt`. An agent may derive and
+  write the record but must never authorize its own architectural deviation.
 - Read `docs/create-project-from-zero.md` before changing bootstrap guidance.
 - Read `docs/team-guide.md` before changing human governance guidance.
 - Read `docs/github-governance.md` before changing review authority or CI enforcement.

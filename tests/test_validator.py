@@ -76,7 +76,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.6/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.7/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -307,9 +307,16 @@ architecture_decisions:
         with contextlib.redirect_stdout(output):
             code = cli(["guide"])
         self.assertEqual(0, code)
+        self.assertIn("architecture-context-authoring-prompt:", output.getvalue())
+        self.assertIn("adapter-authoring-prompt:", output.getvalue())
         self.assertIn("adapter-development:", output.getvalue())
         self.assertIn("bootstrap:", output.getvalue())
         self.assertIn("github-governance:", output.getvalue())
+        self.assertIn("implement-change:", output.getvalue())
+        self.assertIn("module-contract-authoring-prompt:", output.getvalue())
+        self.assertIn("project-policy-authoring-prompt:", output.getvalue())
+        self.assertIn("project-rule-authoring-prompt:", output.getvalue())
+        self.assertIn("waiver-authoring-prompt:", output.getvalue())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -318,6 +325,12 @@ architecture_decisions:
         self.assertIn("# Creating or evolving a project", output.getvalue())
         self.assertIn("## 11. Later evolution", output.getvalue())
         self.assertIn("aak guide github-governance", output.getvalue())
+        self.assertIn("aak guide implement-change", output.getvalue())
+        self.assertIn("aak guide module-contract-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide project-policy-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide architecture-context-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide project-rule-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide waiver-authoring-prompt", output.getvalue())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -333,10 +346,90 @@ architecture_decisions:
         self.assertIn("# Writing a technology adapter", output.getvalue())
         self.assertIn("## 7. Release checklist", output.getvalue())
 
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "adapter-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for a technology adapter", output.getvalue())
+        self.assertIn("## 4. Base rule evidence contract", output.getvalue())
+        self.assertIn("## 5. Extension rule contract", output.getvalue())
+        self.assertIn("## 8. Blind acceptance protocol", output.getvalue())
+        self.assertIn("top-level entry points", output.getvalue())
+        self.assertIn("CORE_MODEL_GAP", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "module-contract-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for a module contract", output.getvalue())
+        self.assertIn("## 4. Property evidence contract", output.getvalue())
+        self.assertIn("The user supplies meaning, not YAML", output.getvalue())
+        self.assertIn("The minimum usable human brief is one sentence", output.getvalue())
+        self.assertIn("IMPLEMENTATION_DRIFT", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "implement-change"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for implementing a product change", output.getvalue())
+        self.assertIn("## 3. Change classification algorithm", output.getvalue())
+        self.assertIn("## 5. Policy update rules", output.getvalue())
+        self.assertIn("The user never fills JSON", output.getvalue().replace("\n", " "))
+        self.assertIn("TECHNOLOGY_OBSERVATION_GAP", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "project-policy-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for project policy", output.getvalue())
+        self.assertIn("## 4. Property evidence contract", output.getvalue())
+        self.assertIn("The user supplies meaning, not JSON", output.getvalue().replace("\n", " "))
+        self.assertIn("REVIEW_OBSERVED_PROPOSAL", output.getvalue())
+        self.assertIn("UNAUTHORIZED_BOUNDARY", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "architecture-context-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for architecture context", output.getvalue())
+        self.assertIn("## 4. Artifact evidence contract", output.getvalue())
+        self.assertIn("The user supplies meaning and decisions, not Markdown", output.getvalue().replace("\n", " "))
+        self.assertIn("RECORD_DECISION", output.getvalue())
+        self.assertIn("BROKEN_NAVIGATION", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "project-rule-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for a project-specific architecture rule", output.getvalue())
+        self.assertIn("## 2. Four decisions and agent responsibilities", output.getvalue())
+        self.assertIn("## 8. Language-agnostic acceptance protocol", output.getvalue())
+        self.assertIn("The user supplies the guarantee", output.getvalue().replace("\n", " "))
+        self.assertIn("all DTOs must be records", output.getvalue().replace("\n", " "))
+        self.assertIn("FAIL_CLOSED", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "waiver-authoring-prompt"])
+        self.assertEqual(0, code)
+        self.assertIn("# Agent prompt for architecture waivers", output.getvalue())
+        self.assertIn("## 2. Waiver eligibility decision", output.getvalue())
+        self.assertIn("## 4. Property evidence contract", output.getvalue())
+        self.assertIn("The user supplies exceptional intent", output.getvalue().replace("\n", " "))
+        self.assertIn("NOT_A_WAIVER", output.getvalue())
+        self.assertIn("STALE_RULE_DIGEST", output.getvalue())
+
         for relative in (
+            "data/guides/architecture-context-authoring-prompt.md",
+            "data/guides/adapter-authoring-prompt.md",
             "data/guides/adapter-development.md",
             "data/guides/bootstrap.md",
             "data/guides/github-governance.md",
+            "data/guides/implement-change-prompt.md",
+            "data/guides/module-contract-authoring-prompt.md",
+            "data/guides/project-policy-authoring-prompt.md",
+            "data/guides/project-rule-authoring-prompt.md",
+            "data/guides/waiver-authoring-prompt.md",
         ):
             packaged = read_bundled_text(relative)
             self.assertNotIn("docs/", packaged)
@@ -344,9 +437,16 @@ architecture_decisions:
 
     def test_web_guides_cover_the_packaged_operational_sections(self) -> None:
         pairs = (
+            ("data/guides/architecture-context-authoring-prompt.md", "docs/architecture-context-authoring-prompt.md"),
+            ("data/guides/adapter-authoring-prompt.md", "docs/adapter-authoring-prompt.md"),
             ("data/guides/adapter-development.md", "docs/adapter-development.md"),
             ("data/guides/bootstrap.md", "docs/create-project-from-zero.md"),
             ("data/guides/github-governance.md", "docs/github-governance.md"),
+            ("data/guides/implement-change-prompt.md", "docs/implement-change-prompt.md"),
+            ("data/guides/module-contract-authoring-prompt.md", "docs/module-contract-authoring-prompt.md"),
+            ("data/guides/project-policy-authoring-prompt.md", "docs/project-policy-authoring-prompt.md"),
+            ("data/guides/project-rule-authoring-prompt.md", "docs/project-rule-authoring-prompt.md"),
+            ("data/guides/waiver-authoring-prompt.md", "docs/waiver-authoring-prompt.md"),
         )
         for packaged_path, web_path in pairs:
             packaged = read_bundled_text(packaged_path)
@@ -354,6 +454,47 @@ architecture_decisions:
             packaged_sections = [line for line in packaged.splitlines() if line.startswith("## ")]
             web_sections = [line for line in web.splitlines() if line.startswith("## ")]
             self.assertEqual(packaged_sections, web_sections, web_path)
+
+        spanish_prompt = (REPOSITORY_ROOT / "docs/es/adapter-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 8. Protocolo de aceptación ciega", spanish_prompt)
+        self.assertIn("entry points top-level", spanish_prompt)
+        self.assertIn("CORE_MODEL_GAP", spanish_prompt)
+
+        spanish_contract_prompt = (REPOSITORY_ROOT / "docs/es/module-contract-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 4. Contrato de evidencia de las propiedades", spanish_contract_prompt)
+        self.assertIn("El usuario aporta significado, no YAML", spanish_contract_prompt)
+        self.assertIn("IMPLEMENTATION_DRIFT", spanish_contract_prompt)
+
+        spanish_change_prompt = (REPOSITORY_ROOT / "docs/es/implement-change-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 3. Algoritmo de clasificación del cambio", spanish_change_prompt)
+        self.assertIn("## 5. Reglas para actualizar la policy", spanish_change_prompt)
+        self.assertIn("TECHNOLOGY_OBSERVATION_GAP", spanish_change_prompt)
+
+        spanish_policy_prompt = (REPOSITORY_ROOT / "docs/es/project-policy-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 4. Contrato de evidencia de las propiedades", spanish_policy_prompt)
+        self.assertIn("El usuario aporta significado, no JSON", spanish_policy_prompt.replace("\n", " "))
+        self.assertIn("REVIEW_OBSERVED_PROPOSAL", spanish_policy_prompt)
+        self.assertIn("UNAUTHORIZED_BOUNDARY", spanish_policy_prompt)
+
+        spanish_context_prompt = (REPOSITORY_ROOT / "docs/es/architecture-context-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 4. Contrato de evidencia de los artefactos", spanish_context_prompt)
+        self.assertIn("El usuario aporta significado y decisiones", spanish_context_prompt.replace("\n", " "))
+        self.assertIn("RECORD_DECISION", spanish_context_prompt)
+        self.assertIn("BROKEN_NAVIGATION", spanish_context_prompt)
+
+        spanish_rule_prompt = (REPOSITORY_ROOT / "docs/es/project-rule-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 2. Cuatro decisiones y responsabilidades del agente", spanish_rule_prompt)
+        self.assertIn("## 8. Protocolo de aceptación agnóstico al lenguaje", spanish_rule_prompt)
+        self.assertIn("El usuario aporta garantía", spanish_rule_prompt.replace("\n", " "))
+        self.assertIn("todo DTO debe ser un record", spanish_rule_prompt)
+        self.assertIn("FAIL_CLOSED", spanish_rule_prompt)
+
+        spanish_waiver_prompt = (REPOSITORY_ROOT / "docs/es/waiver-authoring-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("## 2. Decisión de elegibilidad de la licencia", spanish_waiver_prompt)
+        self.assertIn("## 4. Contrato de evidencia de las propiedades", spanish_waiver_prompt)
+        self.assertIn("El usuario aporta la intención excepcional", spanish_waiver_prompt.replace("\n", " "))
+        self.assertIn("NOT_A_WAIVER", spanish_waiver_prompt)
+        self.assertIn("STALE_RULE_DIGEST", spanish_waiver_prompt)
 
     def test_neutral_templates_are_discoverable_and_readable_through_the_cli(self) -> None:
         output = io.StringIO()
@@ -370,6 +511,19 @@ architecture_decisions:
         self.assertEqual(0, code)
         self.assertIn("# {ProjectName}", output.getvalue())
         self.assertIn("aak guide bootstrap", output.getvalue())
+        self.assertIn("aak guide implement-change", output.getvalue())
+        self.assertIn("aak guide module-contract-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide project-policy-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide architecture-context-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide project-rule-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide waiver-authoring-prompt", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["template", "module.AGENTS.md"])
+        self.assertEqual(0, code)
+        self.assertIn("aak guide module-contract-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide architecture-context-authoring-prompt", output.getvalue())
 
     def test_tool_version_must_match_the_project_pin(self) -> None:
         toolchain = json.loads(self.toolchain_path.read_text(encoding="utf-8"))
@@ -1141,7 +1295,12 @@ architecture_decisions:
     def test_init_can_bootstrap_an_empty_repository_with_explicit_adapter(self) -> None:
         target = self.root / "empty-initialized"
         target.mkdir()
-        initialize(target, "@architecture-team", adapter="dotnet")
+        initialized = initialize(target, "@architecture-team", adapter="dotnet")
+        next_steps = " ".join(initialized["next"])
+        self.assertIn("aak guide implement-change", next_steps)
+        self.assertIn("aak guide module-contract-authoring-prompt", next_steps)
+        self.assertIn("aak guide project-policy-authoring-prompt", next_steps)
+        self.assertIn("aak guide architecture-context-authoring-prompt", next_steps)
         policy = json.loads(
             (target / ".agentic/policies/architecture/project-policy.json").read_text(encoding="utf-8")
         )
@@ -1203,6 +1362,15 @@ architecture_decisions:
         self.assertEqual("python", report["initialization"]["projectPolicy"]["adapter"])
         self.assertTrue(report["initialization"]["projectPolicy"]["modules"])
         self.assertTrue(any(item["kind"] == "MODULE_CONTEXT" for item in report["requiredActions"]))
+        required_messages = " ".join(item["message"] for item in report["requiredActions"])
+        self.assertIn("aak guide implement-change", required_messages)
+        self.assertIn("aak guide module-contract-authoring-prompt", required_messages)
+        self.assertIn("aak guide project-policy-authoring-prompt", required_messages)
+        self.assertIn("aak guide architecture-context-authoring-prompt", required_messages)
+        self.assertTrue(any(
+            item["scope"] == "architecture/system-overview.md"
+            for item in report["requiredActions"]
+        ))
         self.assertEqual(before, after)
         self.assertFalse((target / ".agentic").exists())
 
@@ -1369,9 +1537,16 @@ architecture_decisions:
         exported = target / f"agentic-architecture-kit-{__version__}"
         self.assertTrue((exported / "agentic_architecture_kit/data/rules.json").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/norms/agent-core.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/adapter-authoring-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/architecture-context-authoring-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/adapter-development.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/bootstrap.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/implement-change-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/module-contract-authoring-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/project-policy-authoring-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/project-rule-authoring-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/waiver-authoring-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/AGENTS.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/github-architecture.yml").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/schemas/architecture-policy.schema.json").is_file())

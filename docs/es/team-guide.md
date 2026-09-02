@@ -129,6 +129,12 @@ Los datos generados son evidencia útil, pero no autoridad semántica. Si un
 | Tests arquitectónicos | Protegen decisiones específicas que el validador común no expresa | Equipo o agente autorizado | Que protejan comportamiento y no detalles accidentales |
 | Resultado del validador | Informa conformidad para una revisión concreta | Generado | Fallos, licencias, revisiones semánticas y revisión Git |
 
+Crea o cambia una garantía específica mediante
+[`aak guide project-rule-authoring-prompt`](project-rule-authoring-prompt.md).
+Exige sujetos, excepciones, evidencia fiable, mutaciones negativas y un gate
+local/CI real. Un check externo del proyecto se informa separado de la
+validación portable de AAK.
+
 ## 4. Qué sucede al crear un proyecto
 
 El agente no comienza copiando un árbol completo. Primero registra qué se conoce,
@@ -152,6 +158,10 @@ realmente abierta una decisión material de producto, riesgo u ownership.
 ## 5. Desarrollo rutinario
 
 Para una petición ordinaria, el agente sigue la arquitectura existente:
+
+Usa [`aak guide implement-change`](implement-change-prompt.md) como procedimiento
+end-to-end predeterminado cuando un agente deba clasificar, planificar e
+implementar el cambio.
 
 ```text
 Localizar módulo propietario
@@ -180,6 +190,18 @@ La política evoluciona conforme crece el producto. Algunos casos legítimos:
 - un contrato público nuevo entre módulos actuales;
 - la eliminación de una dependencia, módulo, host o licencia obsoleta;
 - un área funcional cuyo ciclo de vida se ha vuelto independiente.
+
+Para cualquier delta no rutinario de la policy, el agente ejecuta
+[`aak guide project-policy-authoring-prompt`](project-policy-authoring-prompt.md).
+La guía obliga a reconciliar evidencia del adaptador, intención declarada,
+policy base y autoridad de decisión; los reviewers aprueban significado, no
+JSON.
+
+Cuando el mismo cambio registra un ADR, modifica un invariante, refresca el
+system overview o cambia un router de agente, también ejecuta
+[`aak guide architecture-context-authoring-prompt`](architecture-context-authoring-prompt.md).
+El usuario decide significado; el agente se encarga de Markdown, anchors, links
+y routing.
 
 Un cambio de límite debe llegar como un cambio coherente:
 
@@ -253,14 +275,14 @@ es un atajo cuando existe un revisor de equipo disponible.
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.6 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.7 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.6 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.6 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.7 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.7 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un
@@ -271,6 +293,10 @@ puede obtener verde limitándose a ampliar la policy.
 
 Una licencia no es una lista cómoda de exclusiones. Es una decisión visible del
 equipo para aceptar una desviación acotada.
+Usa [`aak guide waiver-authoring-prompt`](waiver-authoring-prompt.md) para que el
+agente clasifique la elegibilidad, derive los campos mecánicos, edite el
+registro y pruebe su scope, mientras la autoridad aplicable conserva la
+aceptación del riesgo.
 
 Una buena licencia responde:
 

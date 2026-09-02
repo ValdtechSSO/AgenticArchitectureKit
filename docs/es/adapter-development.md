@@ -15,7 +15,7 @@ la versión compatible del kit y registra un nombre de adaptador en minúsculas:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.6"]
+dependencies = ["agentic-architecture-kit==0.4.7"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -127,7 +127,7 @@ validación:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.6",
+  "toolVersion": "0.4.7",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}

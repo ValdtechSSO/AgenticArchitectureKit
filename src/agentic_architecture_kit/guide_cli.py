@@ -6,6 +6,14 @@ from .resources import resource, read_text
 
 
 _GUIDES = {
+    "architecture-context-authoring-prompt": (
+        "Prompt an agent to create or maintain ADRs, invariants, overviews, and routers.",
+        "data/guides/architecture-context-authoring-prompt.md",
+    ),
+    "adapter-authoring-prompt": (
+        "Prompt an implementation agent to create or extend a technology adapter.",
+        "data/guides/adapter-authoring-prompt.md",
+    ),
     "adapter-development": (
         "Write and package an external technology observation adapter.",
         "data/guides/adapter-development.md",
@@ -17,6 +25,26 @@ _GUIDES = {
     "github-governance": (
         "Configure GitHub authority, protected branches, and review evidence.",
         "data/guides/github-governance.md",
+    ),
+    "implement-change": (
+        "Plan and implement a product change through the smallest justified architecture.",
+        "data/guides/implement-change-prompt.md",
+    ),
+    "module-contract-authoring-prompt": (
+        "Prompt an agent to create, adopt, or update a semantic module contract.",
+        "data/guides/module-contract-authoring-prompt.md",
+    ),
+    "project-policy-authoring-prompt": (
+        "Prompt an agent to create, review, reconcile, or update project policy.",
+        "data/guides/project-policy-authoring-prompt.md",
+    ),
+    "project-rule-authoring-prompt": (
+        "Prompt an agent to create or maintain an enforceable project-specific rule.",
+        "data/guides/project-rule-authoring-prompt.md",
+    ),
+    "waiver-authoring-prompt": (
+        "Prompt an agent to create, review, update, or remove a bounded architecture waiver.",
+        "data/guides/waiver-authoring-prompt.md",
     ),
 }
 
