@@ -9,6 +9,11 @@
 - `module.contract.yml`
 - `{relevant domain context}`
 - `{relevant ADR}`
+- Before creating or changing stable module semantics, run
+  `aak guide module-contract-authoring-prompt`. Do not infer ownership,
+  invariants, or accepted risk from code alone.
+- Before creating or changing this router, referenced invariants, or governing
+  ADRs, run `aak guide architecture-context-authoring-prompt`.
 
 ## Commands
 

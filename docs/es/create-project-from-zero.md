@@ -40,7 +40,17 @@ de validación estricta. Un código de salida distinto de cero después de escri
 significa que el informe contiene trabajo de conformidad o semántico pendiente;
 no indica que haya que revertir. El comando nunca inventa contratos de módulo,
 contexto local del agente, waivers ni aprobaciones de review. Créalo únicamente
-a partir de hechos actuales y decisiones autorizadas. No pases `--base-ref` en
+a partir de hechos actuales y decisiones autorizadas. Ejecuta
+`aak guide project-policy-authoring-prompt` o usa el
+[prompt de creación de project policy](project-policy-authoring-prompt.md) para
+reconciliar la propuesta observada sin pedir al usuario que escriba JSON.
+Ejecuta `aak guide module-contract-authoring-prompt` o usa el
+[prompt de creación de contratos](module-contract-authoring-prompt.md) para que
+un agente descubra, redacte, valide y mantenga cada contrato sin pedir al usuario
+que escriba YAML. Ejecuta `aak guide architecture-context-authoring-prompt` o usa
+el [prompt de contexto arquitectónico](architecture-context-authoring-prompt.md)
+para crear overview, decisiones, invariantes y routers mínimos actuales sin
+pedir al usuario que escriba Markdown. No pases `--base-ref` en
 la primera adopción salvo que esa revisión ya contenga una política AAK válida;
 el workflow de CI generado detecta si existe una baseline comparativa.
 
@@ -132,6 +142,11 @@ domain/global-invariants.md
 
 Las rutas opcionales se omiten si no tienen contenido actual.
 
+Ejecuta `aak guide architecture-context-authoring-prompt` en modo
+`BOOTSTRAP_CONTEXT`. Solo crea contexto sustentado por evidencia actual, elimina
+placeholders sin uso y mantiene las incógnitas como preguntas en vez de
+arquitectura especulativa.
+
 ## 5. Revisar la propuesta de política específica
 
 El inicializador escribe la propuesta observada en:
@@ -139,6 +154,11 @@ El inicializador escribe la propuesta observada en:
 ```text
 .agentic/policies/architecture/project-policy.json
 ```
+
+Ejecuta `aak guide project-policy-authoring-prompt` en modo
+`REVIEW_OBSERVED_PROPOSAL`. El agente se encarga del registro de evidencias,
+JSON, referencias y validación; el usuario solo resuelve decisiones de frontera
+o autoridad realmente materiales.
 
 El agente conserva los hechos que sean límites intencionales, elimina estructura
 accidental y añade la semántica decidida que el adaptador no puede inferir:
@@ -195,6 +215,10 @@ desviación concreta y autorizada. Debe identificar regla, `ruleDigest` actual,
 scope, decisión, motivo, riesgo, ADR autorizador y condiciones de revisión. Su
 resultado será `WAIVED`, nunca `PASS`. Un digest ausente u obsoleto impide
 aplicarla.
+Ejecuta `aak guide waiver-authoring-prompt` o usa el
+[prompt de licencias arquitectónicas](waiver-authoring-prompt.md) cuando una
+licencia se proponga, revise, cambie o elimine. El agente deriva y escribe el
+registro; la autoridad aplicable del proyecto debe aceptar el riesgo.
 
 ## 8. Autoridad y revisiones semánticas
 
@@ -271,12 +295,24 @@ propietarios. Solo crea un nuevo límite cuando la nueva evidencia lo justifica.
 Si cambia un límite, el cambio actualiza conjuntamente código, política,
 contratos, ADR, validaciones, licencias y evidencia.
 
+Usa `aak guide implement-change` o el
+[prompt de implementación de cambios](implement-change-prompt.md) como
+procedimiento end-to-end predeterminado. Clasifica la petición antes de decidir
+si deben cambiar policy, contratos o decisiones; el usuario proporciona el
+resultado de producto, no ediciones de artefactos.
+Cuando clasifica una garantía específica del proyecto, ejecuta
+`aak guide project-rule-authoring-prompt` o el
+[prompt de reglas del proyecto](project-rule-authoring-prompt.md) para
+implementar el analyzer o test, probarlo negativamente y conectarlo al
+enforcement local y de CI.
+
 El agente actualiza la política conforme crece el proyecto, pero nunca solo para
 hacer desaparecer un fallo:
 
 - un límite nuevo legítimo actualiza la política y la decisión que lo sustenta;
 - una violación accidental se corrige en el código;
-- una desviación necesaria y autorizada crea una licencia visible;
+- una desviación necesaria y autorizada ejecuta
+  `aak guide waiver-authoring-prompt` y crea una licencia visible;
 - la semántica no resuelta permanece como `REVIEW_REQUIRED`.
 
 CI suministra `--base-ref` para comparar el crecimiento de policy con la rama
