@@ -15,7 +15,7 @@ kit version and register one lowercase adapter name:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.7"]
+dependencies = ["agentic-architecture-kit==0.4.8"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -125,7 +125,7 @@ Install the adapter distribution beside the pinned kit. Add it to
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.7",
+  "toolVersion": "0.4.8",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}
@@ -152,6 +152,23 @@ External adapters are loaded by `aak validate`. Automatic technology detection
 and observed-policy seeding in `aak init` and `aak adopt` currently cover the
 built-in adapters, so an external adapter's initial policy must be prepared and
 reviewed explicitly.
+
+### Use a custom adapter locally without committing it
+
+An adapter does not have to live in the consumer repository or be published to
+a package registry. Keep its source in a separate local directory, give it a
+normal distribution version and entry point, and install it in the same Python
+environment as the pinned AAK version. An editable install is appropriate while
+developing it; use the installed `aak` executable from that environment.
+
+The consumer still selects the entry-point name in `project-policy.json` and
+pins the distribution and declared version in `toolchain.json`. Do not put the
+absolute adapter source path in either tracked file. AAK loads the custom entry
+point only for a project whose policy selects it. Other machines and CI fail
+closed with a missing-extension error until they can install the distribution.
+Consequently, an uncommitted adapter is suitable for local use and evaluation,
+but it is not a reproducible team or CI dependency until its source or built
+artifact is made available through an authorized channel.
 
 ## 6. Test both observation and failure detection
 
