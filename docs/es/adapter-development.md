@@ -15,7 +15,7 @@ la versión compatible del kit y registra un nombre de adaptador en minúsculas:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.7"]
+dependencies = ["agentic-architecture-kit==0.4.8"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -127,7 +127,7 @@ validación:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.7",
+  "toolVersion": "0.4.8",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}
@@ -154,6 +154,24 @@ Ese fragmento no es una policy completa: parte de
 generación de policy observada de `aak init` y `aak adopt` cubren actualmente
 los adaptadores incluidos, así que la policy inicial de uno externo debe
 prepararse y revisarse explícitamente.
+
+### Usa localmente un adaptador personalizado sin comitearlo
+
+El adaptador no tiene que vivir en el repositorio consumidor ni publicarse en
+un registro de paquetes. Conserva su código en un directorio local separado,
+asígnale una versión de distribución y un entry point normales e instálalo en el
+mismo entorno Python que la versión fijada de AAK. Una instalación editable es
+apropiada mientras se desarrolla; ejecuta el binario `aak` de ese entorno.
+
+El consumidor todavía selecciona el nombre del entry point en
+`project-policy.json` y fija la distribución y versión declarada en
+`toolchain.json`. No guardes el path absoluto del adaptador en ninguno de esos
+archivos versionados. AAK solo carga el entry point personalizado para el
+proyecto cuya policy lo selecciona. Otras máquinas y CI fallarán de forma
+cerrada por extensión ausente hasta poder instalar la distribución. Por ello,
+un adaptador sin commit sirve para uso y evaluación locales, pero no constituye
+una dependencia reproducible de equipo o CI hasta que su código o artefacto
+construido esté disponible mediante un canal autorizado.
 
 ## 6. Prueba la observación y la detección de fallos
 

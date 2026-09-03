@@ -27,7 +27,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.7",
+  "toolVersion": "0.4.8",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -36,8 +36,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.7 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.7 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.8 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.8 aak context locate "order lifecycle"
 ```
 
 La misma distribución contiene todo lo necesario para que un agente inicialice

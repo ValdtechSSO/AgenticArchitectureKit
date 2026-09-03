@@ -12,6 +12,8 @@ adapter contract remain authoritative.
 Adapter source directory: <ADAPTER_DIRECTORY>
 Adapter distribution name: <DISTRIBUTION_NAME>
 Adapter entry-point name: <ADAPTER_NAME>
+Delivery mode: <PUBLISHED|PRIVATE_PACKAGE|LOCAL_UNCOMMITTED>
+Consumer project root: <CONSUMER_PROJECT_OR_NONE>
 Language or source ecosystem: <LANGUAGE>
 Build or package system: <BUILD_SYSTEM>
 Compatible AAK version: <AAK_VERSION>
@@ -25,6 +27,12 @@ Additional organization or project rules: <EXTENSION_RULES_OR_NONE>
 Create or extend a separately versioned AAK observation adapter. The adapter
 reports repository facts; it does not decide whether those facts are permitted.
 
+If the requester does not specify a narrower observation scope, use all 17 base
+rules in the pinned AAK catalog as the default scope. Cover every adapter
+evidence responsibility in the matrix below; classify `CORE_ONLY` responsibilities
+as belonging to AAK itself and make every unsupported technological construct
+explicit instead of claiming false coverage.
+
 Treat the base AAK rule semantics as invariant across technologies. Translate
 only the evidence required by those rules. Do not inject language-specific
 concepts into portable rule meaning. Do not infer product semantics from names
@@ -35,6 +43,28 @@ The person supplying the prompt owns the guarantee, subject-identification
 contract, explicit exceptions, and acceptable evidence for extension rules. The
 implementation agent owns adapter code, packaging, fixtures, positive and
 negative tests, documentation, and verification evidence.
+
+### Local uncommitted mode
+
+When the requester says that the adapter is custom, local, only for one project,
+or must not be committed or published, select `LOCAL_UNCOMMITTED` unless that
+interpretation changes a stated release boundary. In this mode the agent must:
+
+- create the adapter source outside the consumer repository's tracked tree;
+- keep it as a real versioned Python distribution with the normal entry point;
+- install it locally beside the pinned AAK distribution, using editable install
+  only during development;
+- select its entry-point name in the consumer's `project-policy.json` and pin
+  its declared distribution and version in `.agentic/toolchain.json`;
+- never store the adapter's absolute local source path in tracked project files;
+- neither commit nor publish the adapter source; and
+- report that validation on another machine or in CI will fail closed until
+  that same adapter distribution is made available there.
+
+Only the adapter source is local by default. The project's selected adapter and
+version pin remain explicit project configuration. If the requester also says
+not to commit those project changes, leave them as visible local modifications
+and do not describe the setup as portable or CI-ready.
 
 ## 2. Mandatory context and discovery
 

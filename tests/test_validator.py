@@ -76,7 +76,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.7/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.8/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -356,6 +356,8 @@ architecture_decisions:
         self.assertIn("## 8. Blind acceptance protocol", output.getvalue())
         self.assertIn("top-level entry points", output.getvalue())
         self.assertIn("CORE_MODEL_GAP", output.getvalue())
+        self.assertIn("LOCAL_UNCOMMITTED", output.getvalue())
+        self.assertIn("all 17 base", output.getvalue())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -459,6 +461,8 @@ architecture_decisions:
         self.assertIn("## 8. Protocolo de aceptación ciega", spanish_prompt)
         self.assertIn("entry points top-level", spanish_prompt)
         self.assertIn("CORE_MODEL_GAP", spanish_prompt)
+        self.assertIn("LOCAL_UNCOMMITTED", spanish_prompt)
+        self.assertIn("17 reglas base", spanish_prompt)
 
         spanish_contract_prompt = (REPOSITORY_ROOT / "docs/es/module-contract-authoring-prompt.md").read_text(encoding="utf-8")
         self.assertIn("## 4. Contrato de evidencia de las propiedades", spanish_contract_prompt)

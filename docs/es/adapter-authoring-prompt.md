@@ -15,6 +15,8 @@ versión fijada de AAK siguen siendo la autoridad.
 Directorio de código del adaptador: <ADAPTER_DIRECTORY>
 Nombre de la distribución: <DISTRIBUTION_NAME>
 Nombre del entry point: <ADAPTER_NAME>
+Modo de entrega: <PUBLISHED|PRIVATE_PACKAGE|LOCAL_UNCOMMITTED>
+Raíz del proyecto consumidor: <CONSUMER_PROJECT_OR_NONE>
 Lenguaje o ecosistema de código: <LANGUAGE>
 Sistema de build o paquetes: <BUILD_SYSTEM>
 Versión compatible de AAK: <AAK_VERSION>
@@ -29,6 +31,12 @@ Crea o amplía un adaptador de observación AAK distribuido y versionado por
 separado. El adaptador informa de hechos del repositorio; no decide si esos
 hechos están permitidos arquitectónicamente.
 
+Si quien hace la petición no especifica un alcance de observación más reducido,
+usa como alcance por defecto las 17 reglas base del catálogo AAK fijado. Cubre
+cada responsabilidad de evidencia del adaptador descrita en la matriz inferior;
+clasifica las responsabilidades `CORE_ONLY` como propias de AAK y declara toda
+construcción tecnológica no soportada en vez de afirmar una cobertura falsa.
+
 Trata la semántica de las reglas base de AAK como invariable entre tecnologías.
 Traduce únicamente la evidencia que necesitan esas reglas. No introduzcas
 conceptos propios de un lenguaje en la semántica portable. No infieras
@@ -41,6 +49,30 @@ para identificar sujetos, las excepciones explícitas y la evidencia aceptable d
 cada regla de extensión. El agente implementador es responsable del código,
 empaquetado, fixtures, tests positivos y negativos, documentación y evidencia de
 verificación.
+
+### Modo local sin commit
+
+Cuando quien hace la petición diga que el adaptador es personalizado, local,
+solo para un proyecto o que no debe comitearse ni publicarse, selecciona
+`LOCAL_UNCOMMITTED`, salvo que esa interpretación cambie un límite de release ya
+declarado. En este modo el agente debe:
+
+- crear el código del adaptador fuera del árbol versionado del proyecto
+  consumidor;
+- conservarlo como una distribución Python real y versionada con su entry point;
+- instalarlo localmente junto a la distribución AAK fijada, usando instalación
+  editable solo durante el desarrollo;
+- seleccionar su entry point en el `project-policy.json` consumidor y fijar su
+  distribución y versión declaradas en `.agentic/toolchain.json`;
+- no guardar nunca el path local absoluto del código en archivos versionados;
+- no comitear ni publicar el código del adaptador; y
+- informar de que la validación en otra máquina o en CI fallará de forma cerrada
+  hasta que esa misma distribución esté disponible allí.
+
+Por defecto, solo el código del adaptador es local. El adaptador seleccionado y
+su pin de versión siguen siendo configuración explícita del proyecto. Si también
+se pide no comitear esos cambios del proyecto, déjalos como modificaciones
+locales visibles y no describas el resultado como portable ni listo para CI.
 
 ## 2. Contexto y descubrimiento obligatorios
 
