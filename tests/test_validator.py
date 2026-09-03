@@ -76,7 +76,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.8/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.9/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -314,6 +314,7 @@ architecture_decisions:
         self.assertIn("github-governance:", output.getvalue())
         self.assertIn("implement-change:", output.getvalue())
         self.assertIn("module-contract-authoring-prompt:", output.getvalue())
+        self.assertIn("pipeline:", output.getvalue())
         self.assertIn("project-policy-authoring-prompt:", output.getvalue())
         self.assertIn("project-rule-authoring-prompt:", output.getvalue())
         self.assertIn("waiver-authoring-prompt:", output.getvalue())
@@ -338,6 +339,15 @@ architecture_decisions:
         self.assertEqual(0, code)
         self.assertIn("# GitHub authority enforcement", output.getvalue())
         self.assertIn("## Solo-maintainer mode", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "pipeline"])
+        self.assertEqual(0, code)
+        self.assertIn("# Implementing AAK in a delivery pipeline", output.getvalue())
+        self.assertIn("## 2. Execution model", output.getvalue())
+        self.assertIn('adapters.observe(policy["adapter"], root, policy)', output.getvalue())
+        self.assertIn("## 15. Completion checklist", output.getvalue())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -429,6 +439,7 @@ architecture_decisions:
             "data/guides/github-governance.md",
             "data/guides/implement-change-prompt.md",
             "data/guides/module-contract-authoring-prompt.md",
+            "data/guides/pipeline.md",
             "data/guides/project-policy-authoring-prompt.md",
             "data/guides/project-rule-authoring-prompt.md",
             "data/guides/waiver-authoring-prompt.md",
@@ -446,6 +457,7 @@ architecture_decisions:
             ("data/guides/github-governance.md", "docs/github-governance.md"),
             ("data/guides/implement-change-prompt.md", "docs/implement-change-prompt.md"),
             ("data/guides/module-contract-authoring-prompt.md", "docs/module-contract-authoring-prompt.md"),
+            ("data/guides/pipeline.md", "docs/pipeline.md"),
             ("data/guides/project-policy-authoring-prompt.md", "docs/project-policy-authoring-prompt.md"),
             ("data/guides/project-rule-authoring-prompt.md", "docs/project-rule-authoring-prompt.md"),
             ("data/guides/waiver-authoring-prompt.md", "docs/waiver-authoring-prompt.md"),
@@ -463,6 +475,11 @@ architecture_decisions:
         self.assertIn("CORE_MODEL_GAP", spanish_prompt)
         self.assertIn("LOCAL_UNCOMMITTED", spanish_prompt)
         self.assertIn("17 reglas base", spanish_prompt)
+
+        spanish_pipeline = (REPOSITORY_ROOT / "docs/es/pipeline.md").read_text(encoding="utf-8")
+        self.assertIn("## 2. Modelo de ejecución", spanish_pipeline)
+        self.assertIn('adapters.observe(policy["adapter"], root, policy)', spanish_pipeline)
+        self.assertIn("## 15. Lista de comprobación final", spanish_pipeline)
 
         spanish_contract_prompt = (REPOSITORY_ROOT / "docs/es/module-contract-authoring-prompt.md").read_text(encoding="utf-8")
         self.assertIn("## 4. Contrato de evidencia de las propiedades", spanish_contract_prompt)
@@ -517,6 +534,7 @@ architecture_decisions:
         self.assertIn("aak guide bootstrap", output.getvalue())
         self.assertIn("aak guide implement-change", output.getvalue())
         self.assertIn("aak guide module-contract-authoring-prompt", output.getvalue())
+        self.assertIn("aak guide pipeline", output.getvalue())
         self.assertIn("aak guide project-policy-authoring-prompt", output.getvalue())
         self.assertIn("aak guide architecture-context-authoring-prompt", output.getvalue())
         self.assertIn("aak guide project-rule-authoring-prompt", output.getvalue())
@@ -1548,6 +1566,7 @@ architecture_decisions:
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/implement-change-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/module-contract-authoring-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/pipeline.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/project-policy-authoring-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/project-rule-authoring-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/waiver-authoring-prompt.md").is_file())

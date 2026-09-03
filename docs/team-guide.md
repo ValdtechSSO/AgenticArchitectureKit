@@ -272,19 +272,21 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.8 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.4.9 aak validate --format json
+uvx --from agentic-architecture-kit==0.4.9 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This
 makes newly permitted boundaries and dependencies require an existing ADR
 instead of allowing an agent to obtain green by merely expanding the policy.
+Use [`aak guide pipeline`](pipeline.md) for the complete checkout, adapter,
+base-selection, evidence-retention, and required-check implementation.
 
 ## 9. Waiver governance
 
