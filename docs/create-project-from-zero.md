@@ -53,6 +53,11 @@ without asking the user to author Markdown. Do not pass `--base-ref` on first ad
 already contains a valid AAK policy; the generated CI workflow detects whether
 a comparative baseline is available.
 
+Run `aak guide pipeline` or read [Implementing AAK in a delivery
+pipeline](pipeline.md) when creating, reviewing, or porting the CI gate. It
+explains adapter execution, base selection, exit codes, retained evidence,
+project-specific checks, and enforced delivery controls.
+
 ## 1. Required inputs
 
 Before creating code or directories, the agent gathers:

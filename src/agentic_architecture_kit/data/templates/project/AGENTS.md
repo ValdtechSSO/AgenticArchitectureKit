@@ -26,7 +26,8 @@
   `aak guide waiver-authoring-prompt`. The agent writes the record but never
   authorizes its own architectural deviation.
 - Run `aak guide bootstrap` for the version-matched creation and evolution
-  procedure; use `aak guide github-governance` when configuring GitHub controls.
+  procedure; use `aak guide pipeline` when connecting CI and
+  `aak guide github-governance` when configuring GitHub controls.
 - Read `architecture/system-overview.md` and `domain/global-invariants.md`.
 - Locate the owning module and cohesive feature area before changing behavior.
 - Read the module's `module.contract.yml` and `AGENTS.md`.

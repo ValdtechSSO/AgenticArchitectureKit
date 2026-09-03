@@ -34,6 +34,10 @@ _GUIDES = {
         "Prompt an agent to create, adopt, or update a semantic module contract.",
         "data/guides/module-contract-authoring-prompt.md",
     ),
+    "pipeline": (
+        "Connect architecture validation, adapters, evidence, and merge protection to CI.",
+        "data/guides/pipeline.md",
+    ),
     "project-policy-authoring-prompt": (
         "Prompt an agent to create, review, reconcile, or update project policy.",
         "data/guides/project-policy-authoring-prompt.md",

@@ -29,6 +29,7 @@ jobs:
           aak core > /dev/null
           aak guide bootstrap > /dev/null
           aak guide github-governance > /dev/null
+          aak guide pipeline > /dev/null
           aak template AGENTS.md > /dev/null
       - name: Validate the kit
         run: aak validate --fail-on-review --task-id architecture-ci

@@ -25,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.8",
+  "toolVersion": "0.4.9",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -34,8 +34,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.8 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.9 aak context locate "order lifecycle"
 ```
 
 The same distribution contains everything an agent needs to bootstrap a new
@@ -49,6 +49,7 @@ aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
 aak guide module-contract-authoring-prompt
+aak guide pipeline
 aak guide project-policy-authoring-prompt
 aak guide project-rule-authoring-prompt
 aak guide waiver-authoring-prompt
@@ -98,6 +99,7 @@ aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
 aak guide module-contract-authoring-prompt
+aak guide pipeline
 aak guide project-policy-authoring-prompt
 aak guide project-rule-authoring-prompt
 aak guide waiver-authoring-prompt

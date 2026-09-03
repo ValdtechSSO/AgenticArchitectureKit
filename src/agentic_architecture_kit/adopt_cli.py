@@ -213,7 +213,7 @@ def _required_actions(
         actions.append({
             "kind": "PLATFORM_ENFORCEMENT",
             "scope": ".agentic/policies/architecture/authorities.json",
-            "message": "Configure protected branches and required checks using `aak guide github-governance`.",
+            "message": "Review the CI gate using `aak guide pipeline`, then configure protected branches and required checks using `aak guide github-governance`.",
         })
     return actions
 

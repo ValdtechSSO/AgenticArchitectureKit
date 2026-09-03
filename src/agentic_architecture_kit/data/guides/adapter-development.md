@@ -13,7 +13,7 @@ kit version and register one lowercase adapter name:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.8"]
+dependencies = ["agentic-architecture-kit==0.4.9"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -123,7 +123,7 @@ Install the adapter distribution beside the pinned kit. Add it to
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.8",
+  "toolVersion": "0.4.9",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}

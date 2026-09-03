@@ -54,6 +54,11 @@ pedir al usuario que escriba Markdown. No pases `--base-ref` en
 la primera adopción salvo que esa revisión ya contenga una política AAK válida;
 el workflow de CI generado detecta si existe una baseline comparativa.
 
+Ejecuta `aak guide pipeline` o consulta [Implementar AAK en un pipeline de
+entrega](pipeline.md) al crear, revisar o portar el gate CI. Explica la ejecución
+del adaptador, selección de base, códigos de salida, evidencia retenida, checks
+propios y controles efectivos de entrega.
+
 ## 1. Entradas obligatorias
 
 Antes de crear código o carpetas, el agente reúne:

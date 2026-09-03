@@ -2,7 +2,7 @@
 
 [Español](docs/es/README.md) · [Language policy](docs/language-policy.md)
 
-> **Implementation status:** 0.4.8 preview. The published distribution is
+> **Implementation status:** 0.4.9 preview. The published distribution is
 > self-contained for agent bootstrap and evolution. The packaged decision core
 > and rule references are normative; the manifesto is their human-facing map.
 > The [capability matrix](docs/capabilities.md) distinguishes implemented,
@@ -59,6 +59,9 @@ should arrive when the task requires it.
   web rendition of the operational procedure bundled as `aak guide bootstrap`.
 - [`docs/adapter-development.md`](docs/adapter-development.md): compact contract,
   packaging, and test guide bundled as `aak guide adapter-development`.
+- [`docs/pipeline.md`](docs/pipeline.md): end-to-end CI integration from adapter
+  execution and base comparison through retained evidence and merge protection,
+  bundled as `aak guide pipeline`.
 - [`src/agentic_architecture_kit/`](src/agentic_architecture_kit/): versioned
   Python distribution containing the CLI, operational guides, portable rules,
   schemas, templates, and built-in technology adapters.
@@ -95,14 +98,14 @@ Product objective: <PRODUCT_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.8 to create and govern this project.
+Use Agentic Architecture Kit 0.4.9 to create and govern this project.
 
 Before creating or modifying files:
 
 1. Run these commands and read both outputs completely:
 
-   uvx --from agentic-architecture-kit==0.4.8 aak core
-   uvx --from agentic-architecture-kit==0.4.8 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.9 aak core
+   uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
 
 2. Treat that version-matched guidance as authoritative for architecture
    decisions. Do not rely on a remembered or copied repository structure.
@@ -141,16 +144,16 @@ Change objective: <CHANGE_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.8 before making the first project change.
+Use Agentic Architecture Kit 0.4.9 before making the first project change.
 
 1. Run and read completely:
 
-   uvx --from agentic-architecture-kit==0.4.8 aak core
-   uvx --from agentic-architecture-kit==0.4.8 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.4.9 aak core
+   uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
 
 2. Preview adoption without writing files:
 
-   uvx --from agentic-architecture-kit==0.4.8 aak adopt \
+   uvx --from agentic-architecture-kit==0.4.9 aak adopt \
      --root "<PROJECT_DIRECTORY>" \
      --codeowner <CODEOWNER> \
      --ci github \
@@ -180,9 +183,9 @@ templates are published together as `agentic-architecture-kit`. A consumer pins
 the exact version in `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak core
-uvx --from agentic-architecture-kit==0.4.8 aak guide bootstrap
-uvx --from agentic-architecture-kit==0.4.8 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.4.9 aak core
+uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
+uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
 ```
 
 The agent does not need access to this source checkout. The pinned distribution
@@ -223,7 +226,7 @@ every file it would add, the proposed policy, CI integration, validation result,
 and semantic work that still requires a real decision:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak adopt \
+uvx --from agentic-architecture-kit==0.4.9 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github \
@@ -233,7 +236,7 @@ uvx --from agentic-architecture-kit==0.4.8 aak adopt \
 Review the JSON plan, then apply the same command without `--dry-run`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak adopt \
+uvx --from agentic-architecture-kit==0.4.9 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github
@@ -275,6 +278,7 @@ aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
 aak guide module-contract-authoring-prompt
+aak guide pipeline
 aak guide project-policy-authoring-prompt
 aak guide project-rule-authoring-prompt
 aak guide waiver-authoring-prompt
@@ -292,14 +296,14 @@ files and writes an observed `project-policy.json` proposal without running the
 complete adoption workflow:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.4.9 aak init --root . --codeowner @your-org/architecture
 ```
 
 For a repository maintained by one person, declare that constraint honestly
 instead of configuring an impossible self-review requirement:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.8 aak init --root . \
+uvx --from agentic-architecture-kit==0.4.9 aak init --root . \
   --codeowner @your-user --authority-mode solo-maintainer
 ```
 

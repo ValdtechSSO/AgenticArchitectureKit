@@ -47,6 +47,11 @@ author Markdown. Do not pass `--base-ref` on first adoption unless that revision
 already contains a valid AAK policy; the generated CI workflow detects whether
 a comparative baseline is available.
 
+Run `aak guide pipeline` when creating, reviewing, or porting the CI gate. It
+explains adapter execution, base selection, exit codes, retained evidence,
+project-specific checks, and the platform controls that turn validation into an
+enforced delivery boundary.
+
 ## 1. Required inputs
 
 Before creating code or directories, gather:
