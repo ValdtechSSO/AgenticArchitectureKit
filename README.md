@@ -2,7 +2,12 @@
 
 [Español](docs/es/README.md) · [Language policy](docs/language-policy.md)
 
-> **Implementation status:** 0.4.9 preview. The published distribution is
+See [semantic code intelligence](docs/semantic-code-intelligence.md) for the
+optional provider contract, explicit fallback, and Roslynk agent workflow.
+See [durable long-running execution](docs/long-running-execution.md) for
+content-bound checkpoints and mandatory plan-plus-state resumption.
+
+> **Implementation status:** 0.5.0 preview. The published distribution is
 > self-contained for agent bootstrap and evolution. The packaged decision core
 > and rule references are normative; the manifesto is their human-facing map.
 > The [capability matrix](docs/capabilities.md) distinguishes implemented,
@@ -38,6 +43,11 @@ entry point and lets the agent expand through ownership, dependencies, and
 concrete evidence. More context is not necessarily better: relevant context
 should arrive when the task requires it.
 
+Long-running execution uses content-bound checkpoints so compaction, handoff,
+or restart cannot silently discard the objective, invariants, decisions,
+deviations, test evidence, risks, or next objective. Resumption reloads the
+unchanged original plan together with the latest durable state.
+
 ## What is included
 
 - [`MANIFESTO.md`](MANIFESTO.md): human-facing purpose, enforcement model, and
@@ -62,6 +72,8 @@ should arrive when the task requires it.
 - [`docs/pipeline.md`](docs/pipeline.md): end-to-end CI integration from adapter
   execution and base comparison through retained evidence and merge protection,
   bundled as `aak guide pipeline`.
+- [`docs/long-running-execution.md`](docs/long-running-execution.md): durable
+  checkpoint, test-evidence, and resume protocol for work spanning contexts.
 - [`src/agentic_architecture_kit/`](src/agentic_architecture_kit/): versioned
   Python distribution containing the CLI, operational guides, portable rules,
   schemas, templates, and built-in technology adapters.
@@ -98,14 +110,14 @@ Product objective: <PRODUCT_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.9 to create and govern this project.
+Use Agentic Architecture Kit 0.5.0 to create and govern this project.
 
 Before creating or modifying files:
 
 1. Run these commands and read both outputs completely:
 
-   uvx --from agentic-architecture-kit==0.4.9 aak core
-   uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.5.0 aak core
+   uvx --from agentic-architecture-kit==0.5.0 aak guide bootstrap
 
 2. Treat that version-matched guidance as authoritative for architecture
    decisions. Do not rely on a remembered or copied repository structure.
@@ -144,16 +156,16 @@ Change objective: <CHANGE_OBJECTIVE>
 Known requirements and constraints: <KNOWN_CONSTRAINTS>
 Repository CODEOWNER: <CODEOWNER>
 
-Use Agentic Architecture Kit 0.4.9 before making the first project change.
+Use Agentic Architecture Kit 0.5.0 before making the first project change.
 
 1. Run and read completely:
 
-   uvx --from agentic-architecture-kit==0.4.9 aak core
-   uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
+   uvx --from agentic-architecture-kit==0.5.0 aak core
+   uvx --from agentic-architecture-kit==0.5.0 aak guide bootstrap
 
 2. Preview adoption without writing files:
 
-   uvx --from agentic-architecture-kit==0.4.9 aak adopt \
+   uvx --from agentic-architecture-kit==0.5.0 aak adopt \
      --root "<PROJECT_DIRECTORY>" \
      --codeowner <CODEOWNER> \
      --ci github \
@@ -183,9 +195,9 @@ templates are published together as `agentic-architecture-kit`. A consumer pins
 the exact version in `.agentic/toolchain.json` and runs it with `uvx` or `pipx`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak core
-uvx --from agentic-architecture-kit==0.4.9 aak guide bootstrap
-uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.5.0 aak core
+uvx --from agentic-architecture-kit==0.5.0 aak guide bootstrap
+uvx --from agentic-architecture-kit==0.5.0 aak validate --fail-on-review
 ```
 
 The agent does not need access to this source checkout. The pinned distribution
@@ -226,7 +238,7 @@ every file it would add, the proposed policy, CI integration, validation result,
 and semantic work that still requires a real decision:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak adopt \
+uvx --from agentic-architecture-kit==0.5.0 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github \
@@ -236,7 +248,7 @@ uvx --from agentic-architecture-kit==0.4.9 aak adopt \
 Review the JSON plan, then apply the same command without `--dry-run`:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak adopt \
+uvx --from agentic-architecture-kit==0.5.0 aak adopt \
   --root . \
   --codeowner @your-org/architecture \
   --ci github
@@ -277,16 +289,20 @@ aak guide architecture-context-authoring-prompt
 aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
+aak guide long-running-execution
 aak guide module-contract-authoring-prompt
 aak guide pipeline
 aak guide project-policy-authoring-prompt
 aak guide project-rule-authoring-prompt
+aak guide semantic-code-intelligence
+aak checkpoint status --task-id TASK-123 --plan docs/original-plan.md
 aak guide waiver-authoring-prompt
 aak template
 aak template AGENTS.md
 aak adopt --help
 aak explain DEP001
 aak context index
+aak context status
 aak context locate "architecture validation"
 aak validate --root examples/dotnet-valid
 ```
@@ -296,14 +312,14 @@ files and writes an observed `project-policy.json` proposal without running the
 complete adoption workflow:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak init --root . --codeowner @your-org/architecture
+uvx --from agentic-architecture-kit==0.5.0 aak init --root . --codeowner @your-org/architecture
 ```
 
 For a repository maintained by one person, declare that constraint honestly
 instead of configuring an impossible self-review requirement:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak init --root . \
+uvx --from agentic-architecture-kit==0.5.0 aak init --root . \
   --codeowner @your-user --authority-mode solo-maintainer
 ```
 

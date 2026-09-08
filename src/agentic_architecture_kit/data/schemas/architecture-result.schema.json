@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["tool", "toolVersion", "generatedAt", "repositoryRoot", "repositoryRevision", "project", "adapter", "policy", "waivers", "reviews", "authorities", "toolchain", "policyDigest", "waiverDigest", "reviewDigest", "authorityDigest", "toolchainDigest", "catalogDigest", "observedDigest", "summary", "results"],
+  "required": ["tool", "toolVersion", "generatedAt", "repositoryRoot", "repositoryRevision", "project", "adapter", "policy", "waivers", "reviews", "authorities", "toolchain", "policyDigest", "waiverDigest", "reviewDigest", "authorityDigest", "toolchainDigest", "catalogDigest", "observedDigest", "observationDigest", "observation", "summary", "results"],
   "properties": {
     "tool": { "type": "string", "enum": ["agentic-architecture-validator"] },
     "toolVersion": { "type": "string", "minLength": 1 },
@@ -23,6 +23,8 @@
     "toolchainDigest": { "type": "string", "minLength": 64 },
     "catalogDigest": { "type": "string", "minLength": 64 },
     "observedDigest": { "type": "string", "minLength": 64 },
+    "observationDigest": { "type": "string", "minLength": 64 },
+    "observation": { "type": "object" },
     "baseRevision": { "type": "string", "minLength": 1 },
     "summary": {
       "type": "object",

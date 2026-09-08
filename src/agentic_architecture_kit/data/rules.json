@@ -22,6 +22,16 @@
       "reference": "package:data/norms/portable-rules.md#arc001-declared-and-observed-architecture-agree"
     },
     {
+      "id": "OBS001",
+      "title": "Required observation evidence is current and complete",
+      "description": "Configured semantic evidence reports provider, coverage and fallback; required evidence cannot pass when unavailable, partial, truncated, malformed or stale.",
+      "evaluator": "required_observation",
+      "automatic": true,
+      "inputs": ["project-policy", "semantic-observation", "workspace-inputs"],
+      "enforcer": "validator",
+      "reference": "package:data/norms/portable-rules.md#obs001-required-observation-evidence-is-current-and-complete"
+    },
+    {
       "id": "MOD001",
       "title": "Modules have semantic contracts",
       "description": "Every observed module has a schema-valid semantic contract and local AGENTS.md router.",

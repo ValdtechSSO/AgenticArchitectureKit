@@ -101,7 +101,14 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
                 elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
                     targets = [node.module]
                 for target in targets:
-                    dependencies.add(SourceDependency(relative_source, source_module, target, "import"))
+                    dependencies.add(SourceDependency(
+                        relative_source,
+                        source_module,
+                        target,
+                        "import",
+                        resolution="syntactic",
+                        provider="python-adapter",
+                    ))
 
     directories = tuple(
         sorted(

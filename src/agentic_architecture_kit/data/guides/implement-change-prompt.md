@@ -37,6 +37,10 @@ Before planning or editing:
 2. Run and read `aak core` from the exact version pinned by the repository.
 3. Locate the current owning module and smallest cohesive feature area using
    maintained contracts, policy, domain vocabulary, source, consumers, and tests.
+   For a language with configured semantic code intelligence, use it to resolve
+   symbols, real references, implementations, and direct consumers before
+   relying on textual search. Record provider, coverage, and resolution level;
+   semantic observation never authorizes an architectural edge.
 4. Read only the applicable module contract, local router, invariants, ADRs,
    policy, waivers, and finding references.
 5. Inspect the requested behavior's current code, data lifecycle, interfaces,
@@ -44,6 +48,9 @@ Before planning or editing:
 6. Classify evidence as DECLARED, OBSERVED, INFERRED, ASSUMED, or UNKNOWN.
 7. Record the repository revision and a base reference suitable for detecting
    architectural growth.
+8. If execution may outlive one reliable context, run
+   `aak guide long-running-execution`, preserve the original plan, and start the
+   durable checkpoint protocol before relying on conversational memory.
 ~~~
 
 Do not begin by creating a new module, project, layer, abstraction, or directory.
@@ -63,7 +70,7 @@ Classify the request into the first smallest category that satisfies it:
 | `NEW_HOST` | A currently required way to execute, schedule, compose, or expose the product needs its own runtime/adaptation boundary. | Run the project-policy and architecture-context authoring prompts; declare the host, minimal source, decision, and dependencies. |
 | `NEW_BUILD_UNIT` | A separate project/package enforces a real dependency, deployment, runtime, language, publication, distribution, or ownership boundary. | Run `aak guide project-policy-authoring-prompt`; add only the observed build unit, owner, role, decision references, and authorized edges. |
 | `NEW_DEPENDENCY_PERMISSION` | The requested design requires a new dependency across declared owners or build units. | Run `aak guide project-policy-authoring-prompt`; prefer a public contract and permit only the exact or scalable edge authorized by a current decision. |
-| `TECHNOLOGY_OBSERVATION_GAP` | Required facts cannot be observed reliably by the selected technology adapter. | Run `aak guide adapter-authoring-prompt`; extend observation without changing portable rule meaning or hiding uncertainty. |
+| `TECHNOLOGY_OBSERVATION_GAP` | A real edge is only a syntactic candidate, a required provider is absent, a solution cannot load completely, or evidence is partial or truncated. | Run `aak guide adapter-authoring-prompt`; extend observation without changing portable rule meaning or hiding uncertainty. |
 | `PROJECT_RULE_EXTENSION` | A stable project-specific guarantee is required beyond current portable rules. | Run `aak guide project-rule-authoring-prompt`; implement its evidence, evaluator/analyzer, negative tests, exceptions, and local/CI enforcement without overloading policy. |
 
 A request may have one primary classification and necessary secondary
@@ -179,6 +186,7 @@ Module-contract delta: <NONE|SUMMARY>
 Policy delta: <NONE|SUMMARY>
 ADR/invariant delta: <NONE|SUMMARY>
 Adapter/rule-extension delta: <NONE|SUMMARY>
+Code-intelligence provider and evidence level: <PROVIDER|NONE> / <SEMANTIC|SYNTACTIC|TEXTUAL>
 Risk and authority checks:
 Validation commands including base comparison:
 Only unresolved material decision, if any:
@@ -216,6 +224,11 @@ Preserve unrelated user changes. Avoid generated or vendor output unless a
 required tool owns it. Update context indexes and retained evidence only through
 their authoritative generators.
 
+For a long-running task, checkpoint after each bounded segment. Before the next
+segment, use `aak checkpoint resume` so the unchanged original plan and complete
+latest state are supplied together. Do not continue only from accumulated or
+compacted conversation context.
+
 ## 9. Validation and correction loop
 
 Run validation in proportion to the change:
@@ -224,6 +237,10 @@ Run validation in proportion to the change:
 1. Targeted tests for changed behavior.
 2. Affected module, contract, integration, and architecture tests.
 3. Required build, lint, type, migration, or package checks.
+   Use compiler diagnostics for rapid local feedback when available, then run
+   the project's authoritative build and tests. A green semantic diagnostic
+   query does not replace build targets, generators, packaging, migrations,
+   integration tests, or browser tests.
 4. `aak validate` for current-state agreement.
 5. `aak validate --base-ref <TARGET_BASE> --fail-on-review` for architectural
    growth and strict completion.

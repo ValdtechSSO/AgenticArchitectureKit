@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "globalObjective", "activeInvariants", "decisions", "planDeviations", "openRisks", "resolvedRisks", "nextObjective"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "enum": [1] },
+    "globalObjective": { "type": "string", "minLength": 1 },
+    "activeInvariants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "status", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "statement": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["holds", "at-risk", "unknown"] },
+          "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "decision", "rationale", "status", "supersededBy", "affectsInvariants"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "decision": { "type": "string", "minLength": 1 },
+          "rationale": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["active", "superseded"] },
+          "supersededBy": { "type": "string" },
+          "affectsInvariants": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" } },
+          "source": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "planDeviations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "planReference", "description", "rationale", "impact"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "planReference": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "rationale": { "type": "string", "minLength": 1 },
+          "impact": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "openRisks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "severity", "mitigation", "owner", "trigger"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "description": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "mitigation": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "trigger": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "resolvedRisks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["riskId", "resolution", "evidence"],
+        "properties": {
+          "riskId": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "resolution": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "nextObjective": { "type": "string", "minLength": 1 }
+  }
+}

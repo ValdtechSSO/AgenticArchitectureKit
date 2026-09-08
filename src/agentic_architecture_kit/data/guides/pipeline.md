@@ -37,7 +37,7 @@ load pinned catalog and toolchain
 → load the base policy when --base-ref is available
 → call adapters.observe(policy["adapter"], root, policy)
 → load module contracts
-→ evaluate the 17 portable rules
+→ evaluate the 18 portable rules
 → apply valid waivers and fingerprint-bound reviews
 → write revision-bound evidence
 → return a process exit code
@@ -116,7 +116,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install pinned architecture kit
-        run: python3 -m pip install --no-deps agentic-architecture-kit==0.4.9
+        run: python3 -m pip install --no-deps agentic-architecture-kit==0.5.0
 
       - name: Validate architecture
         env:
@@ -137,7 +137,7 @@ jobs:
           if-no-files-found: error
 ```
 
-Replace `0.4.9` only through an explicit kit upgrade, and update
+Replace `0.5.0` only through an explicit kit upgrade, and update
 `.agentic/toolchain.json` in the same change. Treat third-party action major
 versions as examples from this kit release and update them deliberately.
 
@@ -187,7 +187,7 @@ Install both exact versions from an authorized registry or artifact source:
 
 ```bash
 python3 -m pip install --no-deps \
-  agentic-architecture-kit==0.4.9 \
+  agentic-architecture-kit==0.5.0 \
   aak-rust-adapter==1.2.3
 ```
 
@@ -233,6 +233,11 @@ Upload the complete task directory with retention appropriate to project risk.
 Do not commit runtime evidence as maintained architecture truth; regenerate it
 for each revision.
 
+Architecture validation evidence is distinct from a long-running execution
+checkpoint. When a task crosses contexts or runners, use
+`aak guide long-running-execution` and retain `.agentic/runtime/checkpoints/`
+separately with access controls appropriate to its reasoning and risk content.
+
 ## 11. Project-specific architecture rules
 
 `aak validate` automatically evaluates the portable catalog. A project-specific
@@ -248,7 +253,7 @@ For example:
 ```
 
 Keep the check independently visible. Do not report a project-only analyzer as
-if it were one of the 17 portable AAK rule results.
+if it were one of the 18 portable AAK rule results.
 
 ## 12. Branch protection and review authority
 

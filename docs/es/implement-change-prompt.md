@@ -41,6 +41,10 @@ Antes de planificar o editar:
 2. Ejecuta y lee `aak core` desde la versión exacta fijada por el repositorio.
 3. Localiza módulo owner y feature area cohesiva mínima usando contratos, policy,
    vocabulario de dominio, source, consumidores y tests mantenidos.
+   Si el lenguaje tiene inteligencia semántica configurada, úsala para resolver
+   símbolos, referencias reales, implementaciones y consumidores directos antes
+   de depender de búsqueda textual. Registra provider, cobertura y resolución;
+   la observación semántica nunca autoriza un edge arquitectónico.
 4. Lee únicamente contrato, router local, invariantes, ADR, policy, waivers y
    referencias de findings aplicables.
 5. Inspecciona código, ciclo de datos, interfaces, dependencias, tests y cobertura
@@ -48,6 +52,9 @@ Antes de planificar o editar:
 6. Clasifica la evidencia como DECLARED, OBSERVED, INFERRED, ASSUMED o UNKNOWN.
 7. Registra la revisión y una referencia base adecuada para detectar crecimiento
    arquitectónico.
+8. Si la ejecución puede durar más que un contexto fiable, ejecuta
+   `aak guide long-running-execution`, conserva el plan original e inicia el
+   protocolo de checkpoint duradero antes de depender de memoria conversacional.
 ~~~
 
 No empieces creando un módulo, proyecto, capa, abstracción o directorio. Amplía
@@ -67,7 +74,7 @@ Clasifica la petición en la primera categoría mínima que la satisfaga:
 | `NEW_HOST` | Una forma actualmente necesaria de ejecutar, programar, componer o exponer el producto requiere una frontera propia de runtime/adaptación. | Ejecuta los prompts de project policy y contexto arquitectónico; declara host, source mínimo, decisión y dependencias. |
 | `NEW_BUILD_UNIT` | Un proyecto/paquete separado hace exigible una frontera de dependencia, despliegue, runtime, lenguaje, publicación, distribución u ownership. | Ejecuta `aak guide project-policy-authoring-prompt`; añade solo unidad observada, owner, role, decisiones y edges autorizados. |
 | `NEW_DEPENDENCY_PERMISSION` | El diseño requiere una dependencia nueva entre owners o unidades declaradas. | Ejecuta `aak guide project-policy-authoring-prompt`; prefiere contrato público y autoriza solo el edge exacto o escalable respaldado por una decisión. |
-| `TECHNOLOGY_OBSERVATION_GAP` | El adaptador no puede observar con fiabilidad hechos necesarios. | Ejecuta `aak guide adapter-authoring-prompt`; amplía observación sin cambiar reglas portables ni ocultar incertidumbre. |
+| `TECHNOLOGY_OBSERVATION_GAP` | Un edge real solo es candidate sintáctico, falta un provider required, la solución no carga por completo o la evidencia es parcial/truncada. | Ejecuta `aak guide adapter-authoring-prompt`; amplía observación sin cambiar reglas portables ni ocultar incertidumbre. |
 | `PROJECT_RULE_EXTENSION` | Se necesita una garantía estable de proyecto fuera de las reglas portables actuales. | Ejecuta `aak guide project-rule-authoring-prompt`; implementa evidencia, evaluator/analyzer, tests negativos, excepciones y enforcement local/CI sin sobrecargar la policy. |
 
 Una petición puede tener clasificación primaria y consecuencias secundarias
@@ -182,6 +189,7 @@ Delta del contrato: <NONE|SUMMARY>
 Delta de policy: <NONE|SUMMARY>
 Delta de ADR/invariantes: <NONE|SUMMARY>
 Delta de adaptador/extensión de reglas: <NONE|SUMMARY>
+Provider de code intelligence y nivel de evidencia: <PROVIDER|NONE> / <SEMANTIC|SYNTACTIC|TEXTUAL>
 Checks de riesgo y autoridad:
 Comandos de validación, incluida comparación base:
 Única decisión material pendiente, si existe:
@@ -218,6 +226,11 @@ Conserva cambios ajenos. Evita output generado o vendor salvo que una herramient
 obligatoria lo gestione. Actualiza índices y evidencia retenida únicamente con
 sus generadores autoritativos.
 
+En una tarea larga, crea un checkpoint después de cada tramo acotado. Antes del
+siguiente tramo, usa `aak checkpoint resume` para suministrar juntos el plan
+original sin cambios y el último estado completo. No continúes solo desde el
+contexto conversacional acumulado o compactado.
+
 ## 9. Bucle de validación y corrección
 
 Valida en proporción al cambio:
@@ -226,6 +239,10 @@ Valida en proporción al cambio:
 1. Tests dirigidos del comportamiento cambiado.
 2. Tests de módulo, contrato, integración y arquitectura afectados.
 3. Build, lint, tipos, migraciones o paquetes exigidos.
+   Usa diagnósticos del compilador para feedback local rápido cuando existan y
+   después ejecuta build y tests autoritativos. Un diagnóstico semántico verde
+   no sustituye targets, generators, packaging, migraciones, integration tests
+   ni browser tests.
 4. `aak validate` para concordancia del estado actual.
 5. `aak validate --base-ref <TARGET_BASE> --fail-on-review` para crecimiento y
    finalización estricta.

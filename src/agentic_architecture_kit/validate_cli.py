@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .adapters import observe
 from .contracts import ContractError, load_json, load_yaml_subset, validate_schema
 from .engine import EVALUATORS, evaluate
 from .model import STATUSES, ValidationContext
 from .norms import compute_rule_digest
 from .resources import read_json as read_bundled_json, schema as bundled_schema
+from .semantic_observers import observe_architecture
 from .toolchain import load_toolchain
 
 
@@ -109,6 +109,11 @@ def _validate_policy_semantics(root: Path, policy: dict[str, Any]) -> None:
     module_schema = policy["moduleContract"]["schema"]
     if not module_schema.startswith("package:"):
         _repository_path(root, module_schema)
+    semantic = policy.get("observation", {}).get("semantic")
+    if semantic and semantic.get("solution"):
+        _repository_path(root, semantic["solution"])
+    if semantic and len(semantic["capabilities"]) != len(set(semantic["capabilities"])):
+        raise ContractError("Semantic observation capabilities must be unique")
 
     for module in policy["modules"]:
         feature_root = module.get("featureRoot")
@@ -323,7 +328,8 @@ def run(arguments: list[str] | None = None) -> int:
             _validate_with_schema(base_policy, policy_schema, "Base architecture policy", "package:architecture-policy.schema.json")
             _validate_policy_semantics(root, base_policy)
 
-        observed = observe(policy["adapter"], root, policy)
+        observation_bundle = observe_architecture(root, policy, toolchain_document)
+        observed = observation_bundle.architecture
 
         module_schema_value = policy["moduleContract"]["schema"]
         if module_schema_value.startswith("package:"):
@@ -369,6 +375,7 @@ def run(arguments: list[str] | None = None) -> int:
             base_policy=base_policy,
             base_revision=base_revision,
             base_norms=base_norms,
+            semantic_observation=observation_bundle.semantic,
         )
         findings = evaluate(context)
         counts = Counter(finding.status for finding in findings)
@@ -393,7 +400,13 @@ def run(arguments: list[str] | None = None) -> int:
             "authorityDigest": _canonical_digest(authority_document),
             "toolchainDigest": _canonical_digest(toolchain_document),
             "catalogDigest": _canonical_digest(catalog_document),
-            "observedDigest": _canonical_digest(observed.as_dict()),
+            "observedDigest": _canonical_digest(observation_bundle.as_dict()),
+            "observationDigest": _canonical_digest(
+                observation_bundle.semantic.observation.as_dict()
+                if observation_bundle.semantic.observation is not None
+                else observation_bundle.semantic.as_dict()
+            ),
+            "observation": observation_bundle.semantic.as_dict(),
             "summary": {status: counts[status] for status in STATUSES},
             "results": [finding.as_dict() for finding in findings],
         }
@@ -460,6 +473,8 @@ def run(arguments: list[str] | None = None) -> int:
                 "arguments": cli_arguments,
                 "exitCode": planned_exit,
                 "result": "FAIL" if counts["FAIL"] else "REVIEW_REQUIRED" if counts["REVIEW_REQUIRED"] else "PASS",
+                "observationDigest": report["observationDigest"],
+                "semanticObservation": report["observation"],
             }
             (evidence_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         if args.format == "json":

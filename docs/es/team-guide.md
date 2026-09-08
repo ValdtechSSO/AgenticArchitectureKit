@@ -275,14 +275,14 @@ es un atajo cuando existe un revisor de equipo disponible.
 Modo estricto cuando la política exige resolver toda revisión semántica:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.5.0 aak validate --fail-on-review
 ```
 
 Para CI o evidencia retenida, se recomienda la salida estructurada:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.9 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.5.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.5.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI debería usar `--base-ref` cuando pueda comparar con la rama objetivo. Así un
@@ -291,6 +291,21 @@ puede obtener verde limitándose a ampliar la policy.
 Usa [`aak guide pipeline`](pipeline.md) para la implementación completa de
 checkout, adaptador, selección de base, retención de evidencia y check
 obligatorio.
+
+### Ejecución larga duradera
+
+Cuando el trabajo pueda atravesar compactación de contexto, handoff, reinicio o
+muchas horas, exige el protocolo de checkpoint además de Git. Cada checkpoint
+conserva objetivo global, invariantes activos, decisiones acumulativas y su
+justificación, desviaciones del plan, evidencia de tests generada, riesgos
+abiertos y siguiente objetivo. Antes del tramo siguiente,
+`aak checkpoint resume` suministra juntos el plan original sin cambios y el
+último checkpoint completo y registra un recibo ligado al contenido.
+
+Los revisores deberían rechazar un plan reescrito, una cadena rota, una decisión
+o riesgo desaparecido, drift del workspace sin reanudación o tests verdes
+registrados únicamente como prosa del agente. Consulta
+[`long-running-execution.md`](long-running-execution.md).
 
 ## 9. Gobierno de licencias arquitectónicas
 

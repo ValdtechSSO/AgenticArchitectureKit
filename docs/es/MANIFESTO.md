@@ -49,6 +49,13 @@ contexto se recupera progresivamente desde un bootstrap determinista mediante
 contratos, invariantes, decisiones, dependencias, consumidores, datos, tests y
 evidencia ligada a una revisión.
 
+Cuando la ejecución dura más que un contexto fiable, los checkpoints duraderos
+complementan Git con objetivo global, invariantes activos, razones de las
+decisiones, desviaciones del plan, evidencia de tests, riesgos abiertos y
+siguiente objetivo. Un tramo posterior recarga el plan original sin cambios y
+el último checkpoint completo antes de continuar; la conversación compactada
+no es la fuente de recuperación.
+
 ## Modelo de conformidad
 
 Tres capas del proyecto especializan la distribución portable:
@@ -75,6 +82,7 @@ Tarea
   → implementar dentro del límite cohesivo más pequeño
   → seguir referencias normativas solo cuando un hallazgo lo requiera
   → actualizar conjuntamente código, declaración, decisión, enforcement y evidencia
+  → crear checkpoint y reanudar desde plan más estado duradero si la ejecución cruza contextos
   → volver a validar antes de declarar la tarea completa
   → PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
 ```

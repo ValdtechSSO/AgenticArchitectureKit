@@ -6,6 +6,7 @@ import json
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -25,6 +26,13 @@ from agentic_architecture_kit.init_cli import export_payload, initialize  # noqa
 from agentic_architecture_kit.norms import compute_rule_digest  # noqa: E402
 from agentic_architecture_kit.resources import read_json as read_bundled_json  # noqa: E402
 from agentic_architecture_kit.resources import read_text as read_bundled_text  # noqa: E402
+from agentic_architecture_kit.model import SourceDependency, SourceLocation  # noqa: E402
+from agentic_architecture_kit.semantic_observers.contracts import (  # noqa: E402
+    ObservationInput, SemanticCoverage, SemanticObservation,
+)
+from agentic_architecture_kit.semantic_observers.fingerprint import (  # noqa: E402
+    file_sha256, manifest_fingerprint,
+)
 from agentic_architecture_kit.validate_cli import run  # noqa: E402
 
 
@@ -76,7 +84,7 @@ architecture_decisions:
         (self.root / "architecture/decisions/ADR-001-orders.md").write_text("# Orders decision\n", encoding="utf-8")
 
         self.policy = {
-            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.4.9/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
+            "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.5.0/src/agentic_architecture_kit/data/schemas/architecture-policy.schema.json",
             "version": 1,
             "project": "example",
             "adapter": "dotnet",
@@ -226,6 +234,31 @@ architecture_decisions:
             )
         return code, stdout.getvalue(), stderr.getvalue()
 
+    def _semantic_entry_point(self, dependencies=(), coverage="complete", truncated=False):
+        source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
+        host = self.root / "src/Hosts/Cli/Program.cs"
+        inputs = (
+            ObservationInput("src/Hosts/Cli/Program.cs", file_sha256(host)),
+            ObservationInput(
+                "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs",
+                file_sha256(source),
+            ),
+        )
+        observation = SemanticObservation(
+            "fake", "1.0.0", "source-dependencies", self.initial_revision,
+            manifest_fingerprint(inputs), None, inputs,
+            SemanticCoverage(
+                coverage,
+                (
+                    "src/Hosts/Cli/Program.cs",
+                    "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs",
+                ),
+                (), ("net10.0",), truncated,
+            ),
+            tuple(dependencies),
+        )
+        return SimpleNamespace(name="fake", load=lambda: (lambda root, config: observation))
+
     def test_valid_repository_has_no_failures(self) -> None:
         code, output, error = self._run("--format", "json")
         self.assertEqual(0, code, error)
@@ -233,14 +266,14 @@ architecture_decisions:
         self.assertTrue(all(item["reference"].startswith("package:") for item in report["results"]))
         self.assertTrue(all(item["ruleDigest"].startswith("sha256:") for item in report["results"]))
         documentation = next(item for item in report["results"] if item["rule"] == "DOC001")
-        self.assertEqual(17, documentation["evidence"]["catalogReferences"])
+        self.assertEqual(18, documentation["evidence"]["catalogReferences"])
         self.assertEqual(3, documentation["evidence"]["normativeDocuments"])
         self.assertEqual(0, report["summary"]["FAIL"])
         self.assertGreater(report["summary"]["PASS"], 0)
         self.assertGreater(report["summary"]["REVIEW_REQUIRED"], 0)
         for field in (
             "policyDigest", "waiverDigest", "reviewDigest", "authorityDigest",
-            "toolchainDigest", "catalogDigest", "observedDigest",
+            "toolchainDigest", "catalogDigest", "observedDigest", "observationDigest",
         ):
             self.assertTrue(report[field].startswith("sha256:"), field)
 
@@ -317,6 +350,8 @@ architecture_decisions:
         self.assertIn("pipeline:", output.getvalue())
         self.assertIn("project-policy-authoring-prompt:", output.getvalue())
         self.assertIn("project-rule-authoring-prompt:", output.getvalue())
+        self.assertIn("semantic-code-intelligence:", output.getvalue())
+        self.assertIn("long-running-execution:", output.getvalue())
         self.assertIn("waiver-authoring-prompt:", output.getvalue())
 
         output = io.StringIO()
@@ -332,6 +367,27 @@ architecture_decisions:
         self.assertIn("aak guide architecture-context-authoring-prompt", output.getvalue())
         self.assertIn("aak guide project-rule-authoring-prompt", output.getvalue())
         self.assertIn("aak guide waiver-authoring-prompt", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "semantic-code-intelligence"])
+        self.assertEqual(0, code)
+        guide = output.getvalue()
+        self.assertIn("AAK: architectural authority and conformance", guide)
+        self.assertIn("does not replace builds", guide)
+        self.assertIn("Roslynk", guide)
+        template = read_bundled_text("data/templates/project/AGENTS.md")
+        self.assertIn("configured semantic provider", template)
+        self.assertNotIn("Roslynk", template)
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = cli(["guide", "long-running-execution"])
+        self.assertEqual(0, code)
+        checkpoint_guide = output.getvalue()
+        self.assertIn("# Durable checkpoints for long-running execution", checkpoint_guide)
+        self.assertIn("aak checkpoint resume", checkpoint_guide)
+        self.assertIn("cannot prove private model cognition", checkpoint_guide.replace("\n", " "))
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -367,7 +423,7 @@ architecture_decisions:
         self.assertIn("top-level entry points", output.getvalue())
         self.assertIn("CORE_MODEL_GAP", output.getvalue())
         self.assertIn("LOCAL_UNCOMMITTED", output.getvalue())
-        self.assertIn("all 17 base", output.getvalue())
+        self.assertIn("all 18 base", output.getvalue())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -438,10 +494,12 @@ architecture_decisions:
             "data/guides/bootstrap.md",
             "data/guides/github-governance.md",
             "data/guides/implement-change-prompt.md",
+            "data/guides/long-running-execution.md",
             "data/guides/module-contract-authoring-prompt.md",
             "data/guides/pipeline.md",
             "data/guides/project-policy-authoring-prompt.md",
             "data/guides/project-rule-authoring-prompt.md",
+            "data/guides/semantic-code-intelligence.md",
             "data/guides/waiver-authoring-prompt.md",
         ):
             packaged = read_bundled_text(relative)
@@ -456,6 +514,7 @@ architecture_decisions:
             ("data/guides/bootstrap.md", "docs/create-project-from-zero.md"),
             ("data/guides/github-governance.md", "docs/github-governance.md"),
             ("data/guides/implement-change-prompt.md", "docs/implement-change-prompt.md"),
+            ("data/guides/long-running-execution.md", "docs/long-running-execution.md"),
             ("data/guides/module-contract-authoring-prompt.md", "docs/module-contract-authoring-prompt.md"),
             ("data/guides/pipeline.md", "docs/pipeline.md"),
             ("data/guides/project-policy-authoring-prompt.md", "docs/project-policy-authoring-prompt.md"),
@@ -474,7 +533,7 @@ architecture_decisions:
         self.assertIn("entry points top-level", spanish_prompt)
         self.assertIn("CORE_MODEL_GAP", spanish_prompt)
         self.assertIn("LOCAL_UNCOMMITTED", spanish_prompt)
-        self.assertIn("17 reglas base", spanish_prompt)
+        self.assertIn("18 reglas base", spanish_prompt)
 
         spanish_pipeline = (REPOSITORY_ROOT / "docs/es/pipeline.md").read_text(encoding="utf-8")
         self.assertIn("## 2. Modelo de ejecución", spanish_pipeline)
@@ -525,6 +584,7 @@ architecture_decisions:
         self.assertIn("AGENTS.md", output.getvalue().splitlines())
         self.assertIn("github-architecture.yml", output.getvalue().splitlines())
         self.assertIn("module.contract.yml", output.getvalue().splitlines())
+        self.assertIn("checkpoint-state.json", output.getvalue().splitlines())
 
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -533,6 +593,7 @@ architecture_decisions:
         self.assertIn("# {ProjectName}", output.getvalue())
         self.assertIn("aak guide bootstrap", output.getvalue())
         self.assertIn("aak guide implement-change", output.getvalue())
+        self.assertIn("aak guide long-running-execution", output.getvalue())
         self.assertIn("aak guide module-contract-authoring-prompt", output.getvalue())
         self.assertIn("aak guide pipeline", output.getvalue())
         self.assertIn("aak guide project-policy-authoring-prompt", output.getvalue())
@@ -1158,7 +1219,7 @@ architecture_decisions:
 
     def test_context_index_and_retrieval_report_provenance(self) -> None:
         documents = write_index(self.root, self.policy)
-        self.assertEqual({"repository", "modules", "projects", "dependencies", "documents", "tests"}, set(documents))
+        self.assertEqual({"repository", "modules", "projects", "dependencies", "observations", "documents", "tests"}, set(documents))
         self.assertTrue((self.root / ".agentic/generated/index/modules.json").is_file())
         located = locate(self.root, self.policy, "orders")
         self.assertEqual("declared", located["matches"][0]["provenance"])
@@ -1171,6 +1232,156 @@ architecture_decisions:
         evidence = self.root / ".agentic/runtime/evidence/test-task" / self.initial_revision
         self.assertTrue((evidence / "architecture.json").is_file())
         self.assertTrue((evidence / "manifest.json").is_file())
+        manifest = json.loads((evidence / "manifest.json").read_text(encoding="utf-8"))
+        self.assertIn("observationDigest", manifest)
+        self.assertIn("semanticObservation", manifest)
+
+    def test_required_semantic_observation_without_provider_blocks_strict_validation(self) -> None:
+        self.policy["observation"] = {
+            "semantic": {
+                "provider": "missing_provider",
+                "mode": "required",
+                "capabilities": ["source-dependencies"],
+            }
+        }
+        self._write_policy()
+        code, output, error = self._run("--fail-on-review")
+        self.assertEqual(1, code, error)
+        self.assertIn("[REVIEW_REQUIRED] OBS001", output)
+
+    def test_complete_semantic_coverage_removes_unused_using_false_positive(self) -> None:
+        source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
+        source.write_text("using Example.Cli;\nnamespace Example.Orders;\n", encoding="utf-8")
+        self.policy["observation"] = {"semantic": {
+            "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        with mock.patch(
+            "agentic_architecture_kit.semantic_observers._entry_points",
+            return_value=(self._semantic_entry_point(),),
+        ):
+            code, output, error = self._run("--format", "json")
+        self.assertEqual(0, code, error)
+        report = json.loads(output)
+        dep001 = next(item for item in report["results"] if item["rule"] == "DEP001")
+        self.assertEqual("PASS", dep001["status"])
+        self.assertEqual("complete", report["observation"]["coverage"])
+
+    def test_context_status_and_index_report_semantic_provenance(self) -> None:
+        self.policy["observation"] = {"semantic": {
+            "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        with mock.patch(
+            "agentic_architecture_kit.semantic_observers._entry_points",
+            return_value=(self._semantic_entry_point(),),
+        ):
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                code = cli(["context", "--root", str(self.root), "status"])
+            documents = write_index(self.root, self.policy)
+        self.assertEqual(0, code)
+        status = json.loads(output.getvalue())
+        self.assertEqual("semantic", status["semantic"]["resolutionUsed"])
+        self.assertEqual("fake", documents["observations"]["semantic"]["provider"])
+        self.assertNotIn(str(self.root), json.dumps(documents["observations"]))
+
+    def test_semantic_fully_qualified_edge_fails_dep001_with_symbol_location(self) -> None:
+        relative = "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
+        source = self.root / relative
+        source.write_text(
+            "namespace Example.Orders;\nclass Order { global::Example.Cli.Writer writer; }\n",
+            encoding="utf-8",
+        )
+        edge = SourceDependency(
+            relative, "Example.Orders", "Example.Cli", "symbol-reference",
+            resolution="semantic", provider="fake", source_symbol="Example.Orders.Order",
+            target_symbol="Example.Cli.Writer", target_project_path="src/Hosts/Cli/Cli.csproj",
+            locations=(SourceLocation(relative, 2, 15, 2, 41),), configurations=("net10.0",),
+        )
+        self.policy["observation"] = {"semantic": {
+            "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        with mock.patch(
+            "agentic_architecture_kit.semantic_observers._entry_points",
+            return_value=(self._semantic_entry_point((edge,)),),
+        ):
+            code, output, error = self._run("--format", "json")
+        self.assertEqual(1, code, error)
+        report = json.loads(output)
+        finding = next(item for item in report["results"] if item["rule"] == "DEP001" and item["status"] == "FAIL")
+        self.assertEqual("semantic", finding["evidence"]["resolution"])
+        self.assertEqual("Example.Cli.Writer", finding["evidence"]["targetSymbol"])
+        self.assertEqual(relative, finding["evidence"]["locations"][0]["path"])
+
+    def test_advisory_missing_provider_reports_explicit_fallback(self) -> None:
+        self.policy["observation"] = {"semantic": {
+            "provider": "missing_provider", "mode": "advisory", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        code, output, error = self._run("--format", "json")
+        self.assertEqual(0, code, error)
+        report = json.loads(output)
+        observation = report["observation"]
+        self.assertTrue(observation["fallbackUsed"])
+        self.assertEqual("PROVIDER_NOT_INSTALLED", observation["reasonCode"])
+        self.assertEqual("syntactic", observation["resolutionUsed"])
+
+    def test_required_partial_and_truncated_observation_block_strict_validation(self) -> None:
+        self.policy["observation"] = {"semantic": {
+            "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        for coverage, truncated, reason in (
+            ("partial", False, "PARTIAL_COVERAGE"),
+            ("complete", True, "TRUNCATED_RESULT"),
+        ):
+            with self.subTest(reason=reason), mock.patch(
+                "agentic_architecture_kit.semantic_observers._entry_points",
+                return_value=(self._semantic_entry_point(coverage=coverage, truncated=truncated),),
+            ):
+                code, output, error = self._run("--format", "json", "--fail-on-review")
+            self.assertEqual(1, code, error)
+            report = json.loads(output)
+            finding = next(item for item in report["results"] if item["rule"] == "OBS001")
+            self.assertEqual("REVIEW_REQUIRED", finding["status"])
+            self.assertEqual(reason, finding["evidence"]["reasonCode"])
+
+    def test_stale_semantic_input_is_an_obs001_failure(self) -> None:
+        self.policy["observation"] = {"semantic": {
+            "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+        }}
+        self._write_policy()
+        entry_point = self._semantic_entry_point()
+        source = self.root / "src/Modules/Orders/Features/OrderLifecycle/CreateOrder.cs"
+        source.write_text(source.read_text(encoding="utf-8") + "// changed\n", encoding="utf-8")
+        with mock.patch(
+            "agentic_architecture_kit.semantic_observers._entry_points",
+            return_value=(entry_point,),
+        ):
+            code, output, error = self._run("--format", "json")
+        self.assertEqual(1, code, error)
+        finding = next(item for item in json.loads(output)["results"] if item["rule"] == "OBS001")
+        self.assertEqual("FAIL", finding["status"])
+        self.assertEqual("INPUT_HASH_MISMATCH", finding["evidence"]["reasonCode"])
+
+    def test_required_to_advisory_downgrade_is_detected_against_base(self) -> None:
+        context = SimpleNamespace(
+            root=self.root,
+            policy={**self.policy, "observation": {"semantic": {
+                "provider": "fake", "mode": "advisory", "capabilities": ["source-dependencies"],
+            }}},
+            base_policy={**self.policy, "observation": {"semantic": {
+                "provider": "fake", "mode": "required", "capabilities": ["source-dependencies"],
+            }}},
+            norms={"documents": []}, base_norms=None, base_revision=self.initial_revision,
+        )
+        findings = _rule_policy_growth(context)
+        self.assertTrue(any(
+            item.status == "REVIEW_REQUIRED" and "required to advisory" in str(item.evidence.get("reductions"))
+            for item in findings
+        ))
 
     def test_yaml_subset_rejects_mapping_sequence_items(self) -> None:
         path = self.root / "invalid.yml"
@@ -1530,6 +1741,7 @@ architecture_decisions:
         mutations = {
             "POL001": "test_invalid_policy_role_is_rejected_by_pol001_gate",
             "ARC001": "test_test_role_cannot_hide_a_production_module_dependency",
+            "OBS001": "test_required_semantic_observation_without_provider_blocks_strict_validation",
             "MOD001": "test_missing_module_router_fails_mod001",
             "MOD002": "test_wrong_module_contract_identity_fails_mod002",
             "MOD003": "test_technical_module_name_fails_mod003",
@@ -1565,6 +1777,8 @@ architecture_decisions:
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/bootstrap.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/github-governance.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/implement-change-prompt.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/long-running-execution.md").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/guides/semantic-code-intelligence.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/module-contract-authoring-prompt.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/pipeline.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/guides/project-policy-authoring-prompt.md").is_file())
@@ -1573,6 +1787,9 @@ architecture_decisions:
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/AGENTS.md").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/templates/project/github-architecture.yml").is_file())
         self.assertTrue((exported / "agentic_architecture_kit/data/schemas/architecture-policy.schema.json").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/schemas/semantic-observation.schema.json").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/schemas/checkpoint-state.schema.json").is_file())
+        self.assertTrue((exported / "agentic_architecture_kit/data/schemas/execution-checkpoint.schema.json").is_file())
         self.assertEqual(__version__, manifest["toolVersion"])
 
 

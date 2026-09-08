@@ -32,7 +32,7 @@ separado. El adaptador informa de hechos del repositorio; no decide si esos
 hechos están permitidos arquitectónicamente.
 
 Si quien hace la petición no especifica un alcance de observación más reducido,
-usa como alcance por defecto las 17 reglas base del catálogo AAK fijado. Cubre
+usa como alcance por defecto las 18 reglas base del catálogo AAK fijado. Cubre
 cada responsabilidad de evidencia del adaptador descrita en la matriz inferior;
 clasifica las responsabilidades `CORE_ONLY` como propias de AAK y declara toda
 construcción tecnológica no soportada en vez de afirmar una cobertura falsa.

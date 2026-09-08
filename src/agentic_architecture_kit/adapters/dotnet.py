@@ -174,7 +174,9 @@ def observe(root: Path, policy: dict) -> ObservedArchitecture:
                                     relative_source,
                                     source_namespace,
                                     target_namespace,
-                                    "using",
+                                    "using-directive",
+                                    resolution="syntactic",
+                                    provider="dotnet-adapter",
                                 )
                             )
 

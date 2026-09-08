@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from .context import impact, load_policy, locate, references, write_index
+from .context import impact, load_policy, locate, observation_status, references, write_index
 from .contracts import ContractError
 from .resources import read_json as read_bundled_json
 from .toolchain import load_toolchain
@@ -20,6 +20,7 @@ def _parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     index = commands.add_parser("index", help="Generate the revision-bound repository index.")
     index.add_argument("--output", default=".agentic/generated/index")
+    commands.add_parser("status", help="Report structural and semantic observation status.")
     locate_command = commands.add_parser("locate", help="Find declared starting paths for an intent.")
     locate_command.add_argument("query")
     for name in ("symbol", "references", "tests"):
@@ -35,11 +36,13 @@ def run(arguments: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     try:
         catalog = read_bundled_json("data/rules.json")
-        load_toolchain((root / args.toolchain).resolve(), catalog["version"])
+        toolchain = load_toolchain((root / args.toolchain).resolve(), catalog["version"])
         policy = load_policy(root, args.policy)
         if args.command == "index":
-            result = write_index(root, policy, args.output)
+            result = write_index(root, policy, args.output, toolchain)
             result = {"output": args.output, "files": sorted(result)}
+        elif args.command == "status":
+            result = observation_status(root, policy, toolchain)
         elif args.command == "locate":
             result = locate(root, policy, args.query)
         elif args.command in ("symbol", "references"):

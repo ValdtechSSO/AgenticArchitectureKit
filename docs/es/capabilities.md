@@ -1,6 +1,6 @@
 # Estado de implementación
 
-Agentic Architecture Kit está actualmente en **preview 0.4**. El núcleo de
+Agentic Architecture Kit está actualmente en **preview 0.5**. El núcleo de
 decisiones y las referencias portables incluidas son el objetivo normativo; esta
 página declara qué puede demostrar hoy la implementación. La documentación por
 sí sola no se presenta como implementada.
@@ -13,6 +13,9 @@ sí sola no se presenta como implementada.
 | Adopción de repositorios existentes | Implementado | `aak adopt` ofrece una simulación sin escrituras y orquesta de forma idempotente política observada, gobernanza, CI de GitHub opcional, índice de contexto, validación estricta y seguimiento semántico explícito sin sobrescribir archivos existentes |
 | Autovalidación | Implementado | Smoke test estructural y autorización de imports reales host CLI → validator; cada regla automática se vincula a un test de mutación negativa y los casos prohibidos/entre módulos se ejercitan en vez de inferirse de un pass verde |
 | Observación .NET | Implementado | Proyectos SDK, señales de proyecto de test, `RootNamespace`, ownership de namespaces declarados en fuentes, `ProjectReference` y directivas C# `using` |
+| Guía de descubrimiento semántico para agentes | Implementado | Una guía versionada separa autoridad AAK, descubrimiento semántico configurado (incluido Roslynk para .NET), fallback explícito y finalización con build/tests reales |
+| Contrato provider-neutral de observación semántica | Implementado | Entry points opcionales entregan dependencias versionadas y ligadas a fingerprints, con cobertura/degradación estructurada, merge determinista, estado contextual y enforcement estricto en modo `required` |
+| Observación semántica de dependencias .NET mediante Roslynk | Hoja de ruta | El bridge externo `aak-dotnet-roslynk` requiere una exportación masiva machine-readable estable de Roslynk y queda fuera del package principal |
 | Observación Python | Implementado | `pyproject.toml`, paquetes/CLI directos e imports obtenidos del AST |
 | Dependencias dentro de un assembly | Inicial | Correspondencia exacta de namespace/import en C# y Python; un ownership local sin resolver o ambiguo exige revisión en vez de convertirse en un pass vacío; no es un modelo semántico completo del compilador |
 | Protección del crecimiento de policy | Implementado | `--base-ref` detecta nuevos límites y permisos; CI compara PR con su base y push con su SHA anterior |
@@ -23,13 +26,14 @@ sí sola no se presenta como implementada.
 | Invalidación semántica de concesiones | Implementado | El schema rechaza un digest ausente; un digest válido pero obsoleto no se aplica y exige revisión; cambios de otras reglas no lo invalidan |
 | Aplicación de autoridad | Garantía dividida | Cada scope protegido exige cobertura CODEOWNERS real; `team` requiere revisión independiente y `solo-maintainer` explicita su único principal y atestación; la aplicación en GitHub sigue siendo un hecho de plataforma |
 | Higiene de waivers | Implementado | Waivers sin uso, inválidos, caducados o demasiado amplios permanecen visibles |
-| Índice generado del repositorio | Inicial | Índices JSON de módulos, proyectos, dependencias, documentos y tests ligados a revisión |
+| Índice generado del repositorio | Inicial | Índices JSON de módulos, proyectos, dependencias, metadata de observación semántica, documentos y tests ligados a revisión |
 | Comandos de contexto progresivo | Inicial | Locate, búsqueda textual exacta de símbolos/referencias/tests e impacto directo con procedencia |
 | Evidencia por tarea | Inicial | Se pueden retener resultado de arquitectura y manifiesto de digest por tarea y revisión |
+| Checkpoints duraderos para tareas largas | Implementado | Estado inmutable encadenado conserva identidad del plan, objetivos, invariantes, decisiones, desviaciones, evidencia de tests generada, riesgos y un recibo que demuestra la entrega conjunta de plan y estado antes de continuar |
 | Pureza de comportamiento del host | Hoja de ruta | `HOST001` solo demuestra ubicación; la propiedad del comportamiento requiere un analizador semántico |
 | Ownership observado de escrituras | Hoja de ruta | Se valida la unicidad declarada; las escrituras reales siguen siendo revisables |
-| Grafo de símbolos de nivel compilador | Hoja de ruta | La búsqueda actual es texto exacto y declara explícitamente esa confianza |
-| Ledger completo de build/test/evidencia | Hoja de ruta | El kit retiene evidencia arquitectónica; todavía no orquesta todas las herramientas del proyecto |
+| Grafo de símbolos de nivel compilador | Hoja de ruta | AAK consume edges semánticos acotados cuando se configuran; la navegación general queda en el proveedor y la búsqueda contextual exacta se etiqueta como textual |
+| Ledger completo de build/test/evidencia | Hoja de ruta | Los checkpoints conservan comandos ejecutados explícitamente mediante `aak checkpoint run-test`; no se incluye el descubrimiento y orquestación de todas las herramientas específicas de build, test, migración y despliegue del proyecto |
 
 “Inicial” significa utilizable con una garantía deliberadamente limitada. No
 significa que se haya completado la capacidad semántica más amplia del manifiesto.

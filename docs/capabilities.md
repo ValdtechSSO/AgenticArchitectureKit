@@ -1,6 +1,6 @@
 # Implementation status
 
-Agentic Architecture Kit is currently a **0.4 preview**. The packaged decision
+Agentic Architecture Kit is currently a **0.5 preview**. The packaged decision
 core and portable rule references are the normative target; this page states
 what the reference implementation can prove today. Documentation alone is not
 represented as implemented.
@@ -13,6 +13,9 @@ represented as implemented.
 | Existing-repository adoption | Implemented | `aak adopt` provides a no-write preview and idempotently orchestrates observed policy, governance, optional GitHub CI, context indexing, strict validation, and explicit semantic follow-up without overwriting existing files |
 | Self-validation | Implemented | Structural smoke test plus authorization of real CLI-host → validator imports; every automatic rule is mapped to a negative mutation test, and prohibited/cross-module cases are exercised rather than inferred from a green pass |
 | .NET observation | Implemented | SDK-style projects, test-project signals, `RootNamespace`, source-declared namespace ownership, `ProjectReference`, and C# `using` directives |
+| Agent-side semantic discovery guidance | Implemented | A versioned guide separates AAK authority, configured semantic discovery (including Roslynk for .NET), explicit fallback, and authoritative build/test completion |
+| Provider-neutral semantic observation contract | Implemented | Optional entry points return versioned, content-fingerprinted source-dependency evidence with structured coverage, deterministic merge, context status, and strict required-mode enforcement |
+| .NET semantic source-dependency observation through Roslynk | Roadmap | The external `aak-dotnet-roslynk` bridge requires a stable bulk machine-readable Roslynk export and remains outside the core distribution |
 | Python observation | Implemented | `pyproject.toml`, direct packages/CLI files and AST import directives |
 | Intra-assembly dependency checks | Initial | Exact namespace/import matching for C# and Python; unresolved or ambiguous repository-local namespace ownership requires review rather than becoming an empty pass; not a full compiler semantic model |
 | Policy-growth protection | Implemented | `--base-ref` detects new boundaries and dependency permissions; CI compares PRs with their base and pushes with their previous SHA |
@@ -23,13 +26,14 @@ represented as implemented.
 | Semantic grant invalidation | Implemented | The schema rejects a missing rule digest; a valid but stale digest cannot apply and becomes review-required; unrelated catalog changes do not invalidate other rules |
 | Authority enforcement | Split guarantee | Every protected scope requires real CODEOWNERS coverage; team mode requires independent review, while solo-maintainer mode makes its single-principal limitation and attestation explicit; GitHub enforcement remains a platform fact |
 | Waiver hygiene | Implemented | Unmatched, invalid, expired and overly broad waivers remain visible |
-| Generated repository index | Initial | Revision-tagged module, project, dependency, document and test JSON indices |
+| Generated repository index | Initial | Revision-tagged module, project, dependency, semantic-observation metadata, document and test JSON indices |
 | Progressive context commands | Initial | Locate, exact-text symbol/reference/test search and direct impact queries with provenance |
 | Task evidence | Initial | Architecture results and a digest manifest can be retained by task and revision |
+| Durable long-task checkpoints | Implemented | Immutable chained state retains plan identity, objectives, invariants, decisions, deviations, generated test evidence, risks, and a receipt proving plan-plus-state delivery before continuation |
 | Host behavioral purity | Roadmap | `HOST001` proves source location only; behavioral ownership needs a language semantic analyzer |
 | Observed data-write ownership | Roadmap | Declared ownership uniqueness is checked; actual writes remain reviewable |
-| Compiler-grade symbol graph | Roadmap | Current reference search is exact text, explicitly labelled with that confidence |
-| Complete build/test/evidence ledger | Roadmap | The kit retains architecture evidence; orchestration of every project tool is not yet included |
+| Compiler-grade symbol graph | Roadmap | AAK consumes bounded semantic dependency edges when configured; general symbol navigation remains in providers and exact-text context search is labelled textual |
+| Complete build/test/evidence ledger | Roadmap | Checkpoints retain commands explicitly executed through `aak checkpoint run-test`; discovery and orchestration of every project-specific build, test, migration, and deployment tool is not included |
 
 “Initial” means usable with a deliberately bounded guarantee. It does not mean
 the broader semantic capability described by the manifesto has been completed.

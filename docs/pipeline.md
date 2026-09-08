@@ -32,7 +32,7 @@ toolchain and catalog
 → trusted base policy
 → adapters.observe(policy["adapter"], root, policy)
 → ObservedArchitecture
-→ module contracts and 17 portable rules
+→ module contracts and 18 portable rules
 → revision-bound result and exit code
 ```
 
@@ -89,7 +89,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install pinned architecture kit
-        run: python3 -m pip install --no-deps agentic-architecture-kit==0.4.9
+        run: python3 -m pip install --no-deps agentic-architecture-kit==0.5.0
       - name: Validate architecture
         env:
           BASE_REVISION: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -139,7 +139,7 @@ installed beside AAK and pinned in `toolchain.json`:
 
 ```bash
 python3 -m pip install --no-deps \
-  agentic-architecture-kit==0.4.9 \
+  agentic-architecture-kit==0.5.0 \
   aak-rust-adapter==1.2.3
 ```
 
@@ -175,9 +175,14 @@ digests for toolchain, policy, waivers, reviews, authorities, catalog, and
 observed architecture. Upload it with retention appropriate to risk. Regenerate
 runtime evidence; do not maintain it manually in Git.
 
+Architecture validation evidence is distinct from a long-running execution
+checkpoint. When a task crosses contexts or runners, use
+`aak guide long-running-execution` and retain `.agentic/runtime/checkpoints/`
+separately with access controls appropriate to its reasoning and risk content.
+
 ## 11. Project-specific architecture rules
 
-AAK evaluates the 17 portable rules. A project rule needs a separately connected
+AAK evaluates the 18 portable rules. A project rule needs a separately connected
 analyzer, architecture test, compiler check, or linter. Create it through
 `aak guide project-rule-authoring-prompt` and run its stable command in the same
 job or another required job, for example:

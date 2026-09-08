@@ -15,7 +15,7 @@ la versión compatible del kit y registra un nombre de adaptador en minúsculas:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.9"]
+dependencies = ["agentic-architecture-kit==0.5.0"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -127,7 +127,7 @@ validación:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.9",
+  "toolVersion": "0.5.0",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}
@@ -200,3 +200,15 @@ aristas.
 - La evidencia exacta y la heurística usan valores de confianza distinguibles.
 - Los fixtures positivos y negativos pasan con `--fail-on-review` según lo
   previsto.
+
+## Extensiones semantic observer
+
+Un adapter tecnológico entrega hechos estructurales y sintácticos. Un proveedor
+opcional de dependencias semánticas del compilador es una extensión separada
+registrada en `agentic_architecture_kit.semantic_observers`. Devuelve el contrato
+frozen `SemanticObservation`, con proveedor/versión, capability, revisión,
+cobertura, truncación, hashes de inputs relativos, fingerprint canónico,
+diagnósticos estructurados y provenance semántica. Su distribución debe estar
+pinneada en `toolchain.json`, seleccionada explícitamente en project policy, ser
+determinista y read-only. Consulta [Inteligencia semántica de
+código](semantic-code-intelligence.md).

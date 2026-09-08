@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/OWNER/AgenticArchitectureKit/v0.5.0/src/agentic_architecture_kit/data/schemas/checkpoint-state.schema.json",
+  "version": 1,
+  "globalObjective": "Replace with the complete task outcome.",
+  "activeInvariants": [
+    {
+      "id": "INV-001",
+      "statement": "Replace with a constraint that must remain true.",
+      "status": "holds",
+      "evidence": ["Replace with a repository reference or explicit evidence classification."]
+    }
+  ],
+  "decisions": [],
+  "planDeviations": [],
+  "openRisks": [],
+  "resolvedRisks": [],
+  "nextObjective": "Replace with the next bounded outcome."
+}

@@ -272,14 +272,14 @@ Use strict mode when team policy requires every semantic review to be resolved
 before delivery:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.5.0 aak validate --fail-on-review
 ```
 
 For CI or retained evidence, prefer structured output:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --format json
-uvx --from agentic-architecture-kit==0.4.9 aak validate --base-ref origin/main --task-id CI
+uvx --from agentic-architecture-kit==0.5.0 aak validate --format json
+uvx --from agentic-architecture-kit==0.5.0 aak validate --base-ref origin/main --task-id CI
 ```
 
 CI should use `--base-ref` whenever it can compare with the target branch. This
@@ -287,6 +287,19 @@ makes newly permitted boundaries and dependencies require an existing ADR
 instead of allowing an agent to obtain green by merely expanding the policy.
 Use [`aak guide pipeline`](pipeline.md) for the complete checkout, adapter,
 base-selection, evidence-retention, and required-check implementation.
+
+### Durable long-running execution
+
+When work may cross context compaction, handoff, restart, or many hours, require
+the checkpoint protocol in addition to Git. Each checkpoint retains the global
+objective, active invariants, cumulative decisions and rationale, plan
+deviations, generated test evidence, open risks, and next objective. Before the
+next segment, `aak checkpoint resume` supplies the unchanged original plan and
+complete latest checkpoint together and records a content-bound receipt.
+
+Reviewers should reject a rewritten plan, a broken checkpoint chain, a vanished
+decision or risk, unresumed workspace drift, or test success recorded only as
+agent prose. See [`long-running-execution.md`](long-running-execution.md).
 
 ## 9. Waiver governance
 

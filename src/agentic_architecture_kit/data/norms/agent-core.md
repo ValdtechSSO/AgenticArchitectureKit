@@ -87,3 +87,17 @@ before declaring the task complete.
 If a finding provides a normative reference, follow it and load only the
 required rule context. A reference that does not resolve is a failure, never
 permission to reconstruct the rule from memory.
+
+## Durable long-running execution
+
+When a task can outlive one reliable context, cross compaction or handoff, or
+continue after a process restart, persist a content-bound execution checkpoint.
+Git history alone does not retain the global objective, still-active invariants,
+decision rationale, plan deviations, test evidence, open risks, and next
+objective.
+
+Before the next segment, load the unchanged original plan and latest checkpoint
+from durable repository evidence. Do not rely only on conversational or
+compacted context. Continuation evidence proves that these inputs were supplied;
+it does not claim to prove private model cognition or grant architecture
+authority. Use `aak guide long-running-execution` for the executable protocol.

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "taskId", "checkpointSequence", "checkpointDigest", "plan", "workspaceFingerprint", "resumedAt", "receiptDigest"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "enum": [1] },
+    "taskId": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "checkpointSequence": { "type": "integer" },
+    "checkpointDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "digest"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "workspaceFingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "resumedAt": { "type": "string", "minLength": 1 },
+    "receiptDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

@@ -2,13 +2,16 @@ id: agentic_architecture_kit
 name: Agentic Architecture Kit
 purpose: >
   Observe a repository, evaluate portable architecture rules, and retrieve
-  minimum sufficient architecture context with explicit provenance.
+  minimum sufficient architecture context with explicit provenance, while
+  retaining content-bound execution state for long-running agent work.
 intent:
   aliases:
     - architecture validation
     - conformance engine
     - repository observation
     - progressive context
+    - durable execution checkpoint
+    - long-running task resume
 ownership:
   domain: architecture governance
   authoritative_data: []
@@ -21,3 +24,5 @@ invariants:
   - domain/contexts/architecture-validation.md#invariants
 architecture_decisions:
   - architecture/decisions/ADR-001-portable-validator-boundary.md
+  - architecture/decisions/ADR-002-semantic-code-intelligence.md
+  - architecture/decisions/ADR-003-durable-execution-checkpoints.md

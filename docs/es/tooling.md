@@ -27,7 +27,7 @@ distribución, catálogo y extensiones:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.9",
+  "toolVersion": "0.5.0",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -36,8 +36,8 @@ distribución, catálogo y extensiones:
 La versión se ejecuta sin instalación global:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.9 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.5.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.5.0 aak context locate "order lifecycle"
 ```
 
 La misma distribución contiene todo lo necesario para que un agente inicialice
@@ -50,6 +50,7 @@ aak guide architecture-context-authoring-prompt
 aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
+aak guide long-running-execution
 aak guide module-contract-authoring-prompt
 aak guide pipeline
 aak guide project-policy-authoring-prompt
@@ -104,6 +105,8 @@ aak guide project-rule-authoring-prompt
 aak guide waiver-authoring-prompt
 aak template AGENTS.md
 aak explain DEP001
+aak checkpoint status --task-id TASK-123 --plan docs/plan-original.md
+aak checkpoint verify --task-id TASK-123 --plan docs/plan-original.md
 aak context index
 aak context locate "order lifecycle"
 aak context references CreateOrder
@@ -129,6 +132,26 @@ waiver o review aplicado. Una referencia ausente hace fallar la validación.
 Cada waiver y review semántico debe persistir ese `ruleDigest` exacto. Un digest
 válido pero distinto degrada la licencia a `REVIEW_REQUIRED` e impide aplicarla
 a la semántica actual de la regla.
+
+## Checkpoints duraderos de ejecución
+
+Para trabajo que pueda atravesar compactación, handoff, reinicio o muchas horas,
+usa el protocolo de checkpoint separado:
+
+```bash
+aak template checkpoint-state.json
+aak checkpoint run-test --task-id TASK-123 -- python3 -m unittest discover -s tests -v
+aak checkpoint create --task-id TASK-123 --plan docs/plan-original.md \
+  --state .agentic/runtime/checkpoints/TASK-123/draft-state.json
+aak checkpoint resume --task-id TASK-123 --plan docs/plan-original.md
+aak checkpoint verify --task-id TASK-123 --plan docs/plan-original.md
+```
+
+La cadena queda ligada al plan original, la revisión Git y el contenido del
+worktree. `resume` emite juntos el plan completo y el último estado completo y
+escribe un recibo exigido por el siguiente checkpoint. Consulta
+[`long-running-execution.md`](long-running-execution.md) para las reglas de
+continuidad, retención, confidencialidad y fallo.
 
 ## Extensiones tecnológicas
 

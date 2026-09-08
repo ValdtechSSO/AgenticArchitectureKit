@@ -297,6 +297,41 @@ def _rule_architecture_matches(context: ValidationContext) -> list[Finding]:
     return results
 
 
+def _rule_required_observation(context: ValidationContext) -> list[Finding]:
+    semantic = context.semantic_observation
+    if semantic is None or not semantic.configured:
+        return [_finding("OBS001", "NOT_APPLICABLE", ".", "No semantic observation is configured.")]
+    scope = context.policy.get("observation", {}).get("semantic", {}).get("solution", ".")
+    evidence = semantic.as_dict()
+    if "message" in evidence:
+        evidence["providerMessage"] = evidence.pop("message")
+    if semantic.invalid:
+        return [_finding(
+            "OBS001", "FAIL", scope,
+            "Semantic observation evidence is invalid or stale.",
+            **evidence,
+        )]
+    if semantic.mode == "required" and (
+        not semantic.available or semantic.coverage != "complete" or semantic.fallback_used
+    ):
+        return [_finding(
+            "OBS001", "REVIEW_REQUIRED", scope,
+            "Required semantic observation is unavailable, incomplete, or truncated.",
+            **evidence,
+        )]
+    if semantic.coverage == "complete" and not semantic.fallback_used:
+        return [_finding(
+            "OBS001", "PASS", scope,
+            "Semantic observation evidence is current and complete.",
+            **evidence,
+        )]
+    return [_finding(
+        "OBS001", "PASS", scope,
+        "Advisory semantic observation degraded explicitly to structural/syntactic evidence.",
+        **evidence,
+    )]
+
+
 def _rule_module_contract(context: ValidationContext) -> list[Finding]:
     results: list[Finding] = []
     file_name = context.policy["moduleContract"]["fileName"]
@@ -518,6 +553,45 @@ def _source_belongs_only_to_test_projects(source_path: str, projects: dict[str, 
     return all(projects[path]["role"] == "test" for path in project_paths)
 
 
+def _source_dependency_evidence(dependency: Any) -> dict[str, Any]:
+    return {
+        "sourceNamespace": dependency.source_namespace,
+        "targetNamespace": dependency.target_namespace,
+        "observation": dependency.kind,
+        "confidence": dependency.confidence,
+        "resolution": dependency.resolution,
+        "provider": dependency.provider,
+        **({"sourceSymbol": dependency.source_symbol} if dependency.source_symbol else {}),
+        **({"targetSymbol": dependency.target_symbol} if dependency.target_symbol else {}),
+        **({"targetProjectPath": dependency.target_project_path} if dependency.target_project_path else {}),
+        **({"locations": [item.as_dict() for item in dependency.locations]} if dependency.locations else {}),
+        **({"configurations": list(dependency.configurations)} if dependency.configurations else {}),
+    }
+
+
+def _dependency_owner(
+    context: ValidationContext,
+    dependency: Any,
+    *,
+    target: bool,
+) -> tuple[str, str, bool] | None:
+    if target and dependency.target_project_path:
+        declaration = _declared_projects(context).get(dependency.target_project_path)
+        if declaration:
+            owner = declaration["owner"]
+            is_contract = declaration["role"] == "contracts" or declaration.get("publicContract", False)
+            return owner["kind"], owner["id"], is_contract
+    namespace = dependency.target_namespace if target else dependency.source_namespace
+    owner = _namespace_owner(context, namespace)
+    if owner is not None:
+        return owner
+    if not target:
+        expected, _ = _source_expected_owners(context, dependency.source_path)
+        if len(expected) == 1:
+            return expected[0][0], expected[0][1], False
+    return None
+
+
 def _namespace_resolution_issue(
     context: ValidationContext,
     namespace: str,
@@ -566,10 +640,8 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
         if _source_belongs_only_to_test_projects(dependency.source_path, projects):
             continue
         source_owners, source_evidence = _source_expected_owners(context, dependency.source_path)
-        target_owners, target_evidence = _observed_namespace_expected_owners(
-            context,
-            dependency.target_namespace,
-        )
+        exact_target = _dependency_owner(context, dependency, target=True)
+        target_owners, target_evidence = _observed_namespace_expected_owners(context, dependency.target_namespace)
         source_namespace_observed = any(
             item.source_path == dependency.source_path
             and item.namespace == dependency.source_namespace
@@ -591,7 +663,7 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     target_owners,
                     target_evidence,
                 )
-                if target_owners else None,
+                if target_owners and exact_target is None else None,
             )
             if issue is not None
         ]
@@ -606,15 +678,10 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                         "affectedEdges": [],
                     },
                 )
-                group["affectedEdges"].append({
-                    "sourceNamespace": dependency.source_namespace,
-                    "targetNamespace": dependency.target_namespace,
-                    "observation": dependency.kind,
-                    "confidence": dependency.confidence,
-                })
+                group["affectedEdges"].append(_source_dependency_evidence(dependency))
             continue
-        source = _namespace_owner(context, dependency.source_namespace)
-        target = _namespace_owner(context, dependency.target_namespace)
+        source = _dependency_owner(context, dependency, target=False)
+        target = exact_target
         if source and target and source[0] == "module" and target[0] == "host":
             findings.append(
                 _finding(
@@ -622,10 +689,7 @@ def _rule_modules_do_not_depend_on_hosts(context: ValidationContext) -> list[Fin
                     "FAIL",
                     dependency.source_path,
                     "Module source imports a host-owned namespace.",
-                    sourceNamespace=dependency.source_namespace,
-                    targetNamespace=dependency.target_namespace,
-                    observation=dependency.kind,
-                    confidence=dependency.confidence,
+                    **_source_dependency_evidence(dependency),
                 )
             )
     for key in sorted(resolution_groups):
@@ -698,8 +762,8 @@ def _rule_cross_module_contracts(context: ValidationContext) -> list[Finding]:
                     )
                 )
     for dependency in context.observed.source_dependencies:
-        source = _namespace_owner(context, dependency.source_namespace)
-        target = _namespace_owner(context, dependency.target_namespace)
+        source = _dependency_owner(context, dependency, target=False)
+        target = _dependency_owner(context, dependency, target=True)
         if not source or not target or source[0] != "module" or target[0] != "module" or source[1] == target[1]:
             continue
         cross_edges += 1
@@ -710,10 +774,7 @@ def _rule_cross_module_contracts(context: ValidationContext) -> list[Finding]:
                     "FAIL",
                     dependency.source_path,
                     "Cross-module source import does not target a declared contract namespace.",
-                    sourceNamespace=dependency.source_namespace,
-                    targetNamespace=dependency.target_namespace,
-                    observation=dependency.kind,
-                    confidence=dependency.confidence,
+                    **_source_dependency_evidence(dependency),
                 )
             )
     if violations:
@@ -769,10 +830,10 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
             for source, target in unexpected
         ]
 
-    source_evidence: list[dict[str, str]] = []
+    source_evidence: list[dict[str, Any]] = []
     for dependency in context.observed.source_dependencies:
-        source_owner = _namespace_owner(context, dependency.source_namespace)
-        target_owner = _namespace_owner(context, dependency.target_namespace)
+        source_owner = _dependency_owner(context, dependency, target=False)
+        target_owner = _dependency_owner(context, dependency, target=True)
         if not source_owner or not target_owner or source_owner[:2] == target_owner[:2]:
             continue
         source_declaration = {
@@ -795,8 +856,7 @@ def _rule_allowed_dependencies(context: ValidationContext) -> list[Finding]:
             "from": f"{source_owner[0]}:{source_owner[1]}",
             "to": f"{target_owner[0]}:{target_owner[1]}",
             "sourcePath": dependency.source_path,
-            "targetNamespace": dependency.target_namespace,
-            "confidence": dependency.confidence,
+            **_source_dependency_evidence(dependency),
         }
         source_evidence.append(evidence)
         if not authorized:
@@ -976,6 +1036,39 @@ def _rule_policy_growth(context: ValidationContext) -> list[Finding]:
                         baseRevision=context.base_revision,
                     )
                 )
+
+    base_semantic = context.base_policy.get("observation", {}).get("semantic")
+    current_semantic = context.policy.get("observation", {}).get("semantic")
+    if base_semantic and base_semantic.get("mode") == "required":
+        reductions: list[str] = []
+        if current_semantic is None:
+            reductions.append("required semantic observation was removed")
+        else:
+            if current_semantic.get("mode") != "required":
+                reductions.append("mode changed from required to advisory")
+            removed_capabilities = sorted(
+                set(base_semantic.get("capabilities", []))
+                - set(current_semantic.get("capabilities", []))
+            )
+            if removed_capabilities:
+                reductions.append("capabilities removed: " + ", ".join(removed_capabilities))
+            if base_semantic.get("solution") != current_semantic.get("solution"):
+                reductions.append("semantic solution scope changed")
+            if base_semantic.get("provider") != current_semantic.get("provider"):
+                reductions.append("semantic provider changed")
+        if reductions:
+            findings.append(
+                _finding(
+                    "CHG001",
+                    "REVIEW_REQUIRED",
+                    ".agentic/policies/architecture/project-policy.json",
+                    "Semantic observation enforcement was reduced or materially changed and requires authority review.",
+                    reductions=reductions,
+                    previous=base_semantic,
+                    current=current_semantic,
+                    baseRevision=context.base_revision,
+                )
+            )
 
     if context.base_norms is not None:
         current_documents = {
@@ -1555,6 +1648,7 @@ def _rule_waivers_valid(context: ValidationContext) -> list[Finding]:
 EVALUATORS: dict[str, Callable[[ValidationContext], list[Finding]]] = {
     "policy_valid": _rule_policy_valid,
     "architecture_matches": _rule_architecture_matches,
+    "required_observation": _rule_required_observation,
     "module_contract": _rule_module_contract,
     "module_identity": _rule_module_identity,
     "functional_modules": _rule_functional_modules,

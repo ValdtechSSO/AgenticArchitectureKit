@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .adapters import observe
 from .contracts import load_json, load_yaml_subset
+from .semantic_observers import observe_architecture
+from .semantic_observers.contracts import ObservationBundle
 
 
-INDEX_FILES = ("repository", "modules", "projects", "dependencies", "documents", "tests")
+INDEX_FILES = ("repository", "modules", "projects", "dependencies", "observations", "documents", "tests")
 SOURCE_SUFFIXES = {".cs", ".py", ".fs", ".vb", ".js", ".jsx", ".ts", ".tsx", ".java", ".kt", ".go", ".rs"}
 
 
@@ -66,9 +67,15 @@ def _contract(root: Path, module: dict[str, Any], file_name: str) -> dict[str, A
     return value if isinstance(value, dict) else {}
 
 
-def build_index(root: Path, policy: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def build_index(
+    root: Path,
+    policy: dict[str, Any],
+    toolchain: dict[str, Any] | None = None,
+    bundle: ObservationBundle | None = None,
+) -> dict[str, dict[str, Any]]:
     root = root.resolve()
-    observed = observe(policy["adapter"], root, policy)
+    bundle = bundle or observe_architecture(root, policy, toolchain)
+    observed = bundle.architecture
     meta = _metadata(root)
     contract_file = policy["moduleContract"]["fileName"]
     module_items = []
@@ -98,7 +105,15 @@ def build_index(root: Path, policy: dict[str, Any]) -> dict[str, dict[str, Any]]
             "provenance": {"identity": "observed", "ownership": "declared"},
         })
     dependencies = [
-        {"from": item.path, "to": target, "kind": "project-reference", "confidence": "exact", "provenance": "observed"}
+        {
+            "from": item.path,
+            "to": target,
+            "kind": "project-reference",
+            "confidence": "exact",
+            "resolution": "manifest",
+            "provider": f"{policy['adapter']}-adapter",
+            "provenance": "observed",
+        }
         for item in observed.projects for target in item.references
     ] + [
         {
@@ -107,6 +122,13 @@ def build_index(root: Path, policy: dict[str, Any]) -> dict[str, dict[str, Any]]
             "sourcePath": item.source_path,
             "kind": item.kind,
             "confidence": item.confidence,
+            "resolution": item.resolution,
+            "provider": item.provider,
+            "sourceSymbol": item.source_symbol,
+            "targetSymbol": item.target_symbol,
+            "targetProjectPath": item.target_project_path,
+            "locations": [location.as_dict() for location in item.locations],
+            "configurations": list(item.configurations),
             "provenance": "observed",
         }
         for item in observed.source_dependencies
@@ -138,14 +160,20 @@ def build_index(root: Path, policy: dict[str, Any]) -> dict[str, dict[str, Any]]
         "modules": {**meta, "items": module_items},
         "projects": {**meta, "items": project_items},
         "dependencies": {**meta, "items": dependencies},
+        "observations": {**meta, "semantic": bundle.semantic.as_dict()},
         "documents": {**meta, "items": [{"path": item, "provenance": "observed"} for item in documents]},
         "tests": {**meta, "items": [{"path": item, "provenance": "observed"} for item in tests]},
     }
 
 
-def write_index(root: Path, policy: dict[str, Any], output: str = ".agentic/generated/index") -> dict[str, dict[str, Any]]:
+def write_index(
+    root: Path,
+    policy: dict[str, Any],
+    output: str = ".agentic/generated/index",
+    toolchain: dict[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
     root = root.resolve()
-    documents = build_index(root, policy)
+    documents = build_index(root, policy, toolchain)
     target = _repo_path(root, output)
     target.mkdir(parents=True, exist_ok=True)
     for name, document in documents.items():
@@ -181,6 +209,7 @@ def references(root: Path, policy: dict[str, Any], symbol: str, tests_only: bool
                 "excerpt": path.name,
                 "provenance": "observed",
                 "confidence": "exact-file-name",
+                "resolution": "textual",
             })
         for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
             if pattern.search(line):
@@ -190,6 +219,7 @@ def references(root: Path, policy: dict[str, Any], symbol: str, tests_only: bool
                     "excerpt": line.strip()[:240],
                     "provenance": "observed",
                     "confidence": "exact-text-match",
+                    "resolution": "textual",
                 })
     return {**_metadata(root), "symbol": symbol, "matches": matches}
 
@@ -216,3 +246,13 @@ def impact(root: Path, policy: dict[str, Any], target_path: str) -> dict[str, An
 def load_policy(root: Path, value: str) -> dict[str, Any]:
     path = Path(value)
     return load_json(path if path.is_absolute() else root / path)
+
+
+def observation_status(
+    root: Path,
+    policy: dict[str, Any],
+    toolchain: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    root = root.resolve()
+    bundle = observe_architecture(root, policy, toolchain)
+    return {**_metadata(root), "adapter": policy["adapter"], "semantic": bundle.semantic.as_dict()}

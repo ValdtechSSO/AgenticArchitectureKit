@@ -4,7 +4,7 @@ import argparse
 import sys
 
 from . import __version__
-from . import adopt_cli, context_cli, explain_cli, guide_cli, init_cli, validate_cli
+from . import adopt_cli, checkpoint_cli, context_cli, explain_cli, guide_cli, init_cli, validate_cli
 from .resources import read_text as read_bundled_text
 
 
@@ -17,6 +17,7 @@ def _parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("validate", add_help=False, help="Validate a repository against portable rules.")
     commands.add_parser("context", add_help=False, help="Retrieve minimum sufficient repository context.")
+    commands.add_parser("checkpoint", add_help=False, help="Persist and resume durable long-running task state.")
     commands.add_parser("explain", add_help=False, help="Explain a rule and its current repository state.")
     commands.add_parser("core", add_help=False, help="Print the complete preventive decision core.")
     commands.add_parser("guide", add_help=False, help="Read packaged operational guidance.")
@@ -38,6 +39,8 @@ def main(arguments: list[str] | None = None) -> int:
         return validate_cli.run(remaining)
     if namespace.command == "context":
         return context_cli.run(remaining)
+    if namespace.command == "checkpoint":
+        return checkpoint_cli.run(remaining)
     if namespace.command == "explain":
         return explain_cli.run(remaining)
     if namespace.command == "core":

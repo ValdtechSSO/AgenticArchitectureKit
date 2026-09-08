@@ -19,12 +19,37 @@ class Project:
 
 
 @dataclass(frozen=True)
+class SourceLocation:
+    path: str
+    start_line: int
+    start_column: int
+    end_line: int
+    end_column: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "path": self.path,
+            "startLine": self.start_line,
+            "startColumn": self.start_column,
+            "endLine": self.end_line,
+            "endColumn": self.end_column,
+        }
+
+
+@dataclass(frozen=True)
 class SourceDependency:
     source_path: str
     source_namespace: str
     target_namespace: str
     kind: str
     confidence: str = "exact"
+    resolution: str = "syntactic"
+    provider: str = "technology-adapter"
+    source_symbol: str | None = None
+    target_symbol: str | None = None
+    target_project_path: str | None = None
+    locations: tuple[SourceLocation, ...] = ()
+    configurations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -72,6 +97,13 @@ class ObservedArchitecture:
                     "targetNamespace": item.target_namespace,
                     "kind": item.kind,
                     "confidence": item.confidence,
+                    "resolution": item.resolution,
+                    "provider": item.provider,
+                    **({"sourceSymbol": item.source_symbol} if item.source_symbol else {}),
+                    **({"targetSymbol": item.target_symbol} if item.target_symbol else {}),
+                    **({"targetProjectPath": item.target_project_path} if item.target_project_path else {}),
+                    **({"locations": [location.as_dict() for location in item.locations]} if item.locations else {}),
+                    **({"configurations": list(item.configurations)} if item.configurations else {}),
                 }
                 for item in self.source_dependencies
             ],
@@ -141,3 +173,4 @@ class ValidationContext:
     base_policy: dict[str, Any] | None = None
     base_revision: str | None = None
     base_norms: dict[str, Any] | None = None
+    semantic_observation: Any = None

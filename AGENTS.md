@@ -22,6 +22,12 @@ created and evolved by coding agents.
 - If a project-specific architecture guarantee is created or changed, run
   `python3 tools/aak.py guide project-rule-authoring-prompt` and connect its
   analyzer or test to the authoritative local and CI checks.
+- For configured semantic code intelligence, run
+  `python3 tools/aak.py guide semantic-code-intelligence`; discovery informs
+  observation but never grants architecture permission.
+- For work that may outlive one reliable context, run
+  `python3 tools/aak.py guide long-running-execution`; resume from the original
+  plan and latest durable checkpoint before continuing.
 - If a waiver is proposed, reviewed, changed, or removed, run
   `python3 tools/aak.py guide waiver-authoring-prompt`. An agent may derive and
   write the record but must never authorize its own architectural deviation.
@@ -40,6 +46,7 @@ created and evolved by coding agents.
 - Validator tests: `python3 -m unittest discover -s tests -v`
 - Architecture check: `aak validate --fail-on-review`
 - Context index: `aak context index`
+- Long-task state: `aak checkpoint status --task-id TASK --plan PLAN.md`
 - CLI help: `aak --help`
 - Syntax check: `python3 -m compileall -q src tests tools`
 

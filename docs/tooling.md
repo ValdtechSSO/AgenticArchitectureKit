@@ -25,7 +25,7 @@ catalog, and any adapter extensions exactly:
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.9",
+  "toolVersion": "0.5.0",
   "catalogVersion": 2,
   "extensions": []
 }
@@ -34,8 +34,8 @@ catalog, and any adapter extensions exactly:
 Run that exact version without installing it globally:
 
 ```bash
-uvx --from agentic-architecture-kit==0.4.9 aak validate --fail-on-review
-uvx --from agentic-architecture-kit==0.4.9 aak context locate "order lifecycle"
+uvx --from agentic-architecture-kit==0.5.0 aak validate --fail-on-review
+uvx --from agentic-architecture-kit==0.5.0 aak context locate "order lifecycle"
 ```
 
 The same distribution contains everything an agent needs to bootstrap a new
@@ -48,6 +48,7 @@ aak guide architecture-context-authoring-prompt
 aak guide bootstrap
 aak guide github-governance
 aak guide implement-change
+aak guide long-running-execution
 aak guide module-contract-authoring-prompt
 aak guide pipeline
 aak guide project-policy-authoring-prompt
@@ -106,6 +107,8 @@ aak guide waiver-authoring-prompt
 aak template AGENTS.md
 aak explain DEP001
 aak explain CHG001 --base-ref origin/main --format json
+aak checkpoint status --task-id TASK-123 --plan docs/original-plan.md
+aak checkpoint verify --task-id TASK-123 --plan docs/original-plan.md
 ```
 
 `FAIL` returns exit code 1. An unresolved `REVIEW_REQUIRED` also returns 1 with
@@ -136,6 +139,26 @@ from applying to the current rule semantics.
 
 `--task-id` retains `architecture.json` and `manifest.json` under
 `.agentic/runtime/evidence/{task-id}/{revision}/`.
+
+## Durable execution checkpoints
+
+For work that may cross compaction, handoff, restart, or many hours, use the
+separate checkpoint protocol:
+
+```bash
+aak template checkpoint-state.json
+aak checkpoint run-test --task-id TASK-123 -- python3 -m unittest discover -s tests -v
+aak checkpoint create --task-id TASK-123 --plan docs/original-plan.md \
+  --state .agentic/runtime/checkpoints/TASK-123/draft-state.json
+aak checkpoint resume --task-id TASK-123 --plan docs/original-plan.md
+aak checkpoint verify --task-id TASK-123 --plan docs/original-plan.md
+```
+
+The checkpoint chain is bound to the original plan, Git revision, and worktree
+content. `resume` emits the full plan and full latest state together and writes
+a receipt required by the next checkpoint. Read
+[`long-running-execution.md`](long-running-execution.md) for continuity,
+retention, confidentiality, and failure semantics.
 
 ## Progressive context
 

@@ -48,6 +48,12 @@ is retrieved progressively from a deterministic bootstrap through module
 contracts, invariants, decisions, dependencies, consumers, data, tests, and
 revision-bound evidence.
 
+When execution outlives one reliable context, durable checkpoints complement
+Git with the global objective, active invariants, decision rationale, plan
+deviations, test evidence, open risks, and next objective. A later segment
+reloads the unchanged original plan and complete latest checkpoint before work
+continues; compacted conversation is not the recovery source.
+
 ## Conformance model
 
 Three project-owned layers specialize the portable distribution:
@@ -76,6 +82,7 @@ Task
   → implement inside the smallest cohesive boundary
   → follow normative references only when findings require them
   → update code, declarations, decisions, enforcement, and evidence atomically
+  → checkpoint and resume from plan plus durable state when execution spans contexts
   → validate again before declaring completion
   → PASS / FAIL / WAIVED / REVIEWED / NOT_APPLICABLE / REVIEW_REQUIRED
 ```

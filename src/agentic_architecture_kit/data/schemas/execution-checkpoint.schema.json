@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "taskId", "sequence", "createdAt", "checkpointDigest", "previousCheckpointDigest", "continuedFromReceipt", "plan", "workspace", "state", "testEvidence", "testAssessment"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "enum": [1] },
+    "taskId": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "sequence": { "type": "integer" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "checkpointDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "previousCheckpointDigest": { "type": "string", "pattern": "^(ROOT|sha256:[0-9a-f]{64})$" },
+    "continuedFromReceipt": { "type": "string", "pattern": "^(ROOT|sha256:[0-9a-f]{64})$" },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "digest"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "workspace": { "$ref": "#/$defs/workspace" },
+    "state": { "type": "object" },
+    "testEvidence": { "type": "array", "items": { "type": "object" } },
+    "testAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "currentEvidenceDigests"],
+      "properties": {
+        "status": { "type": "string", "enum": ["passed", "failed", "stale", "not-run"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "currentEvidenceDigests": { "type": "array", "items": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+      }
+    }
+  },
+  "$defs": {
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repositoryRevision", "dirty", "fingerprint", "fileCount", "changedPaths"],
+      "properties": {
+        "repositoryRevision": { "type": "string", "minLength": 1 },
+        "dirty": { "type": "boolean" },
+        "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "fileCount": { "type": "integer" },
+        "changedPaths": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

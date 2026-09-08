@@ -28,6 +28,9 @@
 - Run `aak guide bootstrap` for the version-matched creation and evolution
   procedure; use `aak guide pipeline` when connecting CI and
   `aak guide github-governance` when configuring GitHub controls.
+- For work that may cross context compaction, handoff, or process restart, run
+  `aak guide long-running-execution` and resume from the original plan and
+  latest durable checkpoint before continuing.
 - Read `architecture/system-overview.md` and `domain/global-invariants.md`.
 - Locate the owning module and cohesive feature area before changing behavior.
 - Read the module's `module.contract.yml` and `AGENTS.md`.
@@ -38,6 +41,16 @@
 - Build: `{build command}`
 - Test: `{test command}`
 - Architecture: `uvx --from agentic-architecture-kit=={pinned-version} aak validate --fail-on-review`
+
+## Code intelligence
+
+- Use the configured semantic provider for compiler-resolved navigation when
+  available.
+- Use AAK for architecture authority and validation; semantic discovery never
+  grants a dependency.
+- Fall back explicitly to syntactic or textual evidence and report the reduced
+  confidence.
+- Run the real build and tests before completion.
 
 ## Critical rules
 

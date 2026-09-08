@@ -33,7 +33,7 @@ toolchain y catálogo
 → policy base de confianza
 → adapters.observe(policy["adapter"], root, policy)
 → ObservedArchitecture
-→ contratos de módulo y 17 reglas portables
+→ contratos de módulo y 18 reglas portables
 → resultado ligado a la revisión y código de salida
 ```
 
@@ -90,7 +90,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install pinned architecture kit
-        run: python3 -m pip install --no-deps agentic-architecture-kit==0.4.9
+        run: python3 -m pip install --no-deps agentic-architecture-kit==0.5.0
       - name: Validate architecture
         env:
           BASE_REVISION: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -140,7 +140,7 @@ instalarse junto a AAK y fijarse en `toolchain.json`:
 
 ```bash
 python3 -m pip install --no-deps \
-  agentic-architecture-kit==0.4.9 \
+  agentic-architecture-kit==0.5.0 \
   aak-rust-adapter==1.2.3
 ```
 
@@ -176,9 +176,15 @@ canónicos de toolchain, policy, waivers, reviews, authorities, catálogo y
 arquitectura observada. Súbelo con una retención acorde al riesgo. Regenera la
 evidencia runtime; no la mantengas manualmente en Git.
 
+La evidencia de validación arquitectónica es distinta de un checkpoint de
+ejecución larga. Cuando una tarea atraviese contextos o runners, usa
+`aak guide long-running-execution` y conserva `.agentic/runtime/checkpoints/`
+por separado con controles de acceso adecuados para su contenido de
+razonamiento y riesgo.
+
 ## 11. Reglas arquitectónicas propias del proyecto
 
-AAK evalúa las 17 reglas portables. Una regla del proyecto necesita analyzer,
+AAK evalúa las 18 reglas portables. Una regla del proyecto necesita analyzer,
 test arquitectónico, comprobación del compilador o linter conectado por
 separado. Créala mediante `aak guide project-rule-authoring-prompt` y ejecuta su
 comando estable en el mismo job o en otro obligatorio, por ejemplo:

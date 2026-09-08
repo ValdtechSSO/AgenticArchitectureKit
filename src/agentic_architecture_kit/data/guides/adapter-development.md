@@ -13,7 +13,7 @@ kit version and register one lowercase adapter name:
 [project]
 name = "aak-rust-adapter"
 version = "0.1.0"
-dependencies = ["agentic-architecture-kit==0.4.9"]
+dependencies = ["agentic-architecture-kit==0.5.0"]
 
 [project.entry-points."agentic_architecture_kit.adapters"]
 rust = "aak_rust_adapter:observe"
@@ -123,7 +123,7 @@ Install the adapter distribution beside the pinned kit. Add it to
 {
   "version": 1,
   "distribution": "agentic-architecture-kit",
-  "toolVersion": "0.4.9",
+  "toolVersion": "0.5.0",
   "catalogVersion": 2,
   "extensions": [
     {"distribution": "aak-rust-adapter", "version": "0.1.0"}
@@ -192,3 +192,15 @@ must prove that the adapter looked, not merely that it returned no edges.
 - Exact and heuristic evidence use distinguishable confidence values.
 - Positive and negative integration fixtures pass with `--fail-on-review` as
   intended.
+
+## Semantic observer extensions
+
+A technology adapter supplies structural and syntactic facts. An optional
+compiler-semantic source-dependency provider is a separate extension registered
+under `agentic_architecture_kit.semantic_observers`. It returns the frozen
+`SemanticObservation` contract with provider/version, capability, revision,
+coverage, truncation, repository-relative input hashes, canonical fingerprint,
+structured diagnostics, and semantic dependency provenance. Its distribution
+must be pinned in `toolchain.json`, selected explicitly in project policy,
+deterministic, and read-only. Run `aak guide semantic-code-intelligence` for the
+agent workflow and fallback rules.

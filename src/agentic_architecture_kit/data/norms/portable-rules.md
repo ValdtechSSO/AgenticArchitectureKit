@@ -17,6 +17,17 @@ technology adapter observes in source and build metadata. An observed source
 namespace must resolve to exactly the owner of its most specific declared
 module or host root; project ownership is the fallback outside those roots.
 
+## OBS001 — Required observation evidence is current and complete
+
+Semantic observation is optional unless project policy configures it. Advisory
+observation may fall back only when provider, resolution, coverage, and reason
+remain explicit. Required observation produces review-required when the provider
+is unavailable or evidence is partial or truncated, and fails when evidence is
+malformed, repository paths escape, input hashes differ, the snapshot is stale,
+or the provider or capability differs from policy. Complete coverage is bound to
+a canonical manifest of repository-relative input paths and current content
+hashes. Observation reports facts and never grants dependency permission.
+
 ## MOD001 — Modules have semantic contracts
 
 Every observed module must have a schema-valid `module.contract.yml` and a local

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "providerVersion", "capability", "repositoryRevision", "workspaceFingerprint", "subjectPath", "inputs", "coverage", "sourceDependencies", "diagnostics"],
+  "properties": {
+    "provider": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "providerVersion": { "type": "string", "minLength": 1 },
+    "capability": { "type": "string", "enum": ["source-dependencies"] },
+    "repositoryRevision": { "type": "string", "minLength": 1 },
+    "workspaceFingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "subjectPath": { "type": ["string", "null"] },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "sourceDependencies": { "type": "array", "items": { "$ref": "#/$defs/sourceDependency" } },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/diagnostic" } }
+  },
+  "$defs": {
+    "input": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "coveredSourceFiles", "exclusions", "configurations", "truncated"],
+      "properties": {
+        "status": { "type": "string", "enum": ["complete", "partial", "unavailable"] },
+        "coveredSourceFiles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "exclusions": { "type": "array", "items": { "$ref": "#/$defs/exclusion" } },
+        "configurations": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "exclusion": {
+      "type": "object", "additionalProperties": false, "required": ["path", "reason"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false, "required": ["code", "message"],
+      "properties": { "code": { "type": "string", "minLength": 1 }, "message": { "type": "string", "minLength": 1 } }
+    },
+    "sourceDependency": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourcePath", "sourceNamespace", "targetNamespace", "kind", "confidence", "resolution", "provider"],
+      "properties": {
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "sourceNamespace": { "type": "string", "minLength": 1 },
+        "targetNamespace": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "string", "minLength": 1 },
+        "resolution": { "type": "string", "enum": ["semantic"] },
+        "provider": { "type": "string", "minLength": 1 },
+        "sourceSymbol": { "type": "string", "minLength": 1 },
+        "targetSymbol": { "type": "string", "minLength": 1 },
+        "targetProjectPath": { "type": "string", "minLength": 1 },
+        "locations": { "type": "array", "items": { "$ref": "#/$defs/location" } },
+        "configurations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "startLine", "startColumn", "endLine", "endColumn"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer" },
+        "startColumn": { "type": "integer" },
+        "endLine": { "type": "integer" },
+        "endColumn": { "type": "integer" }
+      }
+    }
+  }
+}

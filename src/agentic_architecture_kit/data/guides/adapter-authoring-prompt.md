@@ -27,7 +27,7 @@ Additional organization or project rules: <EXTENSION_RULES_OR_NONE>
 Create or extend a separately versioned AAK observation adapter. The adapter
 reports repository facts; it does not decide whether those facts are permitted.
 
-If the requester does not specify a narrower observation scope, use all 17 base
+If the requester does not specify a narrower observation scope, use all 18 base
 rules in the pinned AAK catalog as the default scope. Cover every adapter
 evidence responsibility in the matrix below; classify `CORE_ONLY` responsibilities
 as belonging to AAK itself and make every unsupported technological construct

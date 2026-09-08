@@ -30,6 +30,10 @@ _GUIDES = {
         "Plan and implement a product change through the smallest justified architecture.",
         "data/guides/implement-change-prompt.md",
     ),
+    "long-running-execution": (
+        "Persist and resume content-bound state for work that may outlive one agent context.",
+        "data/guides/long-running-execution.md",
+    ),
     "module-contract-authoring-prompt": (
         "Prompt an agent to create, adopt, or update a semantic module contract.",
         "data/guides/module-contract-authoring-prompt.md",
@@ -45,6 +49,10 @@ _GUIDES = {
     "project-rule-authoring-prompt": (
         "Prompt an agent to create or maintain an enforceable project-specific rule.",
         "data/guides/project-rule-authoring-prompt.md",
+    ),
+    "semantic-code-intelligence": (
+        "Use compiler-semantic discovery without confusing observation with architecture authority.",
+        "data/guides/semantic-code-intelligence.md",
     ),
     "waiver-authoring-prompt": (
         "Prompt an agent to create, review, update, or remove a bounded architecture waiver.",
